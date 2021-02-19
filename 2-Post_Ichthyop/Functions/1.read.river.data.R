@@ -2,10 +2,10 @@
 ## This function reads the rivers data
 # and returns a data frame, with prepared filters and weights
 
-read.river.data <- function(RESOURCE_PATH, river_id, thr_disch){
+read.river.data <- function(DATA_PATH, river_id, thr_disch){
   
   ### ADD HERE for filters or weights on rivers data ###
-  rivers_IO <- readRDS(file.path(RESOURCE_PATH, "river_data","rivers_IO.rds"))
+  rivers_IO <- readRDS(file.path(DATA_PATH, "river_data","rivers_IO.rds"))
   # and keep only the estuaries segments of the rivers used to generate input points
   rivers_IO %>% dplyr::filter(MAIN_RIV %in% river_id$MAIN_RIV) %>%
     dplyr::filter(NEXT_DOWN == 0) %>%

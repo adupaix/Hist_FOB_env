@@ -16,7 +16,7 @@ if(!glob_array_exists){
     # a. Arguments and verification ----
     #-----------------------------------
   cat("\na. Generating the global array")
-  NC_PATH <- file.path(DATA_PATH, sim_name)
+  NC_PATH <- file.path(DATA_PATH, "Output_Ichthyop", sim_name)
   nc_files <- list.files(NC_PATH, pattern = "*.nc")
   
   # check if there are files corresponding to the simulation of interest
@@ -49,7 +49,7 @@ if(!glob_array_exists){
     names(river_id) <- c("MAIN_RIV","init_longitude","init_latitude")
     
     # Read the river data.
-    river_data <- read.river.data(RESOURCE_PATH, river_id, thr_disch)
+    river_data <- read.river.data(DATA_PATH, river_id, thr_disch)
     
   } else {
     river_id <- c()
