@@ -61,7 +61,7 @@ if (file.exists(plotListName) & file.exists(mapName)){
   if (!file.exists(meanAggName)){
     stop("Error: matrix does not exist")
     
-  } else {
+  } else if (agg.time_scale != "year" ){
     
     cat("\n Building a map with the mean result for each time scale over the whole study period")
     
@@ -87,15 +87,47 @@ if (file.exists(plotListName) & file.exists(mapName)){
                                            log_color_scale, fixed_scale_max,
                                            color_scale_pos)
     }
+    
+  } else {
+      cat("\n Building a map with the mean result for each time scale over the whole study period")
+      
+      mean.ggplot.list <- list()
+      
+      mean_agg_array <- readRDS(meanAggName)
+      
+      fixed_scale_max <- 0
+      
+      mean.ggplot.list[[1]] <- matrix.to.ggplot(mean_agg_array, "Mean", gsize,
+                                                log_color_scale, fixed_scale_max,
+                                                color_scale_pos)
+      
+    
   }
 
   
 # save the list of ggplots
-saveRDS(ggplot.list, plotListName)
-cat("\n\n List of maps saved in:", plotListName, "\n")
-sink(logName, append = T)
-cat("\n\nList of maps saved in:\n", plotListName)
-sink()
+
+if (length(ggplot.list)<10){
+  save.maps = T
+} else {
+  cat("\n")
+  msg = paste0("Please confirm that you want to save all the maps (n = ",length(ggplot.list),"; estimated size: ",length(ggplot.list)*6," Mb). (y/n):")
+  
+  save.maps <-  toupper(readline(prompt = paste(" ", msg)))
+  if (save.maps == "Y"){ save.maps <- T} else if(save.maps == "N"){save.maps <- F}
+  while (!is.logical(save.maps)){
+    save.maps <-  toupper(readline(prompt = paste("  Wrong entry.", msg)))
+    if (save.maps == "Y"){ save.maps <- T} else if(save.maps == "N"){save.maps <- F}
+  }
+}
+
+if (save.maps == T){
+  saveRDS(ggplot.list, plotListName)
+  cat("\n\n List of maps saved in:", plotListName, "\n")
+  sink(logName, append = T)
+  cat("\n\nList of maps saved in:\n", plotListName)
+  sink()
+}  
 
 # save the list of mean ggplots
 saveRDS(mean.ggplot.list, meanPlotListName)
@@ -104,11 +136,21 @@ sink(logName, append = T)
 cat("\n\nList of mean maps saved in:\n", meanPlotListName)
 sink()
 
+# Choose the maps to plot
+# if agg.time_scale = quarter or month, build the maps from mean_agg_array
+# if agg.time_scale = year, build the maps from the agg_array
+if (agg.time_scale == "year"){
+  toplot.ggplot.list <- ggplot.list
+} else if (agg.time_scale == "month" | agg.time_scale == "quarter"){
+  toplot.ggplot.list <- mean.ggplot.list
+}
+
+
 # save an image of the mean maps
-l = length(mean.ggplot.list)
+l = length(toplot.ggplot.list)
 n_col <- ceiling(sqrt(l))
 n_row <- ceiling(l / n_col)
-p <- ggarrange(plotlist = mean.ggplot.list,
+p <- ggarrange(plotlist = toplot.ggplot.list,
                 ncol = n_col, nrow = n_row,
                 align = "hv", labels = "AUTO",
                 common.legend = common_scale_max,
@@ -121,7 +163,7 @@ ggsave(mapName, p, width = ifelse(common_scale_max, 180*n_col + 20, 180*n_col),
 
 
 # Update dont delete
-DoNotDeleteMeToo <- c(DoNotDeleteMeToo, "mean.ggplot.list")
+DoNotDeleteMeToo <- c(DoNotDeleteMeToo, "mean.ggplot.list", "ggplot.list")
 
 # Save execution time in the log file
 end1 <- Sys.time()
