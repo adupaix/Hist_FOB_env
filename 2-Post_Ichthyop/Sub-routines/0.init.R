@@ -27,7 +27,7 @@ meanAggName <- file.path(NEW_OUTPUT_PATH, paste0("Per_",agg.time_scale,"_2.mean_
 aggregateName <- file.path(NEW_OUTPUT_PATH, paste0("Per_",agg.time_scale,"_3.aggregated_array.rds"))
 plotListName <- file.path(NEW_OUTPUT_PATH, paste0("Per_",agg.time_scale,"_3.maps.rds"))
 meanPlotListName <- file.path(NEW_OUTPUT_PATH, paste0("Per_",agg.time_scale,"_2.mean_maps.rds"))
-mapName <- file.path(NEW_OUTPUT_PATH, paste0("Per_",agg.time_scale,"_2.maps.png"))
+mapName <- file.path(NEW_OUTPUT_PATH, paste0("Per_",agg.time_scale,"_maps.png"))
 
 # Logical to know if files exist
 filesExist <- file.exists(logName, globalName, meanAggName, aggregateName, plotListName, meanPlotListName, mapName)
