@@ -87,7 +87,7 @@ cat(paste("\n Weighting method :", weight_method))
 cat(paste("\n Grid cell size :", gsize, "degrees"))
 cat(paste("\n Aggregating time scale :", agg.time_scale))
 cat(paste("\n Discharge threshold :", ifelse(is.null(thr_disch), "NULL", paste(thr_disch, "m3/s"))))
-cat(paste("\n Using parallelization :", Parallel[1]))
+cat(paste("\n Using parallelization :", as.logical(Parallel[1])))
 cat(paste("\n Number of cores used :", ifelse(Parallel[1]==F, 1, trunc(detectCores() * Parallel[2]))))
 
 sink()
