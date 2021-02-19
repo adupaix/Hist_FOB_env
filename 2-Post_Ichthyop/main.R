@@ -2,7 +2,7 @@ rm(list = ls())
 gc()
 
 WD <- file.path(getwd(),'2-Post_Ichthyop')
-DATA_PATH <- file.path(getwd(),'0-Data/Output_Ichthyop')
+DATA_PATH <- file.path(getwd(),'0-Data')
 
 OUTPUT_PATH <- file.path(WD,"Outputs")
 FUNC_PATH <- file.path(WD,"Functions")
@@ -36,8 +36,8 @@ weight_method = 1
 gsize = 2
 
 ### time scale used to aggregate the dates (day, month, quarter or year)
-## !! quarter start in Decembre: for example, first quarter of 2012 is from 12.2011 to 02.2012 included
-agg.time_scale = "year"
+## !! quarter start in December: for example, first quarter of 2012 is from 12.2011 to 02.2012 included
+agg.time_scale = "month"
 
 ### the mean water discharge of the input river is used as a filter 
 # only particles originating from a river with a value > thr_disch (in m3/s) are kept 
@@ -77,7 +77,7 @@ bouncing=F
 #    if T, runs in parallel
 # Second element of the vector: fraction of the cores to be used
 #
-## !! One part of the script can rapidly fill the RAM memory, to be taken into account when chose to run in parallel or not
+## !! One part of the script can rapidly fill the RAM memory, to be taken into account when choose to run in parallel or not
 ## !! If the script is running on a Windows machine, the script is executed in sequential
 Parallel = c(T, 1/2)
 
@@ -128,6 +128,6 @@ source(file.path(ROUT_PATH,'1.read.ncs.R'))
 
 # 2. Build maps:
 #==============
-# if (agg.time_scale != "day"){
-# source(file.path(ROUT_PATH,'2.map.array.R'))
-# }
+if (agg.time_scale != "day"){
+source(file.path(ROUT_PATH,'2.map.array.R'))
+}
