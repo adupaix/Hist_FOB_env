@@ -122,7 +122,7 @@ if(!glob_array_exists){
   cat("\na. Global array already exists")
   cat("\nGlobal array used is at :\n", globalName)
   sink(logName, append = T)
-  cat("\na. Global array already exists")
+  cat("\n\na. Global array already exists")
   cat("\n\n Global array used is at :\n", globalName)
   sink()
   
@@ -185,7 +185,7 @@ if (!mean_agg_array_exists){
   cat("\n\nb. Mean aggregated array already exists")
   cat("\nMean aggregated array used is at :\n", meanAggName)
   sink(logName, append = T)
-  cat("\nb. Mean aggregated array already exists")
+  cat("\n\nb. Mean aggregated array already exists")
   cat("\n\n Mean aggregated array used is at :\n", meanAggName)
   sink()
   
@@ -250,7 +250,7 @@ if (!agg_array_exists){
   cat("\n\nc. Aggregated array already exists")
   cat("\nAggregated array used is at :\n", aggregateName)
   sink(logName, append = T)
-  cat("\nc. Aggregated array already exists")
+  cat("\n\nc. Aggregated array already exists")
   cat("\n\n Aggregated array used is at :\n", aggregateName)
   sink()
   
