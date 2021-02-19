@@ -81,10 +81,10 @@ bouncing=F
 ## !! If the script is running on a Windows machine, the script is executed in sequential
 Parallel = c(T, 1/2)
 
-# Wheter to delete the results obtained for these arguments (T) or not (F):
+# Whether to delete the results obtained for these arguments (T) or not (F):
 # 1: arrays and matrices obtained with 1.read.ncs and maps obtained with 2.map.array
 # 2: only maps obtained with 2.map.array
-RESET = c(T,T)
+RESET = c(F,T)
 
 # Arguments used for the ggplot:
 #-------------------------------
