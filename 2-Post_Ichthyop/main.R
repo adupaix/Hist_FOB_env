@@ -9,7 +9,7 @@ FUNC_PATH <- file.path(WD,"Functions")
 ROUT_PATH <- file.path(WD, "Sub-routines")
 RESOURCE_PATH <- file.path(WD,"Resources")
 
-set.seed(123456) # set for reproductibility (lognormale distribution in apply.ltime.1)
+set.seed(10) # set for reproductibility (lognormale distribution in apply.ltime.1)
 
 # ARGUMENTS :                                                                             
 #===========
@@ -22,7 +22,7 @@ set.seed(123456) # set for reproductibility (lognormale distribution in apply.lt
 #                                                         step, so that mean(ltimes)=ltime  !! DOES NOT WORK YET
 #                                                      2. life time fixed at ltime        
 ltime=180
-ltime_method = 2
+ltime_method = 1
 
 ### weight_method (num): method used to give weight to input points
 # can be different from one only if the input_location is river
@@ -37,7 +37,7 @@ gsize = 2
 
 ### time scale used to aggregate the dates (day, month, quarter or year)
 ## !! quarter start in December: for example, first quarter of 2012 is from 12.2011 to 02.2012 included
-agg.time_scale = "month"
+agg.time_scale = "year"
 
 ### the mean water discharge of the input river is used as a filter 
 # only particles originating from a river with a value > thr_disch (in m3/s) are kept 
@@ -84,7 +84,7 @@ Parallel = c(T, 1/2)
 # Whether to delete the results obtained for these arguments (T) or not (F):
 # 1: arrays and matrices obtained with 1.read.ncs and maps obtained with 2.map.array
 # 2: only maps obtained with 2.map.array
-RESET = c(F,T)
+RESET = c(T,T)
 
 # Arguments used for the ggplot:
 #-------------------------------
@@ -109,7 +109,7 @@ color_scale_pos = "out_panel"
 source(file.path(FUNC_PATH, "install_libraries.R"))
 
 srcUsedPackages <- c("RNetCDF","RANN","raster","foreach","tictoc","pryr","plyr","lubridate","parallel","crayon",
-                     "dplyr","sf","ggplot2","ggspatial", "doParallel", "ggpubr")
+                     "dplyr","sf","ggplot2","ggspatial", "doParallel", "ggpubr","abind")
 
 installAndLoad_packages(srcUsedPackages, loadPackages = TRUE)
 
