@@ -1,5 +1,6 @@
 
 # Verbose
+cat("\14")
 tic(msg = "### 2. map.array() function", quiet = F)
 cat(crayon::bold("\n\n###### 2. Building maps from the arrays\n"))
 start1 <- Sys.time()
