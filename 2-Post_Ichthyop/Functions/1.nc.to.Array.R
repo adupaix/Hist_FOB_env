@@ -58,13 +58,14 @@ nc.to.Array <- function(NC_PATH, nc_name, sim_nb, ltime = 180, ltime_method = 2,
     
     # get the time between two positions
     t_between_pos <- as.numeric((lead(position_date) - position_date)[1], units = "days")
-
-    mortality <- t(apply(X = mortality, MARGIN = 1, FUN = apply.ltime.1, ltime = ltime, t_between_pos = t_between_pos))
-    # use the transposed matrix for the following reason (in help of function apply()):
-    # "If each call to FUN returns a vector of length n, then apply returns an array of dimension c(n, dim(X)[MARGIN]) if n > 1"
-    # here, MARGIN = 1, there are (as an example) 18703 lines (=particles) and 1201 columns (=timesteps).
-    # So apply returns a matrix of dim = c(1201, 18703),
-    # which is the transposed matrix of the initial mortality matrix
+    
+    # get life time values randomly from a log normal distribution
+    ddays <- round(rlnorm(dim(mortality)[1], log(ltime/t_between_pos), sdlog = 0.1))
+    
+    # for every day after dday, replace mortality value by 1
+    for (i in 1:dim(mortality)[1]){
+      mortality[ i, min(ddays[i],dim(mortality)[2]) : dim(mortality)[2]] <- 1
+    }
     
   }
   

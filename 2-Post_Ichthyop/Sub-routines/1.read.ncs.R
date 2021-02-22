@@ -81,7 +81,7 @@ if(!glob_array_exists){
   rm(arrays_per_sim) ; invisible(gc())
     
   # arrange the array by time
-  glob_array <- glob_array[,,sort(dimnames(glob_array)[[3]])]
+  glob_array <- glob_array[,,order(dimnames(glob_array)[[3]])]
     
   nm <- dimnames(glob_array)[[3]]
   
@@ -102,6 +102,7 @@ if(!glob_array_exists){
   # After ltime, particles from the 1st simulation are removed, at ltime + 1 month, particles from the second sim, etc
   # At the last timesteps, there are only particles from the last simulation
   # So, we keep only the matrices between t0 + ltime - 1 month & t(last) - ltime + 1 month
+  ### WORKS PROPERLY FOR LTIME_METHOD = 2, TO ADAPT FOR THE OTHER METHOD
   t_between_pos <- as.numeric(lead(as.POSIXct(nm, format = "%Y-%m-%d_%H:%M:%S")) -
                                 as.POSIXct(nm, format = "%Y-%m-%d_%H:%M:%S"), units = "days")[1]
   n_pos_to_remove <- (ltime - 30) / t_between_pos

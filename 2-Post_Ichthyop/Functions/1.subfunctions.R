@@ -75,8 +75,8 @@ get.weight <- function(init_pos, weight_method = 1){
   } else if (weight_method == 3){
     return(init_pos$for_pc_use)
   
-  # method 4: apply a weight depending on the area covered by forest in the river bassin
-    # (percentage of the forest * river area in km2)
+  # method 4: apply a weight depending on the area covered by forest in the river basin
+    # (percentage of forest * river area in km2)
   } else if (weight_method == 4){
     return(init_pos$for_km_usu)
   }
@@ -130,24 +130,3 @@ create.raster <- function(gsize){
   return(r)
 }
 
-
-#######################################################################################
-#       APPLY THE LIFE TIME FILTER (method 1) ON THE MORTALITY                        #
-#######################################################################################
-# ARGUMENTS:                                                                          #
-# mortality.i (num vector): mortality vector of one particle (0=alive)                #
-# ltime (num): mean life time of the particles                                        #
-# t_between_pos (num): time in days seperating two positions in the vector mortality.i#
-#######################################################################################
-
-
-apply.ltime.1 <- function(mortality.i, ltime, t_between_pos){
-  
-  # timestep when the log sinks
-  k <- round(rlnorm(1, log(ltime/t_between_pos), sdlog = 0.1))
-
-  # each position after sinking are replaced by 1
-  mortality.i[min(k,length(mortality.i)) : length(mortality.i)] <- 1
-
-  return(mortality.i)
-}
