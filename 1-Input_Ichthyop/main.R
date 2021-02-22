@@ -58,7 +58,7 @@ source(file.path(FUNC_PATH, "install_libraries.R"))
 srcUsedPackages <- c("dplyr","sf","rnaturalearthdata","progress","rnaturalearthdata","ggplot2",
                      "sp","rgeos","RNetCDF","gridExtra","rgdal","cleangeo","rworldmap",
                      "tictoc","RANN","spatialEco","geosphere","lwgeom","doParallel",
-                     "parallel","units")
+                     "parallel","units","abind")
 
 installAndLoad_packages(srcUsedPackages, loadPackages = TRUE)
 
