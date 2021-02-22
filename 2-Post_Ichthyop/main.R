@@ -14,15 +14,13 @@ set.seed(10) # set for reproductibility (lognormale distribution in apply.ltime.
 # ARGUMENTS :                                                                             
 #===========
 #
-# save (log) : if T, a .nc files is saved in the output directory                      
-# save = T,
 
 ### ltime (num): life time of logs to be used                         
-### ltime_method (num) : filter used for the life time : 1. probability to sink at each time
-#                                                         step, so that mean(ltimes)=ltime  !! DOES NOT WORK YET
+### ltime_method (num) : filter used for the life time : 1. lifetimes generated using a log normal law
+#                                                         so that mean(ltimes)=ltime
 #                                                      2. life time fixed at ltime        
 ltime=180
-ltime_method = 1
+ltime_method = 2
 
 ### weight_method (num): method used to give weight to input points
 # can be different from one only if the input_location is river

@@ -65,7 +65,7 @@ agg_array_exists <- file.exists(aggregateName)
 # Create log file
 sink(logName, append = T)
   
-cat("#### FROM SIMUALTION RESULTS TO MAPS ####\n=========================================\n Execution time:",format(Sys.time()),"\n\n")
+cat("#### FROM SIMUALTION RESULTS TO MAPS ####\n=========================================\n Date & Time:",format(Sys.time()),"\n\n")
 cat("1. GENERATING ARRAY FROM SIMULATION RESULTS")
 cat("\n Execution time :", format(Sys.time()))
 cat("\n\n### SIMULATION CHARACTERISTICS")
