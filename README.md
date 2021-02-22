@@ -75,5 +75,6 @@ If agg.time_scale = year, build the maps from the agg_array.
 ## develop:
 	
 * function to link rivers and basins in Post-Ichthyop
+
+* ltime method 1 - crop beginning and end of simulation
 	
-* apply ltime method 1
