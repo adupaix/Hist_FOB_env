@@ -112,7 +112,7 @@ sea.point2 <- function(A, B, dist = 1, world = st_as_sf(clgeo_Clean(getMap()))){
 get.current.mask <- function(RESOURCE_PATH, product = "nemo"){
   
 
-  if (product == "nemo" | product == "nemo15m" | product == "PHILIN12.L75"){
+  if (product == "nemo" | product == "nemo15m"){
     mask <- open.nc(file.path(RESOURCE_PATH, "masks_current_products","nemo.nc")) #ouvre le netcdf avec le masque
     
     ## get variables
