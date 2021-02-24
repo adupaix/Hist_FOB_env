@@ -46,7 +46,7 @@ if(!glob_array_exists){
     
     # fichier txt qui contient les positions d'input et l'identifiant riviere correspondant
     river_id <- read.table(file.path(RESOURCE_PATH,"input_particles_txt", dir_name, "IDs.txt"))
-    names(river_id) <- c("MAIN_RIV","init_longitude","init_latitude")
+    names(river_id) <- c("MAIN_RIV", "HYBAS_L12", "init_longitude","init_latitude")
     
     # Read the river data.
     river_data <- read.river.data(DATA_PATH, river_id, thr_disch)
@@ -76,6 +76,11 @@ if(!glob_array_exists){
   # d. Bind the results and aggregate per day ----
   #-----------------------------------------------
   cat("\n  Binding the results and aggregating per timestep")
+  # get the number of days between the start of two simulations
+  nm1 <- dimnames(arrays_per_sim[[1]])[[3]][1]
+  nm2 <- dimnames(lead(arrays_per_sim)[[1]])[[3]][1]
+  days_between_sim <- as.numeric(as.POSIXct(nm2, format = "%Y-%m-%d_%H:%M:%S") -
+                                   as.POSIXct(nm1, format = "%Y-%m-%d_%H:%M:%S"), units = "days")
   # bind the list of arrays into one global array
   glob_array <- abind::abind(arrays_per_sim, along = 3)
   rm(arrays_per_sim) ; invisible(gc())
@@ -102,11 +107,11 @@ if(!glob_array_exists){
   # After ltime, particles from the 1st simulation are removed, at ltime + 1 month, particles from the second sim, etc
   # At the last timesteps, there are only particles from the last simulation
   # So, we keep only the matrices between t0 + ltime - 1 month & t(last) - ltime + 1 month
-  ### WORKS PROPERLY FOR LTIME_METHOD = 2, TO ADAPT FOR THE OTHER METHOD
+  ### WORKS PROPERLY FOR LTIME_METHOD = 2, TO ADAPT FOR THE OTHER METHOD (WORKS BUT NOT CORRECT)
   t_between_pos <- as.numeric(lead(as.POSIXct(nm, format = "%Y-%m-%d_%H:%M:%S")) -
                                 as.POSIXct(nm, format = "%Y-%m-%d_%H:%M:%S"), units = "days")[1]
-  n_pos_to_remove <- (ltime - 30) / t_between_pos
-    
+  n_pos_to_remove <- (ltime - days_between_sim) / t_between_pos
+
   first_timestep <- n_pos_to_remove+1
   last_timestep <- dim(glob_array)[3] - n_pos_to_remove
     
@@ -259,6 +264,7 @@ if (!agg_array_exists){
   
 }
 
+glob_array <- readRDS(globalName)
 
 # Update DoNotDeleteMe
 DoNotDeleteMeToo <- c("glob_array", "agg_array", "mean_agg_array")
@@ -282,11 +288,7 @@ toc()
 
 
 # Clear environment
-if (agg.time_scale != 'day'){
-  rm(list = ls()[!ls() %in% DoNotDeleteMe]) ; invisible(gc())
-} else {
-  rm(list = ls()[!ls() %in% DoNotDeleteMeToo]) ; invisible(gc())
-}
+rm(list = ls()[!ls() %in% DoNotDeleteMe]) ; invisible(gc())
 
 
 

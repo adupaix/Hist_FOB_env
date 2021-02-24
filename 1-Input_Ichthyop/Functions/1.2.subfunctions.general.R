@@ -140,7 +140,7 @@ get.current.mask <- function(RESOURCE_PATH, product = "nemo"){
     longitude <- var.get.nc(mask, variable = "nav_lon")
     latitude <- var.get.nc(mask, variable = "nav_lat")
     
-    land_lon_lat = abind(onland, latitude, longitude, along = 3)
+    land_lon_lat = abind(onland, longitude, latitude, along = 3)
     
     land_sea = matrix(ncol = 3, nrow = dim(land_lon_lat)[1]*dim(land_lon_lat)[2])
     
