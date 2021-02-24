@@ -75,8 +75,10 @@ input_method = "onMask"
 ### dist (num): distance specified if the input_method above is 'kFromCoast'
 dist=100
 
-### timestep (num): time step in ICHTHYOP simulation
-timestep=6 
+# !!! DELETED !!! Rename the old simulation outputs (delete "_ts6" from the name)
+# ### timestep (num): time step in ICHTHYOP simulation
+# timestep=6
+
 ### dispersion (num): dispersion coefficient in ICHTHYOP simulation. Enter 9 for 10^-9, and 
 #                   0 for no dispersion
 dispersion=9

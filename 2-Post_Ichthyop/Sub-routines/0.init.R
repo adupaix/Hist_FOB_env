@@ -21,7 +21,6 @@ sim_name <- generate.sim_name(forcing,
                                 input_location,
                                 input_method,
                                 dist,
-                                timestep,
                                 dispersion,
                                 bouncing)
   
@@ -86,7 +85,6 @@ cat(paste("\n Method for input points :", input_method))
 if (input_method == "kFromCoast"){
   cat(paste0("\n Distance of input from coast : ", dist, "km"))
 }
-cat(paste0("\n Time step : ", timestep, "h"))
 cat(paste0("\n Dispersion coefficient : 10^-", dispersion, " m^2/s^3"))
 cat(paste0("\n Bouncing on coast : ", bouncing, "\n\n"))
 

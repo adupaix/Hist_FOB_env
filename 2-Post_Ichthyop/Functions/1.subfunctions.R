@@ -8,7 +8,6 @@
 # input_location (chr): "kFromCoast" or "onMask"                                      #
 # input_location (chr): "river" or "mangrove"                                         #
 # dist (num): if input_method = "kFromCoast", the distance from the coast on the input#
-# timestep (num): the timestep used in the Ichthyop simulation                        #
 # dispersion (num): the dispersion coefficient used in the simualtion (enter 9 for a  #
 #                   coefficient equal to 10^-9                                        #
 # bouncing (log): behaviour of particles on the coast (T: bouncing, F: beaching)      #
@@ -24,7 +23,6 @@ generate.sim_name <- function(forcing,
                               input_location,
                               input_method,
                               dist,
-                              timestep,
                               dispersion,
                               bouncing,
                               ltime = 0,
@@ -38,11 +36,7 @@ generate.sim_name <- function(forcing,
     sim_name <- paste0(sim_name, "_", input_method)
   }
   
-  # if(input_location == "river"){
-  #   sim_name <- paste0(sim_name,"_ds",thr_disch)
-  # }
-  
-  sim_name <- paste0(sim_name, "_ts",timestep,"_d",dispersion)
+  sim_name <- paste0(sim_name,"_d",dispersion)
   
   if (bouncing == T){
     sim_name <- paste0(sim_name,"_bouncing")
