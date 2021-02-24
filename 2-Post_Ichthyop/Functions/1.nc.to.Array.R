@@ -12,7 +12,13 @@ nc.to.Array <- function(NC_PATH, nc_name, sim_nb, ltime = 180, ltime_method = 2,
   ### 1. Recupere tous les pas de temps de la simulation ----
   ## time stamps
   time <- var.get.nc(nc, variable = "time")
-  t0 <- att.get.nc(nc, variable="time", attribute = "origin")
+  
+  ## try to read the attribute origin of time. In some cases, the attribute is not saved by Ichthyop, to
+  ## solve a bug with the mask (PHILIN products). Then, if there is no attribute origin, we fix the
+  ## date of origin on 1900/01/01 at 00:00 ~~~  ADD AS A PARAMETER IN main.R
+  t0 <- try(t0 <- att.get.nc(nc, variable="time", attribute = "origin"))
+  if (class(t0) == "try-error"){ t0 <- "year 1900 month 01 day 01 at 00:00" ; cat("Setting time origin the 1900/01/01 at 00:00\n")}
+  
   position_date <- as.POSIXct(t0, tz="GMT", format = "year %Y month %m day %d at %H:%M") + 
     as.difftime(time/(3600*24),units = "days")
   
