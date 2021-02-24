@@ -90,7 +90,7 @@ if (file.exists(plotListName) & file.exists(mapName)){
     }
     
   } else {
-      cat("\n Building a map with the mean result for each time scale over the whole study period")
+      cat("\n Building a map with the mean result over the whole study period")
       
       mean.ggplot.list <- list()
       

@@ -35,7 +35,7 @@ gsize = 2
 
 ### time scale used to aggregate the dates (day, month, quarter or year)
 ## !! quarter start in December: for example, first quarter of 2012 is from 12.2011 to 02.2012 included
-agg.time_scale = "year"
+agg.time_scale = "day"
 
 ### the mean water discharge of the input river is used as a filter 
 # only particles originating from a river with a value > thr_disch (in m3/s) are kept 
@@ -43,19 +43,26 @@ agg.time_scale = "year"
 # if you don't want any filter to be used, set thr_disch = NULL
 thr_disch = 0
 
+### origin of the time in the output results
+# normally will not be used, as it is saved in the attributes of time by Ichthyop
+# except for simulations with PHILIN75.L12, where because the product mask is bad,
+# I had to overide the reading of attributes by Ichthyop
+## !! the format of origin_time has to be kept as it is
+origin_time = "year 1900 month 01 day 01 at 00:00"
+
 
 # Arguments used for the Ichthyop simulation
 #-------------------------------------------
 ### forcing (chr): forcing product used in ICHTHYOP simulation (oscar/globcurrent/nemo)     
-forcing="oscar"
+forcing="PHILIN12.L75"
 ### input_location (chr): either "river" or "mangrove"
 input_location="river"
 ### input_method (chr): either "onMask" put points on the closest point on the      
 #                                     current product                               
 #                      or "kFromCoast" put points at dist km from the coast         
-input_method = "kFromCoast"
+input_method = "onMask"
 
-### dist (num): distance specified in the input_method above
+### dist (num): distance specified if the input_method above is 'kFromCoast'
 dist=100
 
 ### timestep (num): time step in ICHTHYOP simulation
@@ -77,7 +84,7 @@ bouncing=F
 #
 ## !! One part of the script can rapidly fill the RAM memory, to be taken into account when choose to run in parallel or not
 ## !! If the script is running on a Windows machine, the script is executed in sequential
-Parallel = c(T, 1/2)
+Parallel = c(F, 1/2)
 
 # Whether to delete the results obtained for these arguments (T) or not (F):
 # 1: arrays and matrices obtained with 1.read.ncs and maps obtained with 2.map.array

@@ -69,7 +69,8 @@ if(!glob_array_exists){
                                                        gsize = gsize,
                                                        river_id = river_id,
                                                        river_data = river_data,
-                                                       weight_method = weight_method),
+                                                       weight_method = weight_method,
+                                                       origin_time = origin_time),
                                        SIMPLIFY = F,
                                        mc.cores = nb_cores)
     

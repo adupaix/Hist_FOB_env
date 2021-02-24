@@ -2,7 +2,8 @@
 
 nc.to.Array <- function(NC_PATH, nc_name, sim_nb, ltime = 180, ltime_method = 2,
                         input_method = "onMask", dist = 100, gsize = 2,
-                        river_id, river_data, weight_method){
+                        river_id, river_data, weight_method,
+                        origin_time){
   
   tic(msg = paste0("    End sim. N ",sim_nb), quiet = F)
   cat(paste("\n   Simulation", sim_nb, "\n"))
@@ -16,8 +17,8 @@ nc.to.Array <- function(NC_PATH, nc_name, sim_nb, ltime = 180, ltime_method = 2,
   ## try to read the attribute origin of time. In some cases, the attribute is not saved by Ichthyop, to
   ## solve a bug with the mask (PHILIN products). Then, if there is no attribute origin, we fix the
   ## date of origin on 1900/01/01 at 00:00 ~~~  ADD AS A PARAMETER IN main.R
-  t0 <- try(t0 <- att.get.nc(nc, variable="time", attribute = "origin"))
-  if (class(t0) == "try-error"){ t0 <- "year 1900 month 01 day 01 at 00:00" ; cat("Setting time origin the 1900/01/01 at 00:00\n")}
+  t0 <- try(t0 <- att.get.nc(nc, variable="time", attribute = "origin"), silent = T)
+  if (class(t0) == "try-error"){ t0 <- origin_time ; cat(bgRed(white("Manually setting time origin to:"))) ; cat(" ",origin_time, "\n")}
   
   position_date <- as.POSIXct(t0, tz="GMT", format = "year %Y month %m day %d at %H:%M") + 
     as.difftime(time/(3600*24),units = "days")
@@ -41,7 +42,15 @@ nc.to.Array <- function(NC_PATH, nc_name, sim_nb, ltime = 180, ltime_method = 2,
     
     init_pos %>% dplyr::filter(!is.na(init_long)) -> r_init_pos
     
-    r_init_pos$river_id <- river_id$MAIN_RIV[nn2(river_id[,2:3], r_init_pos[,1:2], k = 1)$nn.idx]
+    if (input_method == "kFromCoast"){
+      # si la methode utilisee pour generee l'input est kFromCoast, il y a des particules lachees sur terre, donc on prend pour chaque particules,
+      # la rivière la plus proche
+      r_init_pos$river_id <- river_id$MAIN_RIV[nn2(river_id[,c("init_longitude","init_latitude")], r_init_pos[,1:2], k = 1)$nn.idx]
+    } else if (input_method == "onMask"){
+      # si les points ont ete relachee sur le mask directement, on n'a pas de NAs, et l'ordre des particules est conservé par Ichthyop
+      # donc on copie juste MAIN_RIV de river_id
+      r_init_pos$river_id <- river_id$MAIN_RIV
+    }
     
     init_pos <- merge(init_pos, r_init_pos, all.x = T, sort = F)
   }
