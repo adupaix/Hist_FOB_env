@@ -103,14 +103,14 @@ Datarmor: 100 simulations avec même laché en séquentiel, et N périodes de la
 |       180               |                                | 3Tb|1.5Tb| 752Gb |
 
 
-* **Temps d'execution**, en heures (avec Datarmor, en supposant qu'on a **360 coeurs** en parallèle):
+* **Temps d'execution**, en heures (avec Datarmor, on a 28 processeurs, soit 168 coeurs, donc on lance trois run):
 
 |                         | Intervalle entre deux données: | 6h | 12h | 24h   |
 |-------------------------|--------------------------------|----|-----|-------|
 |Nombre de jours de dérive|                                |    |     |       |
-|       360               |                                |11.7| 11.7| 11.7  |
-|       300               |                                |10  |10   | 10    |
-|       180               |                                |6.7 |6.7  | 6.7   |
+|       360               |                                |35.1| 35.1| 35.1  |
+|       300               |                                |30  |30   | 30    |
+|       180               |                                |20.1|20.1 | 20.1  |
 
 
 * Autre possibilité pour gagner du temps et de la mémoire: appliquer un filtre sur les débit des rivières dès le début. Pas très fan, parce que si on change d'avis sur le filtre au milieu, il faut refaire tourner toute la simulation. De plus, les "rivières" avec des très faibles débit sont probablement des ravines qui relarguent des logs quand il y a une tempête, donc ça serait pas mal de les prendre en compte.
