@@ -11,7 +11,6 @@
 
 source(file.path(FUNC_PATH,'1.1.subfunctions.pre.R'))
 source(file.path(FUNC_PATH,'1.2.subfunctions.general.R'))
-source(file.path(FUNC_PATH,'1.2.write_zone_xml.R'))
 source(file.path(FUNC_PATH,'1.3.subfunctions.post.R'))
 
 
@@ -31,6 +30,9 @@ source(file.path(FUNC_PATH,'1.3.subfunctions.post.R'))
 ### input_method (chr): either "onMask" put points on the closest point on the      #
 #                                     current product                               #
 #                      or "kFromCoast" put points at dist km from the coast         #
+#                      of "allMask" put points on all the points of the mask close  #
+#                                   to the coast and generate a txt file for each   #
+#                                   river/mangrove with the corresponding mask point#
 #                                                                                   #
 ### dist (num) : distance from the coast at which we want the points (in deg)       #
 ### curr_prod (chr): which current mask product to use if put the input points on   #
@@ -47,7 +49,7 @@ input.nlog <- function(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
                        save = T,
                        return_format = "sf",
                        input_location = c("river","mangrove"),
-                       input_method = c("onMask","kFromCoast"),
+                       input_method = c("onMask","kFromCoast", "allMask"),
                        dist = 1, # used if input_method == kFromCoast
                        curr_prod = c("oscar","nemo"), # used if input_method == onMask
                        Parallel = c(T, 1/2) # wether to run in Parallel, used if input_method == kFromCoast
@@ -201,6 +203,41 @@ input.nlog <- function(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
     
     toc()
     
+  } else if (input_method == "allMask"){
+    
+    cat(paste("\n### Get the coastal points on the", curr_prod, "grid\n"))
+    tic(msg = paste("    Coastal points on", curr_prod, "grid determined"))
+    cat(" # Getting product mask\n")
+    sea_points <- get.current.mask(RESOURCE_PATH, curr_prod)
+    
+    cat(" # Getting coast points\n")
+    IO <- read_sf(file.path(DATA_PATH, "OI.shp"))
+    load(file.path(RESOURCE_PATH, "coastline10.rda")) # highres coastline, downloaded at : https://github.com/ropensci/rnaturalearthhires/tree/master/data (last accessed 2021-02-25)
+    coastline10 <- st_as_sf(coastline10)
+    coastline_points <- st_line_sample(st_transform(coastline10, 3857), density = set_units(3, km)) %>% # je ne sais pas pourquoi, en mettant 3km, les points sont espacés d'environ 1km...
+      st_cast("POINT") %>% # passe en "POINT" (plutot que MULTIPOINT)
+      st_crop(IO %>% st_transform(3857)) %>% #garde seulement les points de l'OI
+      st_transform(crs = 4326) %>% # repasse a la projection initiale
+      st_as_sf() # change la classe en sf
+    
+    cat(" # Keeping only coastal points of the product mask\n")
+    product_res = 1/12
+    if (curr_prod == "oscar"){ product_res = 1/3 } else if (curr_prod == "globcurrent") { product_res = 1/4}
+    is_coastal <- which( nn2(st_coordinates(coastline_points), st_coordinates(sea_points), k = 1)$nn.dists < product_res)
+    coastal_prod_points <- sea_points[is_coastal,]
+    
+    cat(" # Deleting points in Chinese Sea\n")
+    input_points <- delete.chinese.sea(coastal_prod_points, "sf")
+    
+    input_points %>% dplyr::mutate(id_curr = seq(1, dim(input_points)[1])) -> input_points
+    
+    cat(" # Generating link table\n")
+    entry_points %>% mutate( id_curr = as.vector( nn2(st_coordinates(input_points),
+                                           st_coordinates(entry_points), k = 1)$nn.idx )) %>%
+      st_drop_geometry() %>% select(MAIN_RIV, HYBAS_L12, id_curr) -> link_table
+    
+    
+    toc()
   }
   
   
@@ -209,7 +246,9 @@ input.nlog <- function(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
   
   input_coords <- round(st_coordinates(input_points), digits = 6) #get only the coordinates for the Ichthyop Input
   
-  if (input_location == "river"){
+  if( input_method == "allMask"){
+    input_coords_id <- link_table
+  } else if (input_location == "river"){
     input_coords_id <- data.frame(cbind(input_points$MAIN_RIV, input_points$HYBAS_L12, input_coords))
     names(input_coords_id) <- c("MAIN_RIV", "HYBAS_L12", "X", "Y")
   } else if (input_location == "mangrove"){
@@ -224,6 +263,8 @@ input.nlog <- function(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
       dir_name <- paste0(dir_name, dist*100,"k_from_coast")
     } else if (input_method == "onMask"){
       dir_name <- paste0(dir_name, curr_prod,"_mask")
+    } else if (input_method == "allMask"){
+      dir_name <- paste0(dir_name, curr_prod, "_allMask")
     }
     
     cat("\n### Saving input locations\n")
@@ -233,7 +274,7 @@ input.nlog <- function(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
     # quote = F to save coordinates (which are characters) as numeric
     write.table(input_coords, file = file.path(dir_path, "input_icht.txt"),
                 row.names = F, col.names = F, sep=" ")
-    #save points coordinates with river id
+    #save points coordinates with river id (or only river id with corresponding input point id if input_method == allMask)
     write.table(input_coords_id, file = file.path(dir_path, "IDs.txt"),
                 row.names = F,col.names = F, sep=" ")
     #save sf object for post treatement after Ichthyop simulations
