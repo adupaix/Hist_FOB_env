@@ -1,9 +1,9 @@
 #'#*******************************************************************************************************************
 #'@author : Amael DUPAIX
-#'@update : 2021-02-24
+#'@update : 2021-04-20
 #'@email : 
 #'#*******************************************************************************************************************
-#'@description :  This is the main script allowing to generate input points for Ichthyop
+#'@description :  This is the main script to generate input points for Ichthyop simulations
 #'#*******************************************************************************************************************
 #'@revision
 #'#*******************************************************************************************************************
@@ -18,66 +18,114 @@ RESOURCE_PATH <- file.path(WD,"Resources")
 OUTPUT_PATH <- file.path(WD, "Outputs")
 
 
-# ARGUMENTS:                                                                        
-# ===========                                                                       
+#'@arguments:
+#'#**********
 arguments <- list(DATA_PATH = DATA_PATH,
                   OUTPUT_PATH = OUTPUT_PATH,
                   RESOURCE_PATH = RESOURCE_PATH,
                   
-## Run in parallel ?
-# (in kFromCoast sub script)
-# First element of the vector:
-#    If F, runs in sequential
-#    if T, runs in parallel
-# Second element of the vector: fraction of the cores to be used
-#
+#'# Run in parallel ?
+#' (in kFromCoast sub script)
+#' First element of the vector:
+#'    If F, runs in sequential
+#'    if T, runs in parallel
+#' Second element of the vector: fraction of the cores to be used
+#'
 Parallel = c(T, 1/2),
                   
-#                            
-# save (logical) : if T, save a txt file ready for use in ichthyop                  
-# return_format (chr): either "sf", returns an sf object with points and associated 
-#                                   river characteristics                           
-#                      or "mat", returns a matrix containing only the coordinates of
-#                               the input points (as saved in the txt file)       
+#'                            
+#' save (logical) : if T, save a txt file ready for use in ichthyop                  
+#' return_format (chr): either "sf", returns an sf object with points and associated 
+#'                                   river characteristics                           
+#'                      or "mat", returns a matrix containing only the coordinates of
+#'                               the input points (as saved in the txt file)       
 save = T,
 return_format = "sf", # one of c("sf", "mat")
 
-#                                                                                   
-### input_location (chr): either "river" or "mangrove"                              
-### input_method (chr): either "onMask" put points on the closest point on the      
-#                                     current product                               
-#                      or "kFromCoast" put points at dist km from the coast         
-#
+#'                                                                                   
+#'## input_location (chr): either "river" or "mangrove"                              
+#'## input_method (chr): either "onMask" put points on the closest point on the      
+#'                                    current product                               
+#'                      or "kFromCoast" put points at dist km from the coast         
+#'
 input_location = "river", # one of c("river","mangrove")
-input_method = "onMask", # one of c("onMask","kFromCoast")
+input_method = "allMask", # one of c("onMask","kFromCoast", "allMask")
 
-#                                                                                   
-### dist (num) : distance from the coast at which we want the points (in deg)       
-### curr_prod (chr): which current mask product to use if put the input points on   
-#              the closest point of the product mask                                
-#
+#'                                                                                   
+#'## dist (num) : distance from the coast at which we want the points (in deg)       
+#'## curr_prod (chr): which current mask product to use if put the input points on   
+#'             the closest point of the product mask                                
+#'
 dist = 1, # used if input_method == kFromCoast (distance from coast in degrees)
-curr_prod = "PHILIN12.L75" # one of c("PHILIN12.L75","oscar","nemo","globcurrent","nemo15m") # used if input_method == onMask
+curr_prod = "PHILIN12.L75") # one of c("PHILIN12.L75","oscar","nemo","globcurrent","nemo15m") # used if input_method == onMask ou allMask
 
-)
+#'
+#' Arguments to generate Ichthyop cfg files (only if input_method == allMask)
+#' 
+#'## generate_xml (log): generate config files or not
+#'## first/last_release_date (chr): start and end dates of the Ichthyop simulations
+#'## release_frequency (num): frequecy at which the particles are released (in weeks)
+#'## transport_duration (num): number of days that the particles are to be transported (in days)
+#'## ICHTHYOP_PATH (chr): path to where the Ichthyop version to be used is installed
 
-# GETTING LIBRARIES:
-# ==================
+generate_xml = F
+
+first_release_date = "1980/01/02"
+last_release_date = "1982/01/02"
+release_frequency = 2
+
+transport_duration = 180
+
+ICHTHYOP_PATH = "/home/adupaix/Documents/ichthyop-private"
+
+
+
+#'@import_libraries:
+#'#********************
 
 source(file.path(FUNC_PATH, "install_libraries.R"))
 
 srcUsedPackages <- c("dplyr","sf","rnaturalearthdata","progress","rnaturalearthdata","ggplot2",
                      "sp","rgeos","RNetCDF","gridExtra","rgdal","cleangeo","rworldmap",
                      "tictoc","RANN","spatialEco","geosphere","lwgeom","doParallel",
-                     "parallel","units","abind")
+                     "parallel","units","abind", "lubridate")
 
 installAndLoad_packages(srcUsedPackages, loadPackages = TRUE)
 
+# loading above arguments to the environment (instead of keeping them in the lists)
+list2env(arguments, globalenv())
 
-# LOADING THE MAIN FUNCTION:
-#==========================
+
+
+
+#'@Load_function_generating_the_input_locations:
+#'#*********************************************
 source(file.path(FUNC_PATH, "1.nlog_inputs_modif.R"))
 
 # calling the main function
 output <- do.call(input.nlog, args = arguments)
 
+
+
+#'@Load_function_generating_the_cfg_files:
+#'#****************************************
+
+if (input_method == "allMask" & generate_xml == T){
+  
+  source(file.path(FUNC_PATH, "2.input_to_xml.R"))
+  
+  # calling the function
+  input.to.xml(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
+               # arguments to retrieve input locations
+               input_location,
+               input_method,
+               dist,
+               curr_prod,
+               # arguments to generate the cfg files
+               transport_duration,
+               first_release_date,
+               last_release_date,
+               release_frequency,
+               ICHTHYOP_PATH
+  )
+}

@@ -78,3 +78,46 @@ If agg.time_scale = year, build the maps from the agg_array.
 
 * ltime method 1 - crop beginning and end of simulation
 	
+
+# "Protocole" simulation historique
+
+Début produit de forçage: 1980-01-01 à 12:00
+
+Fin produit de forçage: 2009-12-31 à 12:00
+
+Donc résultats obtenus du **01-06-1980** au **31-07-2009** (si on garde ltime = 180 jours, car on supprime début et fin de la simulation). Dernière simulations avec durée de dérive moins longue (sinon bug sur Ichthyop).
+
+Relache ~ 18 703 particules (nombre d'entrées de rivière) par simulation (une tous les mois?). Et on fait 100 (?) réplicats de chacune des simulations. J'aurais bien fait 1000 réplicats, mais la sortie Ichthyop va être trop grosse.
+
+Datarmor: 100 simulations avec même laché en séquentiel, et N périodes de laché en parallèle (N = 360, soit 30 ans x 12 mois).
+
+## Estimations
+
+* **Taille** des sorties Ichthyop:
+
+|                         | Intervalle entre deux données: | 6h | 12h | 24h   |
+|-------------------------|--------------------------------|----|-----|-------|
+|Nombre de jours de dérive|                                |    |     |       |
+|       360               |                                | 6Tb| 3Tb | 1.5Tb |
+|       300               |                                | 5Tb|2.5Tb|1.26Tb |
+|       180               |                                | 3Tb|1.5Tb| 752Gb |
+
+
+* **Temps d'execution**, en heures (avec Datarmor, on a 28 processeurs, soit 168 coeurs, donc on lance trois run):
+
+|                         | Intervalle entre deux données: | 6h | 12h | 24h   |
+|-------------------------|--------------------------------|----|-----|-------|
+|Nombre de jours de dérive|                                |    |     |       |
+|       360               |                                |35.1| 35.1| 35.1  |
+|       300               |                                |30  |30   | 30    |
+|       180               |                                |20.1|20.1 | 20.1  |
+
+
+* Autre possibilité pour gagner du temps et de la mémoire: appliquer un filtre sur les débit des rivières dès le début. Pas très fan, parce que si on change d'avis sur le filtre au milieu, il faut refaire tourner toute la simulation. De plus, les "rivières" avec des très faibles débit sont probablement des ravines qui relarguent des logs quand il y a une tempête, donc ça serait pas mal de les prendre en compte.
+
+  - Si on supprime les entrées avec débit moyen = 0 m3/s : 17 728 particules (réduction de 5%)
+
+  - Si on supprime les entrées avec débit moyen <= 0.1 m3/s : 15 271 particules (réduction de 18%)
+
+  - Si on supprime les entrées avec débit moyen <= 0.2 m3/s : 11 479 particules (réduction de 39%)
+
