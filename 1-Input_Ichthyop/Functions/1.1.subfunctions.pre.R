@@ -31,8 +31,8 @@ delete.chinese.sea <- function(coords, class){
   N[2,] = c(115,-5);
   N[3,] = c(110,-5);
   N[4,] = c(102,5);
-  N[5,] = c(102,30);
-  N[6,] = c(140,30);
+  N[5,] = c(102,35);
+  N[6,] = c(140,35);
   N[7,] = N[1,];
   
   N <- data.frame(N)
