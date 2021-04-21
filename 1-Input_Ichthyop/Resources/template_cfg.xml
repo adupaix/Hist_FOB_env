@@ -561,7 +561,7 @@
     <key>action.hdisp</key>
     <description>Block of options that control the horizontal dispersion process. Horizontal dispersion has been implemented following Peliz et al. (2007)</description>
     <tree_path>Advanced/Transport/Horizontal dispersion</tree_path>
-    <enabled>true</enabled>
+    <enabled>false</enabled>
     <parameters>
       <parameter type="serial">
         <key>epsilon</key>
