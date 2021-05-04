@@ -247,7 +247,8 @@ input.nlog <- function(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
   input_coords <- round(st_coordinates(input_points), digits = 6) #get only the coordinates for the Ichthyop Input
   
   if( input_method == "allMask"){
-    input_coords_id <- link_table
+    input_coords_id <- data.frame(cbind(input_coords,
+                                        1:(dim(input_coords)[1])))
   } else if (input_location == "river"){
     input_coords_id <- data.frame(cbind(input_points$MAIN_RIV, input_points$HYBAS_L12, input_coords))
     names(input_coords_id) <- c("MAIN_RIV", "HYBAS_L12", "X", "Y")
@@ -274,9 +275,13 @@ input.nlog <- function(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
     # quote = F to save coordinates (which are characters) as numeric
     write.table(input_coords, file = file.path(dir_path, "input_icht.txt"),
                 row.names = F, col.names = F, sep=" ")
-    #save points coordinates with river id (or only river id with corresponding input point id if input_method == allMask)
+    #save points coordinates with river id (or only point id if input_method == allMask)
     write.table(input_coords_id, file = file.path(dir_path, "IDs.txt"),
-                row.names = F,col.names = F, sep=" ")
+                row.names = F, col.names = F, sep=" ")
+    if(input_method == "allMask"){
+      write.table(link_table, file = file.path(dir_path, "Link_table.txt"),
+                  row.names = F, sep=" ")
+    }
     #save sf object for post treatement after Ichthyop simulations
     write_sf(input_points, dsn = dir_path,
              layer = dir_name,
