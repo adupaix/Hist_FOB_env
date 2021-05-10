@@ -22,7 +22,10 @@ nc.to.Array <- function(nc_name, gsize,
   ## solve a bug with the mask (PHILIN products). Then, if there is no attribute origin, we fix the
   ## date of origin on 1900/01/01 at 00:00 ~~~  ADD AS A PARAMETER IN main.R
   t0 <- try(t0 <- att.get.nc(nc, variable="time", attribute = "origin"), silent = T)
-  if (class(t0) == "try-error"){ t0 <- origin_time ; cat(bgRed(white("Manually setting time origin to:"))) ; cat(" ",origin_time, "\n")}
+  if (class(t0) == "try-error"){
+    t0 <- origin_time
+    # cat(bgRed(white("Manually setting time origin to:"))) ; cat(" ",origin_time, "\n")
+  }
   
   position_date <- as.POSIXct(t0, tz="GMT", format = "year %Y month %m day %d at %H:%M") + 
     as.difftime(time/(3600*24),units = "days")
@@ -80,40 +83,28 @@ nc.to.Array <- function(nc_name, gsize,
 #'#*******************************************************************************************************************
 #'@description :  create a raster with the correct dimensions in the Indian Ocean
 #'#*******************************************************************************************************************
-#'@revision : copied from 1.subfunctions.R in 2-Post_Ichthyop/Functions
+#'@revision : adapted from 1.subfunctions.R in 2-Post_Ichthyop/Functions
 #'#*******************************************************************************************************************
 
 
 create.raster <- function(gsize){
   
-  if (gsize == 5) {
-    r <- raster(
-      nrows = 14,
-      ncols = 18,
-      xmn = 30,
-      xmx = 120,
-      ymn = -40,
-      ymx = 30
+  xmin = 30
+  xmax = 120
+  ncols = (xmax - xmin) / gsize
+  
+  ymin = -40
+  ymax = 30
+  nrows = (ymax - ymin) / gsize
+  
+  r <- raster(
+    nrows = nrows,
+    ncols = ncols,
+    xmn = xmin,
+    xmx = xmax,
+    ymn = ymin,
+    ymx = ymax
     )
-  } else if (gsize == 1) {
-    r <- raster(
-      nrows = 70,
-      ncols = 90,
-      xmn = 30,
-      xmx = 120,
-      ymn = -40,
-      ymx = 30
-    )
-  } else if (gsize == 2) {
-    r <- raster(
-      nrows = 35,
-      ncols = 45,
-      xmn = 30,
-      xmx = 120,
-      ymn = -40,
-      ymx = 30
-    )
-  }
   
   r[] <- 0
   names(r) <- "occ"
