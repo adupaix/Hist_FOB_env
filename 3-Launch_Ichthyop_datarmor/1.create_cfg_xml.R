@@ -2,37 +2,40 @@
 
 library(lubridate)
 
+#~ Read arguments
 args = commandArgs(TRUE)
 template = args[1]
 long = args[2]
 lat = args[3]
-cfg_nb = args[4]
+nb = args[4]
 sim_input_path = args[5]
 sim_output_path = args[6]
 
+#~ In case the arguments are not provided properly
 if (length(args) < 6){
   cat("-> Arguments are missing - Please run script again\n\n")
   cat("Expected arguments:\n  1. Template file name\n")
   cat("  2. Starting point longitude\n  3. Starting point latitude\n")
-  cat("  4. Number of the point, to be saved in cfg file name\n  5. Path where the forcing product is save (input_path)\n")
+  cat("  4. Number of the point (in '000xx' format), to be saved in cfg file name\n  5. Path where the forcing product is save (input_path)\n")
   cat("  6. Path where the Ichthyop outputs are to be saved (output_path)\n")
   quit(save = "no")
 }
 
-transport_duration = 30 #in days
+
+
+#~ Fixed arguments
+transport_duration = 100 #in days
 
 first_release_date = "1980/01/02"
 last_release_date = "1980/06/02"
 release_frequency = 2 # in weeks
-record_frequency = 1 #in days (interval between two recorded positions)
+record_frequency = 7 #in days (interval between two recorded positions)
 
 
 # generate the initial times from the start/end dates and the frequency
 initial_time <- seq(as.POSIXct(paste(first_release_date, "00:00")),
                     as.POSIXct(paste(last_release_date, "00:00")),
                     as.difftime(release_frequency, units = "weeks"))
-
-# sous fontion de input.2.xml
 
 #~ Read the template file
 tplate <- scan(template, what = "", sep = "\n", quiet = T)
@@ -63,7 +66,7 @@ value <- list(paste0(formatC(transport_duration, width = 4, flag = "0"),
                      " at ",formatC(hour(initial_time), width = 2, flag = "0"),
                      ":",formatC(minute(initial_time), width = 2, flag = "0")),
               sim_input_path,
-              sim_output_path,
+              file.path(sim_output_path, nb),
               long,
               lat,
               (record_frequency*24*3600)/1800)
@@ -96,15 +99,16 @@ for (i in 1:length(param_list)){
   }
 }
 
-t <- paste(rep(0, 5), collapse = "")
-cfg_nb <- as.character(cfg_nb)
-nb <- paste0(substr(t, 1, nchar(t)-nchar(cfg_nb)), cfg_nb)
 
 #~ Write tplate into a new cfg file
 cfg_name <- as.character(paste0("cfg_point_",nb,".xml"))
+try(file.remove(cfg_name))
 file.create(cfg_name)
 
 cfg <- file(cfg_name, open = "w")
 writeLines(tplate, cfg)
 close(cfg)
+
+#~ Empty the ichthyop output directory if exists
+try(file.remove(file.path(sim_output_path, nb , list.files(file.path(sim_output_path, nb)))))
 
