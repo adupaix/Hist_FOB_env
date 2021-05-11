@@ -5,17 +5,17 @@ library(crayon)
 library(foreach)
 library(raster)
 
-# get the current location
-initial.options <- commandArgs(trailingOnly = FALSE)
-file.arg.name <- "--file="
-script.name <- sub(file.arg.name, "", initial.options[grep(file.arg.name, initial.options)])
-this.dir <- dirname(script.name)
+# # get the current location
+# initial.options <- commandArgs(trailingOnly = FALSE)
+# file.arg.name <- "--file="
+# script.name <- sub(file.arg.name, "", initial.options[grep(file.arg.name, initial.options)])
+# this.dir <- dirname(script.name)
 
-args <- commandArgs(trailingOnly = TRUE)
-nb = args[1]
-gsize = args[2]
-sim_output_path = args[3]
-rds_output_path = args[4]
+# args <- commandArgs(trailingOnly = TRUE)
+# nb = args[1]
+# gsize = args[2]
+# sim_output_path = args[3]
+# rds_output_path = args[4]
 
 origin_time = "year 1900 month 01 day 01 at 00:00"
 
@@ -32,12 +32,15 @@ try(file.remove(file.path(rds_output_path, list.files(rds_output_path))))
 fname <- paste0("sim_from_point_", nb)
 
 for (i in 1:length(arrays_per_sim)){
-  saveRDS(arrays_per_sim[[i]], file.path(rds_output_path, paste0(fname, "_date_", i, ".rds")))
+  # Recupere le numero des simulations
+  nb <- as.numeric(sub("s", "", sub(".nc", "", unlist(strsplit(sim_files[i], "_"))[3])))
+  
+  saveRDS(arrays_per_sim[[i]], file.path(rds_output_path, paste0(fname, "_date_", nb, ".rds")))
 }
 
-# d. Bind the results and aggregate per day ----
-#-----------------------------------------------
-
+# # d. Bind the results and aggregate per day ----
+# #-----------------------------------------------
+# 
 # # bind the list of arrays into one global array
 # glob_array <- abind::abind(arrays_per_sim, along = 3)
 # rm(arrays_per_sim) ; invisible(gc())
@@ -50,10 +53,10 @@ for (i in 1:length(arrays_per_sim)){
 # # aggregate the array by timestamp, to have one data.frame per timestamp (instead of per timestamp per simulation)
 # glob_array <- foreach(day.i = unique(nm),
 #                       .combine = function(x,y) abind::abind(x,y, along = 3)) %do% {
-#                         
+# 
 #                         array.i <- glob_array[,,which(dimnames(glob_array)[[3]] == day.i)]
 #                         apply(array.i, c(1,2), sum)
-#                         
+# 
 #                       }
 # new_nm <- unique(nm)
 # dimnames(glob_array)[[3]] <- new_nm

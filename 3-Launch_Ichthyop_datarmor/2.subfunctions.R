@@ -32,30 +32,31 @@ nc.to.Array <- function(nc_name, gsize,
   
   nb_p_per_timestep <- foreach(i = seq(1, length(position_date),1),
                                .packages = c("raster"),
-                               .combine = function(x,y) abind::abind(x,y, along = 3)) %do% {
+                               .combine = function(x,y) abind::abind(x,y, along = 3),
+                               .export = c("create.raster")) %do% {
                                  
                                  longitude <- var.get.nc(nc, variable = "lon", start = c(1,i), count = c(NA,1)) #lit la longitude pour le pas de temps i
                                  latitude <- var.get.nc(nc, variable = "lat", start = c(1,i), count = c(NA,1)) #lit la latitude pour le pas de temps i
                                  mortality.i <- var.get.nc(nc, variable = "mortality", start = c(1,i), count = c(NA,1)) #lit la mortalite pour le pas de temps i
-                                 
+
                                  # remove not released, filtered (discharge threshold or ltime filter 1) and beached particles
                                  longitude <- longitude[which(mortality.i == 0)]
                                  latitude <- latitude[which(mortality.i == 0)]
-                                 
+
                                  # create a raster of the area of interest
                                  r.i <- create.raster(gsize)
-                                 
+
                                  # get the cell number where each particle is
                                  cell_pos <- cellFromXY(r.i, cbind(longitude,latitude))
-                                 
+
                                  # count the number of particles in each cell, applying the weight
                                  nb_p_per_cell <- table(cell_pos)
-                                 
+
                                  # fill the raster
                                  # the attribute of nb_p_per_cell used contains the cell number
-                                 
+
                                  r.i[ as.numeric(attr(nb_p_per_cell, "dimnames")$cell_pos) ] <- nb_p_per_cell
-                                 
+
                                  as.matrix(r.i)
                                  
                                }

@@ -2,24 +2,24 @@
 
 library(lubridate)
 
-#~ Read arguments
-args = commandArgs(TRUE)
-template = args[1]
-long = args[2]
-lat = args[3]
-nb = args[4]
-sim_input_path = args[5]
-sim_output_path = args[6]
-
-#~ In case the arguments are not provided properly
-if (length(args) < 6){
-  cat("-> Arguments are missing - Please run script again\n\n")
-  cat("Expected arguments:\n  1. Template file name\n")
-  cat("  2. Starting point longitude\n  3. Starting point latitude\n")
-  cat("  4. Number of the point (in '000xx' format), to be saved in cfg file name\n  5. Path where the forcing product is save (input_path)\n")
-  cat("  6. Path where the Ichthyop outputs are to be saved (output_path)\n")
-  quit(save = "no")
-}
+# #~ Read arguments
+# args = commandArgs(TRUE)
+# template = args[1]
+# long = args[2]
+# lat = args[3]
+# nb = args[4]
+# sim_input_path = args[5]
+# sim_output_path = args[6]
+# 
+# #~ In case the arguments are not provided properly
+# if (length(args) < 6){
+#   cat("-> Arguments are missing - Please run script again\n\n")
+#   cat("Expected arguments:\n  1. Template file name\n")
+#   cat("  2. Starting point longitude\n  3. Starting point latitude\n")
+#   cat("  4. Number of the point (in '000xx' format), to be saved in cfg file name\n  5. Path where the forcing product is save (input_path)\n")
+#   cat("  6. Path where the Ichthyop outputs are to be saved (output_path)\n")
+#   quit(save = "no")
+# }
 
 
 
@@ -28,14 +28,15 @@ transport_duration = 100 #in days
 
 first_release_date = "1980/01/02"
 last_release_date = "1980/06/02"
-release_frequency = 2 # in weeks
+release_frequency = 14 # in days
 record_frequency = 7 #in days (interval between two recorded positions)
 
 
 # generate the initial times from the start/end dates and the frequency
-initial_time <- seq(as.POSIXct(paste(first_release_date, "00:00")),
-                    as.POSIXct(paste(last_release_date, "00:00")),
-                    as.difftime(release_frequency, units = "weeks"))
+initial_time <- as.POSIXct(paste(seq(as.Date(first_release_date),
+                                     as.Date(last_release_date),
+                                     as.difftime(release_frequency, units = "days")),
+                                 "00:00"))
 
 #~ Read the template file
 tplate <- scan(template, what = "", sep = "\n", quiet = T)
