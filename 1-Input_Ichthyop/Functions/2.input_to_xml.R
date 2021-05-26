@@ -47,12 +47,18 @@ input.to.xml <- function(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
                          curr_prod = c("oscar","nemo"), # used if input_method == onMask
                          
                          # arguments to generate the cfg files
+                         sim_input_path,
+                         sim_output_path,
+                         
                          transport_duration,
                          first_release_date,
                          last_release_date,
                          release_frequency,
-                         ICHTHYOP_PATH
+                         record_frequency,
+                         n_cfg_per_dir
 ){
+  
+  cat(crayon::bold("\n\n###### Generating xml cfg files from points\n"))
   
   #~ Get the file name
   dir_name <- paste0(input_location, "_nlog_input_")
@@ -67,43 +73,106 @@ input.to.xml <- function(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
   dir_path <- file.path(OUTPUT_PATH, dir_name)
   
   # read the input coordinates generated in input.nlog()
-  input_coords <- read.table(file = file.path(dir_path, "input_icht.txt"),
+  input_coords <- read.table(file = file.path(dir_path, "IDs.txt"),
               header = F, sep=" ")
-  input_long <- input_coords[,1]
-  input_lat <- input_coords[,2]
+  
+  # get the number of directories to generate
+  n_dirs <- floor(dim(input_coords)[1]/n_cfg_per_dir)
+  
+  n_iter <- dim(input_coords)[1]
+  pb <- txtProgressBar(min = 0, 
+                       max = n_iter,
+                       style = 3)
   
   # Get the cfg template path
   template <- file.path(RESOURCE_PATH, "template_cfg.xml")
   
   #Create the directory to save the cfg files
-  dir.create(file.path(dir_path, "cfg"))
-  
-  # generate the cfg numbers, to name the files
-  cfg_nbs <- seq(1, dim(input_coords)[1], 1)
-  
-  # generate the paths to be saved in the cfg files
-  ## path to where the Ichthyop outputs will be save
-  sim_output_path <- file.path(ICHTHYOP_PATH, "output",
-                               paste0(curr_prod, "_",
-                                      input_location, "_",
-                                      input_method, "_d9_pt",
-                                      formatC(cfg_nbs, width = 5, flag = "0"),
-                                      "/"))
-  ## path to where the current products to use in the Ichthyop simulation are saved
-  sim_input_path <- file.path(ICHTHYOP_PATH, "input/")
+  cfg_dir <- file.path(OUTPUT_PATH, dir_name, "cfgs")
+  dir.create(file.path(dir_path, "cfgs"), showWarnings = F)
   
   # generate the initial times from the start/end dates and the frequency
-  initial_time <- seq(as.POSIXct(paste(first_release_date, "00:00")),
-                      as.POSIXct(paste(last_release_date, "00:00")),
-                      as.difftime(release_frequency, units = "weeks"))
+  initial_time <- as.POSIXct(paste(seq(as.Date(first_release_date),
+                                       as.Date(last_release_date),
+                                       as.difftime(release_frequency, units = "days")),
+                                   "00:00"))
   
-  # Function generating the cfg files from the template
-  mapply(write.cfg.xml, long = input_long, lat = input_lat, cfg_nb = cfg_nbs,
-         template = template, sim_output_path = sim_output_path,
-         MoreArgs = list(transport_duration = transport_duration,
-                         initial_time = initial_time,
-                         sim_input_path = sim_input_path,
-                         dir_path = dir_path))
+  #~ Read the template file
+  tplate <- scan(template, what = "", sep = "\n", quiet = T)
+  
+  for (i in 1:n_dirs){
+    
+    t <- paste(rep(0, 2), collapse = "")
+    i_chr <- as.character(i)
+    i_chr <- paste0(substr(t, 1, nchar(t)-nchar(i_chr)), i_chr)
+    
+    dir_name.i <- file.path(cfg_dir, paste0("cfgs_", i_chr))
+    
+    dir.create(dir_name.i)
+    
+    for (j in 1:n_cfg_per_dir){
+      long <- input_coords[n_cfg_per_dir*(i-1)+j,1]
+      lat <- input_coords[n_cfg_per_dir*(i-1)+j,2]
+      cfg_nb <- input_coords[n_cfg_per_dir*(i-1)+j,3]
+      
+      #~ Transform cfg_nb into "000xx" format
+      t <- paste(rep(0, 5), collapse = "")
+      cfg_nb <- as.character(cfg_nb)
+      nb <- paste0(substr(t, 1, nchar(t)-nchar(cfg_nb)), cfg_nb)
+      
+      #~ Create the xml cfg for ichthyop
+      write.cfg.xml(initial_time,
+                    tplate,
+                    sim_input_path,
+                    sim_output_path,
+                    record_frequency,
+                    dir_name.i,
+                    
+                    long, lat,
+                    nb
+      )
+      
+      setTxtProgressBar(pb, n_cfg_per_dir*(i-1)+j)
+    }
+    
+  }
+  
+  i=n_dirs+1
+  t <- paste(rep(0, 2), collapse = "")
+  i_chr <- as.character(i)
+  i_chr <- paste0(substr(t, 1, nchar(t)-nchar(i_chr)), i_chr)
+  
+  dir_name.i <- file.path(cfg_dir, paste0("cfgs_", i_chr))
+  
+  dir.create(dir_name.i, showWarnings = F)
+  
+  for (j in 1:(n_iter - n_dirs*n_cfg_per_dir)){
+    long <- input_coords[n_cfg_per_dir*(i-1)+j,1]
+    lat <- input_coords[n_cfg_per_dir*(i-1)+j,2]
+    cfg_nb <- input_coords[n_cfg_per_dir*(i-1)+j,3]
+    
+    #~ Transform cfg_nb into "000xx" format
+    t <- paste(rep(0, 5), collapse = "")
+    cfg_nb <- as.character(cfg_nb)
+    nb <- paste0(substr(t, 1, nchar(t)-nchar(cfg_nb)), cfg_nb)
+    
+    #~ Create the xml cfg for ichthyop
+    write.cfg.xml(initial_time,
+                  tplate,
+                  sim_input_path,
+                  sim_output_path,
+                  record_frequency,
+                  dir_name.i,
+                  
+                  long, lat,
+                  nb
+    )
+    
+    setTxtProgressBar(pb, n_cfg_per_dir*(i-1)+j)
+    
+  }
+  
+  close(pb)
   
 }
 
