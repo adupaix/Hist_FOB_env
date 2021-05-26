@@ -63,20 +63,33 @@ curr_prod = "PHILIN12.L75") # one of c("PHILIN12.L75","oscar","nemo","globcurren
 #' Arguments to generate Ichthyop cfg files (only if input_method == allMask)
 #' 
 #'## generate_xml (log): generate config files or not
-#'## first/last_release_date (chr): start and end dates of the Ichthyop simulations
-#'## release_frequency (num): frequecy at which the particles are released (in weeks)
+#'## xml_template (chr): resource file to generate cfg files from
+#'## sim_input/output_path (chr): paths to save in the cfg files
+#'
 #'## transport_duration (num): number of days that the particles are to be transported (in days)
+#'## first/last_release_date (chr): start and end dates of the Ichthyop simulations
+#'## release_frequency (num): frequency at which the particles are released (in days)
+#'## record_frequency (num): frequency at which the particles positions are to be save (in days)
+#'
+#'## n_cfg_per_dir (num): number of cfg files to save per directory
 #'## ICHTHYOP_PATH (chr): path to where the Ichthyop version to be used is installed
 
-generate_xml = F
+generate_xml = T
+
+xml_template <- "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/3-Launch_Ichthyop_datarmor/template_cfg.xml"
+
+sim_input_path <- "/home/adupaix/Documents/ichthyop-private/input"
+sim_output_path <- "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/3-Launch_Ichthyop_datarmor/ichthyop-output"
+
+#~ Fixed arguments
+transport_duration = 180 #in days
 
 first_release_date = "1980/01/02"
-last_release_date = "1982/01/02"
-release_frequency = 2
+last_release_date = "1981/12/02"
+release_frequency = 14 # in days
+record_frequency = 5 #in days (interval between two recorded positions)
 
-transport_duration = 180
-
-ICHTHYOP_PATH = "/home/adupaix/Documents/ichthyop-private"
+n_cfg_per_dir = 560
 
 
 
@@ -122,10 +135,14 @@ if (input_method == "allMask" & generate_xml == T){
                dist,
                curr_prod,
                # arguments to generate the cfg files
+               sim_input_path,
+               sim_output_path,
+               
                transport_duration,
                first_release_date,
                last_release_date,
                release_frequency,
-               ICHTHYOP_PATH
+               record_frequency,
+               n_cfg_per_dir
   )
 }
