@@ -113,7 +113,7 @@ list2env(arguments, globalenv())
 
 #'@Load_function_generating_the_input_locations:
 #'#*********************************************
-source(file.path(FUNC_PATH, "1.nlog_inputs_modif.R"))
+source(file.path(FUNC_PATH, "1.nlog_inputs.R"))
 
 # calling the main function
 output <- do.call(input.nlog, args = arguments)
