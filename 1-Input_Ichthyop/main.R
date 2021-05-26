@@ -5,7 +5,8 @@
 #'#*******************************************************************************************************************
 #'@description :  This is the main script to generate input points for Ichthyop simulations
 #'#*******************************************************************************************************************
-#'@revision
+#'@revisions
+#'2021-05-25: added second part, to generate .xml files to run Ichthyop on cluster
 #'#*******************************************************************************************************************
 
 
@@ -63,8 +64,8 @@ curr_prod = "PHILIN12.L75") # one of c("PHILIN12.L75","oscar","nemo","globcurren
 #' Arguments to generate Ichthyop cfg files (only if input_method == allMask)
 #' 
 #'## generate_xml (log): generate config files or not
-#'## xml_template (chr): resource file to generate cfg files from
-#'## sim_input/output_path (chr): paths to save in the cfg files
+#'## xml_template (chr): path of the resource file to generate cfg files from
+#'## sim_input/output_path (chr): paths to be saved in the cfg files
 #'
 #'## transport_duration (num): number of days that the particles are to be transported (in days)
 #'## first/last_release_date (chr): start and end dates of the Ichthyop simulations
@@ -76,7 +77,7 @@ curr_prod = "PHILIN12.L75") # one of c("PHILIN12.L75","oscar","nemo","globcurren
 
 generate_xml = T
 
-xml_template <- "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/3-Launch_Ichthyop_datarmor/template_cfg.xml"
+xml_template <- file.path(RESOURCE_PATH, "template_cfg.xml")
 
 sim_input_path <- "/home/adupaix/Documents/ichthyop-private/input"
 sim_output_path <- "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/3-Launch_Ichthyop_datarmor/ichthyop-output"
