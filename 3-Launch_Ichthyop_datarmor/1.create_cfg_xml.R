@@ -1,7 +1,5 @@
 #!/usr/bin/env Rscript
 
-library(lubridate)
-
 # #~ Read arguments
 # args = commandArgs(TRUE)
 # template = args[1]
@@ -23,13 +21,7 @@ library(lubridate)
 
 
 
-#~ Fixed arguments
-transport_duration = 100 #in days
 
-first_release_date = "1980/01/02"
-last_release_date = "1980/06/02"
-release_frequency = 14 # in days
-record_frequency = 7 #in days (interval between two recorded positions)
 
 
 # generate the initial times from the start/end dates and the frequency
@@ -73,29 +65,29 @@ value <- list(paste0(formatC(transport_duration, width = 4, flag = "0"),
               (record_frequency*24*3600)/1800)
 
 # for each parameter
-for (i in 1:length(param_list)){
-  # get the line j where the parameter section starts
-  j <- which(grepl(pattern = paste0("<key>",param_list[i]), tplate))
-  k = j
-  # get the following line where the value is entered (k)
-  while (grepl("<value>", tplate[k]) == F) {
-    k=k+1
+for (k in 1:length(param_list)){
+  # get the line l where the parameter section starts
+  l <- which(grepl(pattern = paste0("<key>",param_list[k]), tplate))
+  m = l
+  # get the following line where the value is entered (m)
+  while (grepl("<value>", tplate[m]) == F) {
+    m=m+1
   }
 
   # replace the default value in this line with the new value
-  tplate[k] <- gsub(pattern = as.character(default_value[i]),
-                    replacement = as.character(value[[i]][1]),
-                    x = tplate[k])
+  tplate[m] <- gsub(pattern = as.character(default_value[k]),
+                    replacement = as.character(value[[k]][1]),
+                    x = tplate[m])
 
   # if several values are to be entered for this parameter (initial_time)
-  if (length(value[[i]])>1) {
+  if (length(value[[k]])>1) {
     # insert a new line with the same formatting for each value
-    for (l in 1:(length(value[[i]])-1)){
-      tplate <- c(tplate[1:(k+l-1)],
-                  gsub(pattern = as.character(value[[i]][1]),
-                       replacement = as.character(value[[i]][l+1]),
-                       x = tplate[k]),
-                  tplate[(k+l):length(tplate)])
+    for (n in 1:(length(value[[k]])-1)){
+      tplate <- c(tplate[1:(m+n-1)],
+                  gsub(pattern = as.character(value[[k]][1]),
+                       replacement = as.character(value[[k]][n+1]),
+                       x = tplate[m]),
+                  tplate[(m+n):length(tplate)])
     }
   }
 }
@@ -103,13 +95,13 @@ for (i in 1:length(param_list)){
 
 #~ Write tplate into a new cfg file
 cfg_name <- as.character(paste0("cfg_point_",nb,".xml"))
-try(file.remove(cfg_name))
-file.create(cfg_name)
+try(file.remove(cfg_name), silent = T)
+file.create(file.path(dir_name.i, cfg_name))
 
-cfg <- file(cfg_name, open = "w")
+cfg <- file(file.path(dir_name.i, cfg_name), open = "w")
 writeLines(tplate, cfg)
 close(cfg)
 
 #~ Empty the ichthyop output directory if exists
-try(file.remove(file.path(sim_output_path, nb , list.files(file.path(sim_output_path, nb)))))
+# try(file.remove(file.path(sim_output_path, nb , list.files(file.path(sim_output_path, nb)))))
 

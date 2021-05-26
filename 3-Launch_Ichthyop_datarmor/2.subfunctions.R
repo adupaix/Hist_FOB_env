@@ -21,11 +21,11 @@ nc.to.Array <- function(nc_name, gsize,
   ## try to read the attribute origin of time. In some cases, the attribute is not saved by Ichthyop, to
   ## solve a bug with the mask (PHILIN products). Then, if there is no attribute origin, we fix the
   ## date of origin on 1900/01/01 at 00:00 ~~~  ADD AS A PARAMETER IN main.R
-  t0 <- try(t0 <- att.get.nc(nc, variable="time", attribute = "origin"), silent = T)
-  if (class(t0) == "try-error"){
+  # t0 <- try(t0 <- att.get.nc(nc, variable="time", attribute = "origin"), silent = T)
+  # if (class(t0) == "try-error"){
     t0 <- origin_time
     # cat(bgRed(white("Manually setting time origin to:"))) ; cat(" ",origin_time, "\n")
-  }
+  # }
   
   position_date <- as.POSIXct(t0, tz="GMT", format = "year %Y month %m day %d at %H:%M") + 
     as.difftime(time/(3600*24),units = "days")
