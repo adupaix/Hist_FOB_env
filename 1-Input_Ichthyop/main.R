@@ -47,7 +47,9 @@ return_format = "sf", # one of c("sf", "mat")
 #'## input_location (chr): either "river" or "mangrove"                              
 #'## input_method (chr): either "onMask" put points on the closest point on the      
 #'                                    current product                               
-#'                      or "kFromCoast" put points at dist km from the coast         
+#'                      or "kFromCoast" put points at dist km from the coast
+#'                      or "allMask" put points on the current product cells which
+#'                                  are close to the coastline  
 #'
 input_location = "river", # one of c("river","mangrove")
 input_method = "allMask", # one of c("onMask","kFromCoast", "allMask")
@@ -79,16 +81,19 @@ generate_xml = T
 
 xml_template <- file.path(RESOURCE_PATH, "template_cfg.xml")
 
-sim_input_path <- "/home/adupaix/Documents/ichthyop-private/input"
-sim_output_path <- "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/3-Launch_Ichthyop_datarmor/ichthyop-output"
+# sim_input_path <- "/home/adupaix/Documents/ichthyop-private/input"
+sim_input_path <- "/home1/datawork/adupaix/input-ichthyop"
+# sim_output_path <- "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/3-Launch_Ichthyop_datarmor/ichthyop-output"
+sim_output_path <- "/home1/scratch/adupaix/ichthyop-output"
+
 
 #~ Fixed arguments
 transport_duration = 180 #in days
 
-first_release_date = "1980/01/02"
-last_release_date = "1981/12/02"
+first_release_date = "1991/06/01"
+last_release_date = "1994/12/15"
 release_frequency = 14 # in days
-record_frequency = 5 #in days (interval between two recorded positions)
+record_frequency = 7 #in days (interval between two recorded positions)
 
 n_cfg_per_dir = 560
 
