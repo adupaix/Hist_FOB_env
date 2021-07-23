@@ -33,7 +33,7 @@
       <parameter type="serial">
         <key>time_step</key>
         <long_name>Time step [second]</long_name>
-        <value>1800</value>
+        <value>2400</value>
         <format>integer</format>
         <description>The computational time step (dt) expressed in seconds. Take great care for setting this parameter. Simulation must not break the CFL criterion: (U * dt) / dX inferior to 1 with U the velocity and dX the move. An acceptable estimation could be dt = 0.7 * dGrid / Umax with dGrid the average length of the grid cells and Umax the order of magnitude of the fastest current velocities in the hydrodynamic model. In our case: dGrid = 1/12 deg ~ 9250 m and Umax for the first year = 3.1. Hence, the estimation gives dt ~ 2100s. </description>
       </parameter>

@@ -8,6 +8,7 @@ write.cfg.xml <- function(initial_time,
                           sim_output_path,
                           record_frequency,
                           dir_name.i,
+                          i_chr,
                           
                           long, lat,
                           nb
@@ -39,10 +40,10 @@ write.cfg.xml <- function(initial_time,
                        " at ",formatC(hour(initial_time), width = 2, flag = "0"),
                        ":",formatC(minute(initial_time), width = 2, flag = "0")),
                 sim_input_path,
-                file.path(sim_output_path, nb),
+                file.path(sim_output_path, paste0("points_", i_chr), nb),
                 long,
                 lat,
-                (record_frequency*24*3600)/1800)
+                (record_frequency*24*3600)/2400)
   
   # for each parameter
   for (k in 1:length(param_list)){
@@ -87,3 +88,13 @@ write.cfg.xml <- function(initial_time,
 
 
 
+txt.for.mpi <- function(sim_input_path, cfg_dir){
+  
+  lignes <- paste0("java -jar ichthyop-private/target/ichthyop-3.3.10.jar ",sim_input_path,"/cfgs/", list.files(cfg_dir, recursive = T))
+  
+  file.create(file.path(cfg_dir, "list_commands.txt"))
+  cmds <- file(file.path(cfg_dir, "list_commands.txt"), open = "w")
+  writeLines(lignes, cmds)
+  close(cmds)
+  
+}

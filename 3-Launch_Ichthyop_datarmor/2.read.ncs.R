@@ -5,6 +5,7 @@ library(crayon)
 library(foreach)
 library(raster)
 library(abind)
+library(slam)
 
 sim_output_path <- "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/3-Launch_Ichthyop_datarmor/ichthyop-output"
 rds_output_path <- "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/3-Launch_Ichthyop_datarmor/rds-output"
@@ -22,23 +23,23 @@ rds_output_path <- "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/3-Launch_Ic
 # sim_output_path = args[3]
 # rds_output_path = args[4]
 
-gsize = 0.5
+gsize = 2
 origin_time = "year 1900 month 01 day 01 at 00:00"
 
-source(file.path(this.dir,"2.subfunctions.R"))
+source(file.path(getwd(),"3-Launch_Ichthyop_datarmor","2.subfunctions.R"))
 
-sim_files <- list.files(path = file.path(sim_output_path, nb), pattern = "\\.nc$")
+sim_files <- list.files(path = file.path(sim_output_path, nb_chr), pattern = "\\.nc$")
 
 ### RENAME SIMULATION FILES
 
 arrays_per_sim <- lapply(sim_files, nc.to.Array,
                          gsize = gsize, origin_time = origin_time,
-                         sim_dir = file.path(sim_output_path, nb))
+                         sim_dir = file.path(sim_output_path, nb_chr))
 
 rds_files <- list.files(rds_output_path)
-try(file.remove(file.path(rds_output_path, rds_files[grepl(nb, rds_files)])))
+try(file.remove(file.path(rds_output_path, rds_files[grepl(nb_chr, rds_files)])))
 
-fname <- paste0("sim_from_point_", nb)
+fname <- paste0("sim_from_point_", nb_chr)
 
 for (i in 1:length(arrays_per_sim)){
   # Recupere le numero des simulations
@@ -48,7 +49,9 @@ for (i in 1:length(arrays_per_sim)){
   snb <- as.character(snb)
   snb <- paste0(substr(t, 1, nchar(t)-nchar(snb)), snb)
   
-  saveRDS(arrays_per_sim[[i]], file.path(rds_output_path, paste0(fname, "_date_", snb, ".rds")))
+  tosave.i <- as.simple_sparse_array(arrays_per_sim[[i]])
+  
+  saveRDS(tosave.i, file.path(rds_output_path, paste0(fname, "_date_", snb, ".rds")))
 }
 
 # # d. Bind the results and aggregate per day ----

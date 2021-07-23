@@ -7,6 +7,7 @@
 #'#*******************************************************************************************************************
 #'@revisions
 #'2021-05-25: added second part, to generate .xml files to run Ichthyop on cluster
+#'2021-07-20: modifications of second part
 #'#*******************************************************************************************************************
 
 
@@ -88,14 +89,14 @@ sim_output_path <- "/home1/scratch/adupaix/ichthyop-output"
 
 
 #~ Fixed arguments
-transport_duration = 180 #in days
+transport_duration = 500 #in days
 
-first_release_date = "1991/06/01"
-last_release_date = "1994/12/15"
-release_frequency = 14 # in days
-record_frequency = 7 #in days (interval between two recorded positions)
+first_release_year = 1999 # release from the first of January of this year
+last_release_year = 2000 # to December of this year
+release_frequency = 2 # nb of release per month
+record_frequency = 1 #in days (interval between two recorded positions)
 
-n_cfg_per_dir = 560
+n_cfg_per_dir = 28*8*5
 
 
 
@@ -145,8 +146,8 @@ if (input_method == "allMask" & generate_xml == T){
                sim_output_path,
                
                transport_duration,
-               first_release_date,
-               last_release_date,
+               first_release_year,
+               last_release_year,
                release_frequency,
                record_frequency,
                n_cfg_per_dir

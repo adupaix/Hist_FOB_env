@@ -51,8 +51,8 @@ input.to.xml <- function(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
                          sim_output_path,
                          
                          transport_duration,
-                         first_release_date,
-                         last_release_date,
+                         first_release_year,
+                         last_release_year,
                          release_frequency,
                          record_frequency,
                          n_cfg_per_dir
@@ -92,9 +92,14 @@ input.to.xml <- function(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
   dir.create(file.path(dir_path, "cfgs"), showWarnings = F)
   
   # generate the initial times from the start/end dates and the frequency
-  initial_time <- as.POSIXct(paste(seq(as.Date(first_release_date),
-                                       as.Date(last_release_date),
-                                       as.difftime(release_frequency, units = "days")),
+  yrs = seq(first_release_year, last_release_year)
+  mths = 1:12
+  dys = seq(1, 30-30/release_frequency, length.out = release_frequency)
+  
+  initial_time <- as.POSIXct(paste(paste(rep(yrs, each = length(mths)*length(dys)),
+                                         rep(mths, length(yrs), each = length(dys)),
+                                         rep(dys, length(mths)*length(yrs)),
+                                         sep = "-"),
                                    "00:00"))
   
   #~ Read the template file
@@ -127,6 +132,7 @@ input.to.xml <- function(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
                     sim_output_path,
                     record_frequency,
                     dir_name.i,
+                    i_chr,
                     
                     long, lat,
                     nb
@@ -163,6 +169,7 @@ input.to.xml <- function(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
                   sim_output_path,
                   record_frequency,
                   dir_name.i,
+                  i_chr,
                   
                   long, lat,
                   nb
@@ -173,6 +180,8 @@ input.to.xml <- function(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
   }
   
   close(pb)
+  
+  txt.for.mpi(sim_input_path, cfg_dir)
   
 }
 

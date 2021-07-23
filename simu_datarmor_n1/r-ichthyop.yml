@@ -37,7 +37,7 @@ dependencies:
   - gxx_linux-64=7.3.0=h553295d_15
   - harfbuzz=2.8.0=h6f93f22_0
   - hdf4=4.2.13=h3ca952b_2
-  - hdf5=1.10.4=nompi_h3c11f04_1106
+  - hdf5=1.10.6=nompi_h3c11f04_101
   - icu=58.2=he6710b0_3
   - importlib-metadata=3.10.0=py39h06a4308_0
   - importlib_metadata=3.10.0=hd3eb1b0_0
@@ -46,7 +46,7 @@ dependencies:
   - ipython_genutils=0.2.0=pyhd3eb1b0_1
   - jedi=0.17.2=py39h06a4308_1
   - jinja2=3.0.0=pyhd3eb1b0_0
-  - jpeg=9b=h024ee3a_2
+  - jpeg=9d=h36c2ea0_0
   - jsonschema=3.2.0=py_2
   - jupyter_client=6.1.12=pyhd3eb1b0_0
   - jupyter_core=4.7.1=py39h06a4308_0
@@ -58,7 +58,7 @@ dependencies:
   - libffi=3.3=he6710b0_2
   - libgcc-ng=9.1.0=hdf63c60_0
   - libgfortran-ng=7.3.0=hdf63c60_0
-  - libnetcdf=4.7.3=hb80b6cc_0
+  - libnetcdf=4.7.4=nompi_h84807e1_104
   - libpng=1.6.37=hbc83047_0
   - libsodium=1.0.18=h7b6447c_0
   - libssh2=1.9.0=h1ba5d50_1
@@ -172,6 +172,7 @@ dependencies:
   - r-modelmetrics=1.2.2=r36h29659fb_0
   - r-modelr=0.1.4=r36h6115d3f_0
   - r-munsell=0.5.0=r36h6115d3f_0
+  - r-ncdf4=1.17=r36h4fa2c38_4
   - r-nlme=3.1_139=r36ha65eedd_0
   - r-nnet=7.3_12=r36h96ca727_0
   - r-numderiv=2016.8_1=r36h6115d3f_0
