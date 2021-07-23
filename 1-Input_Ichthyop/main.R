@@ -5,7 +5,9 @@
 #'#*******************************************************************************************************************
 #'@description :  This is the main script to generate input points for Ichthyop simulations
 #'#*******************************************************************************************************************
-#'@revision
+#'@revisions
+#'2021-05-25: added second part, to generate .xml files to run Ichthyop on cluster
+#'2021-07-20: modifications of second part
 #'#*******************************************************************************************************************
 
 
@@ -46,7 +48,9 @@ return_format = "sf", # one of c("sf", "mat")
 #'## input_location (chr): either "river" or "mangrove"                              
 #'## input_method (chr): either "onMask" put points on the closest point on the      
 #'                                    current product                               
-#'                      or "kFromCoast" put points at dist km from the coast         
+#'                      or "kFromCoast" put points at dist km from the coast
+#'                      or "allMask" put points on the current product cells which
+#'                                  are close to the coastline  
 #'
 input_location = "river", # one of c("river","mangrove")
 input_method = "allMask", # one of c("onMask","kFromCoast", "allMask")
@@ -63,20 +67,36 @@ curr_prod = "PHILIN12.L75") # one of c("PHILIN12.L75","oscar","nemo","globcurren
 #' Arguments to generate Ichthyop cfg files (only if input_method == allMask)
 #' 
 #'## generate_xml (log): generate config files or not
-#'## first/last_release_date (chr): start and end dates of the Ichthyop simulations
-#'## release_frequency (num): frequecy at which the particles are released (in weeks)
+#'## xml_template (chr): path of the resource file to generate cfg files from
+#'## sim_input/output_path (chr): paths to be saved in the cfg files
+#'
 #'## transport_duration (num): number of days that the particles are to be transported (in days)
+#'## first/last_release_date (chr): start and end dates of the Ichthyop simulations
+#'## release_frequency (num): frequency at which the particles are released (in days)
+#'## record_frequency (num): frequency at which the particles positions are to be save (in days)
+#'
+#'## n_cfg_per_dir (num): number of cfg files to save per directory
 #'## ICHTHYOP_PATH (chr): path to where the Ichthyop version to be used is installed
 
-generate_xml = F
+generate_xml = T
 
-first_release_date = "1980/01/02"
-last_release_date = "1982/01/02"
-release_frequency = 2
+xml_template <- file.path(RESOURCE_PATH, "template_cfg.xml")
 
-transport_duration = 180
+# sim_input_path <- "/home/adupaix/Documents/ichthyop-private/input"
+sim_input_path <- "/home1/datawork/adupaix/input-ichthyop"
+# sim_output_path <- "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/3-Launch_Ichthyop_datarmor/ichthyop-output"
+sim_output_path <- "/home1/scratch/adupaix/ichthyop-output"
 
-ICHTHYOP_PATH = "/home/adupaix/Documents/ichthyop-private"
+
+#~ Fixed arguments
+transport_duration = 500 #in days
+
+first_release_year = 1999 # release from the first of January of this year
+last_release_year = 2000 # to December of this year
+release_frequency = 2 # nb of release per month
+record_frequency = 1 #in days (interval between two recorded positions)
+
+n_cfg_per_dir = 28*8*5
 
 
 
@@ -100,7 +120,7 @@ list2env(arguments, globalenv())
 
 #'@Load_function_generating_the_input_locations:
 #'#*********************************************
-source(file.path(FUNC_PATH, "1.nlog_inputs_modif.R"))
+source(file.path(FUNC_PATH, "1.nlog_inputs.R"))
 
 # calling the main function
 output <- do.call(input.nlog, args = arguments)
@@ -122,10 +142,14 @@ if (input_method == "allMask" & generate_xml == T){
                dist,
                curr_prod,
                # arguments to generate the cfg files
+               sim_input_path,
+               sim_output_path,
+               
                transport_duration,
-               first_release_date,
-               last_release_date,
+               first_release_year,
+               last_release_year,
                release_frequency,
-               ICHTHYOP_PATH
+               record_frequency,
+               n_cfg_per_dir
   )
 }

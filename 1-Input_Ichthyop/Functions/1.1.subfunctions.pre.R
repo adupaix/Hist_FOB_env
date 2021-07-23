@@ -27,7 +27,7 @@ delete.chinese.sea <- function(coords, class){
   
   ##Polygon of the Chinese Sea
   N = matrix(data=NA,nrow=7,ncol=2)
-  N[1,] = c(140,-10);
+  N[1,] = c(140,-3);
   N[2,] = c(115,-5);
   N[3,] = c(110,-5);
   N[4,] = c(102,5);
@@ -81,50 +81,63 @@ delete.chinese.sea <- function(coords, class){
 prep.river.data <- function(DATA_PATH){
   
   RIVER_PATH <- file.path(DATA_PATH, "river_data")
-  ### Reading rivers data
   
-  cat("READING DATA")
-  tic(msg = "### READING DATA")
-  africa <- read_sf(RIVER_PATH, "RiverATLAS_v10_af")
-  mid_east <- read_sf(RIVER_PATH, "RiverATLAS_v10_eu")
-  asia <- read_sf(RIVER_PATH, "RiverATLAS_v10_as")
-  oceania <- read_sf(RIVER_PATH, "RiverATLAS_v10_au")
   IO <- read_sf(RIVER_PATH, "OI")
-  toc ()
   
-  ### Cropping data to keep only rivers around IO
+  ### Reading and cropping data to keep only rivers around IO
   
-  cat("CROPPING AFRICA DATA")
-  tic(msg = "### CROPPING AFRICA DATA")
-  africa_cropped <- st_crop(africa, st_bbox(IO))
+  cat("~~~ Reading and cropping Africa data\n")
+  tic(msg = '  Reading data')
+  africa <- read_sf(RIVER_PATH, "RiverATLAS_v10_af")
+  toc()
+  tic(msg = "  Cropping data")
+  africa %>% dplyr::filter(MAIN_RIV == HYRIV_ID & ENDORHEIC == 0) -> coast_africa
+  cc_africa <- st_crop(coast_africa, st_bbox(IO))
+  africa %>% dplyr::filter(MAIN_RIV %in% cc_africa$HYRIV_ID) -> africa_cropped
+  rm(africa, cc_africa, coast_africa) ; invisible(gc())
   toc()
   
-  cat("CROPPING MIDDLE EAST DATA")
-  tic(msg = "### CROPPING MIDDLE EAST DATA")
-  mid_east_cropped <- st_crop(mid_east, st_bbox(IO))
+  cat("~~~ Reading and cropping Middle East data\n")
+  tic(msg = '  Reading data')
+  mid_east <- read_sf(RIVER_PATH, "RiverATLAS_v10_eu")
+  toc()
+  tic(msg = "  Cropping data")
+  mid_east %>% dplyr::filter(MAIN_RIV == HYRIV_ID & ENDORHEIC == 0) -> coast_mid_east
+  cc_mid_east <- st_crop(coast_mid_east, st_bbox(IO))
+  mid_east %>% dplyr::filter(MAIN_RIV %in% cc_mid_east$HYRIV_ID) -> mid_east_cropped
+  rm(mid_east, cc_mid_east, coast_mid_east) ; invisible(gc())
   toc()
   
-  cat("CROPPING ASIA DATA")
-  tic(msg = "### CROPPING ASIA DATA")
-  asia_cropped <- st_crop(asia, st_bbox(IO))
+  cat("~~~ Reading and cropping Asia data\n")
+  tic(msg = '  Reading data')
+  asia <- read_sf(RIVER_PATH, "RiverATLAS_v10_as")
+  toc()
+  tic(msg = "  Cropping data")
+  asia %>% dplyr::filter(MAIN_RIV == HYRIV_ID & ENDORHEIC == 0) -> coast_asia
+  cc_asia <- st_crop(coast_asia, st_bbox(IO))
+  asia %>% dplyr::filter(MAIN_RIV %in% cc_asia$HYRIV_ID) -> asia_cropped
+  rm(asia, cc_asia, coast_asia) ; invisible(gc())
   toc()
   
-  cat("CROPPING OCEANIA DATA")
-  tic(msg = "### CROPPING OCEANIA DATA")
-  oceania_cropped <- st_crop(oceania, st_bbox(IO))
+  cat("~~~ Reading and cropping Oceania data\n")
+  tic(msg = '  Reading data')
+  oceania <- read_sf(RIVER_PATH, "RiverATLAS_v10_au")
+  toc()
+  tic(msg = "  Cropping data")
+  oceania %>% dplyr::filter(MAIN_RIV == HYRIV_ID & ENDORHEIC == 0) -> coast_oceania
+  cc_oceania <- st_crop(coast_oceania, st_bbox(IO))
+  oceania %>% dplyr::filter(MAIN_RIV %in% cc_oceania$HYRIV_ID) -> oceania_cropped
+  rm(oceania, cc_oceania, coast_oceania) ; invisible(gc())
   toc()
   
-  rm(africa, mid_east, asia, oceania)
-  gc()
-  
-  cat("MERGING DATA AND DELETING CHINESE SEA")
-  tic(msg = "### MERGING DATA AND DELETING CHINESE SEA")
+  cat("~~~ Merging data and deleting Chinese Sea\n")
+  tic(msg = "  Merging")
   rivers_IO <- bind_rows(africa_cropped, mid_east_cropped, asia_cropped, oceania_cropped)
   rivers_IO <- delete.chinese.sea(rivers_IO, class = "sf")
   toc()
   
-  cat("SAVING RDS FILE")
-  tic(msg = "### SAVING RDS FILE")
+  cat("~~~ Saving rds file\n")
+  tic(msg = "  File saved")
   saveRDS(rivers_IO, file.path(DATA_PATH, "rivers_IO.rds"))
   toc()
   

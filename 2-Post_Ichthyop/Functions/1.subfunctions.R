@@ -32,11 +32,11 @@ generate.sim_name <- function(forcing,
   
   if(input_method == "kFromCoast"){
     sim_name <- paste0(sim_name, "_",dist, input_method)
-  } else if (input_method == "onMask"){
+  } else if (input_method %in% c("onMask","allMask")){
     sim_name <- paste0(sim_name, "_", input_method)
   }
   
-  sim_name <- paste0(sim_name,"_d",dispersion)
+  # sim_name <- paste0(sim_name,"_d",dispersion)
   
   if (bouncing == T){
     sim_name <- paste0(sim_name,"_bouncing")

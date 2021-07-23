@@ -14,7 +14,7 @@ read.river.data <- function(DATA_PATH, river_id, thr_disch){
     # keep the variables of interest (more details in RiverATLAS_Catalog_v10.pdf)
     dplyr::select(MAIN_RIV, # river id
                   dis_m3_pyr, # annual mean river discharge (in m3/s) at the reach pour point
-                  # dis_m3_pmx, # annual maximum river discharge (in m3/s) at the reach pour point
+                  dis_m3_pmx, # annual maximum river discharge (in m3/s) at the reach pour point
                   ria_ha_usu, # total surface in hectares of the river basin in the total watershed upstream of the reach pour point
                   for_pc_use # percentage of forest cover in the total watershed upstream of the reach pour point
                   ) %>%
@@ -23,7 +23,7 @@ read.river.data <- function(DATA_PATH, river_id, thr_disch){
   
   # add a column which will allow to filter the particles according to the discharge
   if (!is.null(thr_disch)) {
-    river_data %>% mutate(is_bellow_thr = ifelse(dis_m3_pyr <= thr_disch, TRUE, FALSE)) -> river_data
+    river_data %>% mutate(is_bellow_thr = ifelse(dis_m3_pmx <= thr_disch, TRUE, FALSE)) -> river_data
   } else {
     river_data %>% mutate(is_bellow_thr =  FALSE) -> river_data
   }

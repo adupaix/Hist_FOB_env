@@ -29,7 +29,7 @@ set.seed(10) # set for reproductibility (lognormale distribution in apply.ltime.
 ### ltime_method (num) : filter used for the life time : 1. lifetimes generated using a log normal law
 #                                                         so that mean(ltimes)=ltime
 #                                                      2. life time fixed at ltime        
-ltime=180
+ltime=360
 ltime_method = 2
 
 ### weight_method (num): method used to give weight to input points
@@ -48,8 +48,8 @@ gsize = 2
 agg.time_scale = "day"
 
 ### the mean water discharge of the input river is used as a filter 
-# only particles originating from a river with a value > thr_disch (in m3/s) are kept 
-# if thr_disch = 0, only rivers with a mean discharge > 0 m3/s will be kept
+# only particles originating from a river with a maximum value > thr_disch (in m3/s) are kept 
+# if thr_disch = 0, only rivers with a maximum discharge > 0 m3/s will be kept
 # if you don't want any filter to be used, set thr_disch = NULL
 thr_disch = 0
 
@@ -69,8 +69,9 @@ forcing="PHILIN12.L75"
 input_location="river"
 ### input_method (chr): either "onMask" put points on the closest point on the      
 #                                     current product                               
-#                      or "kFromCoast" put points at dist km from the coast         
-input_method = "onMask"
+#                      or "kFromCoast" put points at dist km from the coast
+#                      or "allMask" put points on each coastal point of the current product
+input_method = "allMask"
 
 ### dist (num): distance specified if the input_method above is 'kFromCoast'
 dist=100
