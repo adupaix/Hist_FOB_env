@@ -11,7 +11,7 @@
 rm(list = ls())
 gc()
 
-WD <- file.path(getwd(),'2-Post_Ichthyop')
+WD <- file.path(getwd(),'3-Post_Ichthyop')
 DATA_PATH <- file.path(getwd(),'0-Data')
 
 OUTPUT_PATH <- file.path(WD,"Outputs")
