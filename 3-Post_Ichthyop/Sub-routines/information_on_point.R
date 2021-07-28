@@ -63,7 +63,7 @@ get.cover.shp <- function(DATA_PATH, year){
 }
 
 
-cover <- get.cover.shp(DATA_PATH, year)
+# cover <- get.cover.shp(DATA_PATH, year)
 
 
 #'@get_information_on_release_point
@@ -152,68 +152,4 @@ point <- get.associated.rivers(sim_input_path, point)
 
 # get forest surface (release_date, point_coords, point_associated_rivers, forest_cover)
 
-
-
-cover <- read_sf("/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/0-Data/forest_cover/forest_cover_pts_2000/forest_zone4aus_pts.shp")
-
-
-## link table cover - release points
-
-
-#'@link_cover-river
-
-# read river
-rivers_IO <- readRDS(file.path(DATA_PATH, "river_data", "rivers_IO.rds"))
-
-filter_dis = 100
-
-rivers_IO %>%
-  # garde uniquement les embouchures
-  # (identifiant de la portion de riviere = a l'identifiant principal de la riviere)
-  filter(HYRIV_ID == MAIN_RIV) %>%
-  # garde uniquement les portions de riviere qui se jettent dans la mer
-  filter(ENDORHEIC == 0) %>%
-  # garde uniquement les fleuves avec un debit maximal de plus d 100 m3 par seconde
-  filter(dis_m3_pmx >= filter_dis) -> embouchures
-
-rivers_IO %>%
-  filter(MAIN_RIV %in% embouchures$HYRIV_ID) %>%
-  filter(dis_m3_pmx >= filter_dis) -> filtered
-
-filtered %>% dplyr::select(HYRIV_ID, #id de la portion de riviere
-                           NEXT_DOWN,#id de la portion en aval
-                           MAIN_RIV, # id de la portion qui se jette dans la mer
-                           LENGTH_KM, # longeur de la portion en km
-                           HYBAS_L12, # id du bassin versant,
-                           #pour faire le lien avec l'autre base de donnees
-                           dis_m3_pyr, # debit moyen en m3/s
-                           dis_m3_pmn, # debit minimal en m3/s
-                           dis_m3_pmx # debit maximal
-) -> filtered
-
-filtered %>% st_transform(3857) %>% st_buffer(dist = 10^3) -> buffer_filtered_rivers
-
-buffer_filtered_rivers %>% group_by(MAIN_RIV) %>% summarise(.groups = "keep") -> grouped_buffer
-
-# simplifer les multipolygons en polygons (si possible ?)
-
-
-is_within <- st_within(st_geometry(cover), st_geometry(grouped_buffer))
-
-unlist_is_within <- unlist(is_within)
-
-
-
-
-k=1
-system.time({
-# for (i in 1:length(is_within)){
-for (i in 1:10000){
-  if (length(is_within[[i]])!=0){
-    cover$is_within_river_buffer[i] <- rivers_IO$HYRIV_ID[unlist_is_within[k]]
-    k = k+1
-  }
-}
-
-})
 

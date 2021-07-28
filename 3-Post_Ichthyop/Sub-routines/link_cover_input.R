@@ -34,7 +34,8 @@ cover_files <- list.files(path = file.path(DATA_PATH,
 # read the input points to add a column containing the number of cover cells associated with each point
 input_points <- read.table(file.path(sim_input_path, "IDs.txt"))
 names(input_points) <- c("x","y", "id_curr")
-input_points$nb_cover_points <- 0
+input_points$nb_coastal_cover_points <- 0
+input_points$nb_river_cover_points <- 0
 
 # read river
 cat("  - Reading and filtering rivers file\n")
@@ -87,7 +88,9 @@ filtered %>%
 
 for (k in 1:length(cover_files)){
   
-  cat(crayon::bold("Cover file n",k,"/ 6 \n"))
+  cat(crayon::bold("\nCover file n",k,"/",length(cover_files),"\n"))
+  
+  cat("1. Link river - cover\n")
   
   cat("  - Reading cover file\n")
   
@@ -96,82 +99,62 @@ for (k in 1:length(cover_files)){
                     paste0("forest_cover_pts_", year),
                     cover_files[k])) %>%
     select(id, geometry) %>%
-    st_transform(4326) -> cover
+    st_transform(4326) -> cover_df
   
-  cover_test <- cover[1:100000,]
   
   cat("  - Getting the cover points inside the river buffer\n")
   #' get the points of cover which are inside the buffers
   #' return a list with for each point, the polygons inside which the point is
-  system.time({
-    is_within1 <- st_within(st_geometry(cover_test), st_geometry(grouped_buffer))
-  })
-  system.time({
-    is_within2 <- st_within(st_geometry(cover_test), st_geometry(buffer))
-  })
-  system.time({
-    is_within3 <- st_intersects(st_geometry(cover_test), st_geometry(buffer))
-  })
-  system.time({ ##### a garder, c'est celle qui va le plus vite
-    is_within4 <- st_intersects(st_geometry(cover_test), st_geometry(grouped_buffer))
-  })
-  system.time({
-    is_within5 <- st_touches(st_geometry(cover_test), st_geometry(buffer))
-  })
-  system.time({
-    is_within6 <- st_touches(st_geometry(cover_test), st_geometry(grouped_buffer))
-  })
+  is_within <- st_intersects(st_geometry(cover_df), st_geometry(grouped_buffer))
   
   
   # unlist the result, and keep only the first value (there shouldn't be any duplicates, but just in case...)
   unlist_is_within <- unlist(lapply(is_within, function(x) ifelse(length(x)==0, NA, x[1])))
   
   if(length(unlist_is_within) != length(is_within)){
-    stop("Some points are associated with several rivers at the same time")
+    stop("Error: some points are associated with several rivers at the same time")
   }
   
-  cover$is_within_river_buffer <- NA
+  rm(is_within) ; invisible(gc())
   
-  niter <- length(is_within)
+  cat("  - Filling the cover df with the river ids\n")
   
-  pb <- progress_bar$new(format = "[:bar] :percent | :current / :total",
-                         total = niter
-  )
+  cover_df %>% mutate(is_within_river_buffer = NA) -> cover_df
   
-  cat("  - Filling the cover df with the cover ids\n")
-  k=1
-  # system.time({
-  # fill the cover column with the river id inside which the point is
-  for (i in 1:niter){
-    if (length(is_within[[i]])!=0){
-      cover$is_within_river_buffer[i] <- rivers_IO$HYRIV_ID[unlist_is_within[k]]
-      k = k+length(is_within[[i]])
-    }
-    pb$tick()
-  }
+  cover_df$is_within_river_buffer[which(!is.na(unlist_is_within))] <- grouped_buffer$MAIN_RIV[unlist_is_within[which(!is.na(unlist_is_within))]]
   
-  # })
   
-  cat("  - Saving the table with the number of associated cover cells for each river")
+  cat("  - Saving the table with the number of associated cover cells for each river\n")
   # get MAIN_RIV ids corresponding to river ids associated with cover points
-  rivers_IO %>%
-    as.data.frame() %>%
-    dplyr::select(HYRIV_ID, MAIN_RIV) %>%
-    right_join(y = cover, by = c("HYRIV_ID" = "is_within_river_buffer")) %>%
-    # get the number of cover points associated with each river mouth
-    group_by(MAIN_RIV) %>%
-    summarise(n_cover_points = n(), .groups = "keep") %>%
+  suppressWarnings(
+  as.data.frame(summary(as.factor(cover_df$is_within_river_buffer))) %>%
+    tibble::rownames_to_column(var = "MAIN_RIV") %>% mutate(MAIN_RIV = as.numeric(MAIN_RIV)) %>%
     dplyr::filter(!is.na(MAIN_RIV)) -> river_cover_summary
+  )
+  names(river_cover_summary)[2] <- "nb_river_cover_points"
+  
+  # filtered %>%
+  #   as.data.frame() %>%
+  #   dplyr::select(HYRIV_ID, MAIN_RIV) %>%
+  #   right_join(y = cover_df, by = c("MAIN_RIV" = "is_within_river_buffer")) %>%
+  #   # get the number of cover points associated with each river mouth
+  #   group_by(MAIN_RIV) %>%
+  #   summarise(n_cover_points = n(), .groups = "keep") %>%
+  #   dplyr::filter(!is.na(MAIN_RIV)) -> river_cover_summary
   
   write.table(river_cover_summary,
-              file = file.path(OUTPUT_PATH, sim_name, paste0("link_rivers_",cover_files[k],".txt")))
+              file = file.path(OUTPUT_PATH, sim_name, paste0("link_rivers_",sub(".shp", "", cover_files[k]),".txt")),
+              row.names = F)
   
   
-  cat("  - Filter: keep only coastal points")
+  cat("2. Link input - coastal cover\n")
   
-  cover %>%
+  cat("  - Filter: keep only coastal cover points")
+  
+  cover_df %>%
     dplyr::filter(is.na(is_within_river_buffer)) -> coastal_cover
   
+  rm(cover_df) ; invisible(gc())
   
   ## calcul distance entre cover et input
   
@@ -226,8 +209,8 @@ for (k in 1:length(cover_files)){
     
     n_cover_per_points <- get.nb.cover.per.input(indexes, coastal_cover, input_points)
     
-    input_points$nb_cover_points[
-      as.numeric(names(n_cover_per_points)) ] <- input_points$nb_cover_points[ as.numeric(names(n_cover_per_points)) ] + n_cover_per_points
+    input_points$nb_coastal_cover_points[
+      as.numeric(names(n_cover_per_points)) ] <- input_points$nb_coastal_cover_points[ as.numeric(names(n_cover_per_points)) ] + n_cover_per_points
     
     pb$tick()
     
@@ -237,13 +220,58 @@ for (k in 1:length(cover_files)){
   
   n_cover_per_points <- get.nb.cover.per.input(indexes, coastal_cover, input_points)
   
-  input_points$nb_cover_points[
-    as.numeric(names(n_cover_per_points)) ] <- input_points$nb_cover_points[ as.numeric(names(n_cover_per_points)) ] + n_cover_per_points
+  input_points$nb_coastal_cover_points[
+    as.numeric(names(n_cover_per_points)) ] <- input_points$nb_coastal_cover_points[ as.numeric(names(n_cover_per_points)) ] + n_cover_per_points
   
   pb$tick()
   
+  file_name <- ifelse(k != length(cover_files),
+                      paste0("input_point_with_cover_nb_v",k,".txt"),
+                      "input_point_with_cover_nb_vf.txt")
+  
   write.table(input_points,
-              file = file.path(OUTPUT_PATH, sim_name, paste0("input_point_with_cover_nb_v",k,".txt")))
+              file = file.path(OUTPUT_PATH, sim_name, file_name))
   
 }
 
+
+cat("3. Merging coastal and river information\n")
+
+link_riv_cov_files <- list.files(file.path(OUTPUT_PATH, sim_name), pattern = "link_rivers_")
+
+n_cover_per_river <- list()
+
+for (i in 1:length(link_riv_cov_files)){
+  n_cover_per_river[[i]] <- read.table(file.path(OUTPUT_PATH, sim_name, link_riv_cov_files[i]), header = T)
+}
+
+bind_rows(n_cover_per_river) %>%
+  group_by(MAIN_RIV) %>%
+  summarise(n = sum(nb_river_cover_points), .groups = "keep") %>%
+  ungroup() %>%
+  rename("nb_river_cover_points" = "n") -> n_cover_per_river
+
+link_river_input <- read.table(file.path(sim_input_path, "Link_table.txt"), header = T)
+
+if (!all(n_cover_per_river$MAIN_RIV %in% link_river_input$MAIN_RIV)){
+  stop("error with river ids")
+}
+
+input_points %>%
+  full_join(link_river_input, by = "id_curr") %>%
+  arrange(id_curr) %>%
+  dplyr::select(-HYBAS_L12) %>%
+  full_join(n_cover_per_river, by = "MAIN_RIV") -> cover_global_summary
+
+cover_global_summary$nb_river_cover_points[which(is.na(cover_global_summary$nb_river_cover_points))] <- 0
+
+cover_global_summary %>%
+  group_by(id_curr) %>%
+  summarise(nb_river_cover_points = sum(nb_river_cover_points), .groups = "keep") %>%
+  left_join(y = input_points, by = "id_curr") %>%
+  dplyr::mutate(nb_cover_points = nb_river_cover_points + nb_coastal_cover_points) %>%
+  dplyr::select(id_curr, x, y, nb_river_cover_points, nb_coastal_cover_points, nb_cover_points) -> nb_cover_per_input
+
+write.table(nb_cover_per_input,
+            file = file.path(OUTPUT_PATH, sim_name, "number_of_cover_points_per_input_point.txt"),
+            row.names = F)

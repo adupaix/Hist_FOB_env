@@ -51,7 +51,8 @@ agg.time_scale = "day"
 # only particles originating from a river with a maximum value > thr_disch (in m3/s) are kept 
 # if thr_disch = 0, only rivers with a maximum discharge > 0 m3/s will be kept
 # if you don't want any filter to be used, set thr_disch = NULL
-thr_disch = 0
+# a threshold of 100 m3/s was used to map the forest cover around the rivers
+thr_disch = 100
 
 ### origin of the time in the output results
 # normally will not be used, as it is saved in the attributes of time by Ichthyop
@@ -97,7 +98,7 @@ bouncing=F
 #
 ## !! One part of the script can rapidly fill the RAM memory, to be taken into account when choose to run in parallel or not
 ## !! If the script is running on a Windows machine, the script is executed in sequential
-Parallel = c(F, 1/2)
+Parallel = c(T, 1/2)
 
 # Whether to delete the results obtained for these arguments (T) or not (F):
 # 1: arrays and matrices obtained with 1.read.ncs and maps obtained with 2.map.array
@@ -127,7 +128,7 @@ color_scale_pos = "out_panel"
 source(file.path(FUNC_PATH, "install_libraries.R"))
 
 srcUsedPackages <- c("RNetCDF","RANN","raster","foreach","tictoc","pryr","plyr","lubridate","parallel","crayon",
-                     "dplyr","sf","ggplot2","ggspatial", "doParallel", "ggpubr","abind")
+                     "dplyr","sf","ggplot2","ggspatial", "doParallel", "ggpubr","abind", "progress")
 
 installAndLoad_packages(srcUsedPackages, loadPackages = TRUE)
 
