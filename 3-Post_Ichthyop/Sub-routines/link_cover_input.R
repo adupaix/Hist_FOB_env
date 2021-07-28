@@ -1,0 +1,249 @@
+#'#*******************************************************************************************************************
+#'@author : Amael DUPAIX
+#'@update : 2021-07-28
+#'@email : amael.dupaix@ens-lyon.fr
+#'#*******************************************************************************************************************
+#'@description :  Sub-routine to link the input points from an Ichthyop simulation with the forest cover
+#'#*******************************************************************************************************************
+#'@revision
+#'#*******************************************************************************************************************
+#'@comment: very long script, to run once. Will return a table with, for each input point, the number of
+#'associated forest points (one cell represents 900m2 of forest). Takes the rivers into account.
+#'#*******************************************************************************************************************
+
+
+#'@arguments
+#'**********
+year = 2000 # year of the cover to be used
+
+buffer_size = 10^3 #in m
+
+sim_output_path <- file.path(DATA_PATH, "Output_Ichthyop", sim_name)
+sim_input_path <- file.path(DATA_PATH, "Input_Ichthyop", paste0(input_location, "_nlog_input_", forcing, "_", input_method))
+
+
+cat("\14")
+cat(crayon::bold("Counting the number of cover points associated with each input point\n\n"))
+
+# get the cover files names
+cover_files <- list.files(path = file.path(DATA_PATH,
+                                           "forest_cover",
+                                           paste0("forest_cover_pts_", year)),
+                          pattern = "shp")
+
+# read the input points to add a column containing the number of cover cells associated with each point
+input_points <- read.table(file.path(sim_input_path, "IDs.txt"))
+names(input_points) <- c("x","y", "id_curr")
+input_points$nb_cover_points <- 0
+
+# read river
+cat("  - Reading and filtering rivers file\n")
+cat("      - Reading\n")
+
+rivers_IO <- readRDS(file.path(DATA_PATH, "river_data", "rivers_IO.rds"))
+
+cat("      - Filtering\n")
+
+#' filter rivers
+rivers_IO %>%
+  # garde uniquement les embouchures
+  # (identifiant de la portion de riviere = a l'identifiant principal de la riviere)
+  dplyr::filter(HYRIV_ID == MAIN_RIV) %>%
+  # garde uniquement les portions de riviere qui se jettent dans la mer
+  dplyr::filter(ENDORHEIC == 0) %>%
+  # garde uniquement les fleuves avec un debit maximal de plus d 100 m3 par seconde
+  dplyr::filter(dis_m3_pmx >= thr_disch) -> embouchures
+
+# keep only variables of interest
+rivers_IO %>%
+  dplyr::filter(MAIN_RIV %in% embouchures$HYRIV_ID) %>%
+  dplyr::filter(dis_m3_pmx >= thr_disch) %>%
+  dplyr::select(HYRIV_ID, #id de la portion de riviere
+                NEXT_DOWN,#id de la portion en aval
+                MAIN_RIV, # id de la portion qui se jette dans la mer
+                LENGTH_KM, # longeur de la portion en km
+                HYBAS_L12, # id du bassin versant,
+                #pour faire le lien avec l'autre base de donnees
+                dis_m3_pyr, # debit moyen en m3/s
+                dis_m3_pmn, # debit minimal en m3/s
+                dis_m3_pmx # debit maximal
+  ) -> filtered
+
+# build buffer of 1km around the rivers
+cat("      - Generating buffer\n")
+
+# filtered %>%
+#   st_transform(3857) %>%
+#   st_buffer(dist = buffer_size) %>%
+#   st_transform(4326) -> buffer
+filtered %>% 
+  st_transform(3857) %>%
+  st_buffer(dist = buffer_size) %>%
+  st_transform(4326) %>%
+  group_by(MAIN_RIV) %>%
+  summarise(.groups = "keep") %>%
+  ungroup() -> grouped_buffer
+
+
+for (k in 1:length(cover_files)){
+  
+  cat(crayon::bold("Cover file n",k,"/ 6 \n"))
+  
+  cat("  - Reading cover file\n")
+  
+  read_sf(file.path(DATA_PATH,
+                    "forest_cover",
+                    paste0("forest_cover_pts_", year),
+                    cover_files[k])) %>%
+    select(id, geometry) %>%
+    st_transform(4326) -> cover
+  
+  cover_test <- cover[1:100000,]
+  
+  cat("  - Getting the cover points inside the river buffer\n")
+  #' get the points of cover which are inside the buffers
+  #' return a list with for each point, the polygons inside which the point is
+  system.time({
+    is_within1 <- st_within(st_geometry(cover_test), st_geometry(grouped_buffer))
+  })
+  system.time({
+    is_within2 <- st_within(st_geometry(cover_test), st_geometry(buffer))
+  })
+  system.time({
+    is_within3 <- st_intersects(st_geometry(cover_test), st_geometry(buffer))
+  })
+  system.time({ ##### a garder, c'est celle qui va le plus vite
+    is_within4 <- st_intersects(st_geometry(cover_test), st_geometry(grouped_buffer))
+  })
+  system.time({
+    is_within5 <- st_touches(st_geometry(cover_test), st_geometry(buffer))
+  })
+  system.time({
+    is_within6 <- st_touches(st_geometry(cover_test), st_geometry(grouped_buffer))
+  })
+  
+  
+  # unlist the result, and keep only the first value (there shouldn't be any duplicates, but just in case...)
+  unlist_is_within <- unlist(lapply(is_within, function(x) ifelse(length(x)==0, NA, x[1])))
+  
+  if(length(unlist_is_within) != length(is_within)){
+    stop("Some points are associated with several rivers at the same time")
+  }
+  
+  cover$is_within_river_buffer <- NA
+  
+  niter <- length(is_within)
+  
+  pb <- progress_bar$new(format = "[:bar] :percent | :current / :total",
+                         total = niter
+  )
+  
+  cat("  - Filling the cover df with the cover ids\n")
+  k=1
+  # system.time({
+  # fill the cover column with the river id inside which the point is
+  for (i in 1:niter){
+    if (length(is_within[[i]])!=0){
+      cover$is_within_river_buffer[i] <- rivers_IO$HYRIV_ID[unlist_is_within[k]]
+      k = k+length(is_within[[i]])
+    }
+    pb$tick()
+  }
+  
+  # })
+  
+  cat("  - Saving the table with the number of associated cover cells for each river")
+  # get MAIN_RIV ids corresponding to river ids associated with cover points
+  rivers_IO %>%
+    as.data.frame() %>%
+    dplyr::select(HYRIV_ID, MAIN_RIV) %>%
+    right_join(y = cover, by = c("HYRIV_ID" = "is_within_river_buffer")) %>%
+    # get the number of cover points associated with each river mouth
+    group_by(MAIN_RIV) %>%
+    summarise(n_cover_points = n(), .groups = "keep") %>%
+    dplyr::filter(!is.na(MAIN_RIV)) -> river_cover_summary
+  
+  write.table(river_cover_summary,
+              file = file.path(OUTPUT_PATH, sim_name, paste0("link_rivers_",cover_files[k],".txt")))
+  
+  
+  cat("  - Filter: keep only coastal points")
+  
+  cover %>%
+    dplyr::filter(is.na(is_within_river_buffer)) -> coastal_cover
+  
+  
+  ## calcul distance entre cover et input
+  
+  #'@sub_function
+  #'***************
+  get.nb.cover.per.input <- function(indexes, coastal_cover, input_points){
+    
+    sub_coastal_cover <- data.frame(cbind(coastal_cover$id[indexes],
+                                          st_coordinates(coastal_cover[indexes,])))
+    names(sub_coastal_cover) <- c("id_cover", "x", "y")
+    
+    x_input <- t(matrix(input_points$x,
+                        nrow = length(input_points$x),
+                        ncol = length(sub_coastal_cover$x)))
+    
+    x_cover <- matrix(sub_coastal_cover$x,
+                      nrow = length(sub_coastal_cover$x),
+                      ncol = length(input_points$x))
+    
+    y_input <- t(matrix(input_points$y,
+                        nrow = length(input_points$y),
+                        ncol = length(sub_coastal_cover$y)))
+    
+    y_cover <- matrix(sub_coastal_cover$y,
+                      nrow = length(sub_coastal_cover$y),
+                      ncol = length(input_points$y))
+    
+    
+    dist_mat <- sqrt((x_cover - x_input)^2 + (y_cover - y_input)^2)
+    
+    # get the closest input point for each cover point
+    n_cover_per_points <- summary( as.factor( input_points$id_curr[apply(dist_mat, 1, function(x) which(x == min(x)))] ))
+    
+    return(n_cover_per_points)
+    
+  }
+  #'***************
+  
+  cat("  - Get input points associated with cover cells")
+  
+  sample_size <- 1000
+  
+  niter <- floor( dim(coastal_cover)[1] / sample_size )
+  
+  pb <- progress_bar$new(format = "[:bar] :percent | Cover points sample :current / :total",
+                         total = niter+1
+  )
+  
+  for (i in 1:niter){
+    
+    indexes <- ((i-1)*sample_size+1):(i*sample_size)
+    
+    n_cover_per_points <- get.nb.cover.per.input(indexes, coastal_cover, input_points)
+    
+    input_points$nb_cover_points[
+      as.numeric(names(n_cover_per_points)) ] <- input_points$nb_cover_points[ as.numeric(names(n_cover_per_points)) ] + n_cover_per_points
+    
+    pb$tick()
+    
+  }
+  
+  indexes <- (niter*sample_size+1):(dim(coastal_cover)[1])
+  
+  n_cover_per_points <- get.nb.cover.per.input(indexes, coastal_cover, input_points)
+  
+  input_points$nb_cover_points[
+    as.numeric(names(n_cover_per_points)) ] <- input_points$nb_cover_points[ as.numeric(names(n_cover_per_points)) ] + n_cover_per_points
+  
+  pb$tick()
+  
+  write.table(input_points,
+              file = file.path(OUTPUT_PATH, sim_name, paste0("input_point_with_cover_nb_v",k,".txt")))
+  
+}
+
