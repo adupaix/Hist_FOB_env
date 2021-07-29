@@ -25,4 +25,4 @@ module load NETCDF
 conda activate ichthyop
 
 # run the simulation
-time $MPI_LAUNCH -np 224 ichthyop-mpi/ichthyopmpi $DATAWORK/input-ichthyop/cfgs/list_commands.txt &> out.log
+time $MPI_LAUNCH -np 280 ichthyop-mpi/ichthyopmpi $DATAWORK/input-ichthyop/cfgs/list_commands.txt &> out.log
