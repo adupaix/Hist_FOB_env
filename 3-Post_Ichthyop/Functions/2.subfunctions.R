@@ -1,146 +1,132 @@
-
-
-#######################################################################################
-#               FROM ONE MATRIX OF THE ARRAY RETURNS A GGPLOT                         #
-#######################################################################################
-# ARGUMENTS:                                                                          #
-#                                                                                     #
-# OUTPUT: ggplot                                                                      #
-#######################################################################################
-
-matrix.to.ggplot <- function(array.i, dimname.i, gsize,
-                             log_color_scale, fixed_scale_max,
-                             color_scale_pos){
+#'#*******************************************************************************************************************
+#'@author : Amael DUPAIX
+#'@update : 2021-07-29
+#'@email : amael.dupaix@ens-lyon.fr
+#'#*******************************************************************************************************************
+#'@description :  Sub-functions of the 2nd sub-routine which weights the simulations and applies mortality
+#'#*******************************************************************************************************************
+#'@revision
+#'#*******************************************************************************************************************
+#'
+#'
+#'@sub-function 1
+#'***************
+#'read the link table generate in the sub-routine 1
+read.link_cover_input <- function(OUTPUT_PATH, sim_name){
   
-  r.i <- raster(array.i)
-  extent(r.i) <- extent(create.raster(gsize))
+  link_table <- read.csv(file.path(OUTPUT_PATH, sim_name, "number_of_cover_points_per_input_point.csv"), header = T)
   
-  # df from the raster
-  df.i <- as.data.frame(r.i, xy = TRUE)
-  
-  ### PLOT
-  p <- build.ggplot(df = df.i, titre = dimname.i, col_title = "Mean number\nof particles",
-                    log_color_scale, fixed_scale_max, color_scale_pos)
-  
-  return(p)
-  
+  return(link_table)
 }
 
 
-#######################################################################################
-#                          GENERATES THE GGPLOT                                       #
-#######################################################################################
-# ARGUMENTS:                                                                          #
-# df (data.frame): obtained from the raster containing one time_scale of the array    #
-# titre (chr): title of the ggplot                                                    #
-# col_title (chr): title of the colour legend                                         #
-# log_color_scale (log): color scale linear or with log10 transformation              #
-# color_scale_pos (chr): position of the color scale, either inside the map, outside  #
-#                        or no color scale                                            #
-#                                                                                     #
-# OUTPUT: ggplot                                                                      #
-#######################################################################################
+#'@sub-function 2
+#'***************
+#' get the coordinates of release associated with the input point of interest
+get.coords.release <- function(sim_input_path, point){
+  
+  # get the coordinates of the point
+  coords <- read.table(file.path(sim_input_path, "IDs.txt"))
+  
+  point$x <- coords[coords$V3 == as.numeric(point$id),1]
+  point$y <- coords[coords$V3 == as.numeric(point$id),2]
+  
+  # get the coordinates of the points which are at less than 1/4° of the point
+  # dists <- sqrt((point$x-coords[,1])^2 + (point$y-coords[,2])^2)
+  # df <- coords[which(dists < 1/4 & coords$V3 != as.numeric(point$id)),]
+  # names(df) <- c("x","y","id")
+  # point$close_points <- df
+  
+  return(point)
+}
 
-build.ggplot <- function(df, titre, col_title, log_color_scale, fixed_scale_max,
-                         color_scale_pos){
+#'@sub-function 3
+#'***************
+#' get the precipitations associated with the point of interest
+get.precipitations <- function(DATA_PATH,
+                               point){
   
-  # get the max of the color scale
-  if (fixed_scale_max != 0){
-    max = fixed_scale_max
-  } else{
-    max = max(df$layer[is.na(df$layer) == FALSE &
-                         is.infinite(df$layer) == FALSE])
-  }
+  x = point$x
+  y = point$y
   
-  if (log_color_scale == T){
-    min = min(df$layer[is.na(df$layer) == FALSE &
-                         is.infinite(df$layer) == FALSE &
-                         df$layer != 0])
-  }
+  ## open the netcdf file
+  precip <- open.nc(con = file.path(DATA_PATH,"precip.mon.mean.nc"))
   
-  p <- ggplot() +
-    geom_sf() +
-    coord_sf(
-      xlim = c(35, 120),
-      ylim = c(-30, 25),
-      expand = FALSE,
-      crs = st_crs(4326)
-    ) +
-    geom_raster(data = df, aes(x, y, fill = layer)) +
-    borders(fill = "grey30", colour = "grey30")
+  # select the interval of interest
+  time <- var.get.nc(precip, "time")
+  init_nc <- as.Date("1800-01-01")
+  time <- as.difftime(time, units = "days") + init_nc
+  time_of_int <- which(paste0(year(time),"-",month(time)) == paste0(year(point$release_date),"-",month(point$release_date)))
   
-  ### Echelle de couleur
-  # transformation log
-  if (log_color_scale == T){
-    p <- p + scale_fill_gradientn(
-      trans = "log10",
-      colors = c("gray80", "blue", "yellow", "red"),
-      name = col_title,
-      limits = c(min, max))
-    #sans transformation log
+  
+  lon <- var.get.nc(precip, "lon")
+  lon_of_int <- which(abs(lon - x) == min(abs(lon - x)))
+  
+  lat <- var.get.nc(precip, "lat")
+  lat_of_int <- which(abs(lat - y) == min(abs(lat - y)))
+  
+  of_int <- c(lon_of_int, lat_of_int, time_of_int)
+  
+  # get the precipitation value
+  point$precip <- var.get.nc(precip, "precip", start = of_int, count = rep(1,3))
+  
+  # close the netcdf file
+  close.nc(precip)
+  
+  return(point)
+}
+
+#'@sub-function 4
+#'***************
+#' get the information on the rivers associated with the input point of interest
+get.associated.rivers <- function(sim_input_path,
+                                  n_cover_per_river,
+                                  filtered,
+                                  point){
+  
+  rivers <- read.table(file.path(sim_input_path, "Link_table.txt"), header = T)
+  
+  point$rivers <- list()
+  
+  point$rivers$ids = (rivers %>% filter(id_curr == as.numeric(point$id)))$MAIN_RIV
+  
+  if (length(point$rivers) != 0){
+    
+    point$rivers$cover <- c()
+    point$rivers$dis_m3_pyr <- c()
+    point$rivers$dis_m3_pmn <- c()
+    point$rivers$dis_m3_pmx <- c()
+    for (i in 1:length(point$rivers)){
+      point$rivers$cover[i] <- n_cover_per_river$nb_river_cover_points[n_cover_per_river$MAIN_RIV == point$rivers[i]]
+      point$rivers$dis_m3_pyr[i] <- filtered$dis_m3_pyr[filtered$MAIN_RIV == point$rivers$ids[i]]
+      point$rivers$dis_m3_pmn[i] <- filtered$dis_m3_pmn[filtered$MAIN_RIV == point$rivers$ids[i]]
+      point$rivers$dis_m3_pmx[i] <- filtered$dis_m3_pmx[filtered$MAIN_RIV == point$rivers$ids[i]]
+    }
   } else {
-    p <- p + scale_fill_gradientn(
-      colors = c("gray80", "blue", "yellow", "red"),
-      name = col_title,
-      limits = c(0,max))
+    point$rivers$cover <- 0
+    point$rivers$dis_m3_pyr <- 0
+    point$rivers$dis_m3_pmn <- 0
+    point$rivers$dis_m3_pmx <- 0
   }
   
-  
-  
-  p <- p + labs(title = titre) +
-    xlab("Longitude") +
-    ylab("Latitude") +
-    theme(plot.title = element_text(hjust = 0.5),
-          legend.title = element_text(hjust = 0.5)) +
-    # echelle distance
-    annotation_scale(location = "bl", width_hint = 0.5) +
-    # fleche nord
-    annotation_north_arrow(
-      location = "tr",
-      which_north = "true",
-      pad_x = unit(0.75, "in"),
-      pad_y = unit(0.5, "in"),
-      style = north_arrow_fancy_orienteering
-    )
-  
-  
-  ### Position de la legend de couleur
-  # pas de legende
-  if (color_scale_pos == "null"){
-    p <- p + guides(fill = F)
-    
-    # legend a l'interieur de la carte
-  } else if (color_scale_pos == "in_panel"){
-    # legende a l interieur
-    p <- p + theme(
-      panel.border = element_rect(colour = "black", fill = NA),
-      legend.position = c(1, 0),
-      legend.justification = c(1, 0),
-      legend.background = element_rect(
-        fill = "white",
-        linetype = "solid",
-        colour = "black"
-      ),
-      legend.title.align = .5
-    )
-    
-    # legende a l exterieur de la carte
-  } else if (color_scale_pos == "out_panel"){
-    p <- p + theme(
-      panel.border = element_rect(colour = "black", fill = NA),
-      # legend.position = c(1, 0),
-      # legend.justification = c(1, 0),
-      legend.background = element_rect(
-        fill = "white",
-        linetype = "solid",
-        colour = "black"
-      ),
-      legend.title.align = .5
-    )
-  }
-  
-  
-  
-  return(p)
-  
+  return(point)
 }
+
+#'@sub-function 5
+#'***************
+#' get the number of forest cover points associated with the input point
+#' forest_surface is in m2
+get.number.of.cover.points <- function(link_table, point){
+  
+  point$nb_coastal_cover_points <- link_table$nb_coastal_cover_points[link_table$id_curr == as.numeric(point$id)]
+  
+  point$nb_cover_points <- link_table$nb_cover_points[link_table$id_curr == as.numeric(point$id)]
+  
+  point$forest_surface <- point$nb_cover_points * 900
+  
+  return(point)
+}
+
+#'
+#'
+#'
