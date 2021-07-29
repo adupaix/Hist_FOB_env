@@ -35,7 +35,6 @@ cover_files <- list.files(path = file.path(DATA_PATH,
 input_points <- read.table(file.path(sim_input_path, "IDs.txt"))
 names(input_points) <- c("x","y", "id_curr")
 input_points$nb_coastal_cover_points <- 0
-input_points$nb_river_cover_points <- 0
 
 # read river
 cat("  - Reading and filtering rivers file\n")
@@ -62,7 +61,7 @@ rivers_IO %>%
   dplyr::select(HYRIV_ID, #id de la portion de riviere
                 NEXT_DOWN,#id de la portion en aval
                 MAIN_RIV, # id de la portion qui se jette dans la mer
-                LENGTH_KM, # longeur de la portion en km
+                LENGTH_KM, # longueur de la portion en km
                 HYBAS_L12, # id du bassin versant,
                 #pour faire le lien avec l'autre base de donnees
                 dis_m3_pyr, # debit moyen en m3/s
@@ -70,17 +69,17 @@ rivers_IO %>%
                 dis_m3_pmx # debit maximal
   ) -> filtered
 
+rm(embouchures) ; invisible(gc())
+
 # build buffer of 1km around the rivers
 cat("      - Generating buffer\n")
 
-# filtered %>%
-#   st_transform(3857) %>%
-#   st_buffer(dist = buffer_size) %>%
-#   st_transform(4326) -> buffer
+# add a buffer
 filtered %>% 
   st_transform(3857) %>%
   st_buffer(dist = buffer_size) %>%
   st_transform(4326) %>%
+  # and fusion the polygons by rivers (one geometry per river instead of one per segment)
   group_by(MAIN_RIV) %>%
   summarise(.groups = "keep") %>%
   ungroup() -> grouped_buffer
@@ -94,11 +93,14 @@ for (k in 1:length(cover_files)){
   
   cat("  - Reading cover file\n")
   
+  # read the cover file
   read_sf(file.path(DATA_PATH,
                     "forest_cover",
                     paste0("forest_cover_pts_", year),
                     cover_files[k])) %>%
-    select(id, geometry) %>%
+    #select only the point and the id
+    dplyr::select(id, geometry) %>%
+    # transform it to lat/long coordinates
     st_transform(4326) -> cover_df
   
   
@@ -111,6 +113,7 @@ for (k in 1:length(cover_files)){
   # unlist the result, and keep only the first value (there shouldn't be any duplicates, but just in case...)
   unlist_is_within <- unlist(lapply(is_within, function(x) ifelse(length(x)==0, NA, x[1])))
   
+  # test if some points are counted twice (if it happens, need to determine the rule to follow)
   if(length(unlist_is_within) != length(is_within)){
     stop("Error: some points are associated with several rivers at the same time")
   }
@@ -119,13 +122,16 @@ for (k in 1:length(cover_files)){
   
   cat("  - Filling the cover df with the river ids\n")
   
+  # create the column which will contain the river id
   cover_df %>% mutate(is_within_river_buffer = NA) -> cover_df
   
+  # fill in the river id
   cover_df$is_within_river_buffer[which(!is.na(unlist_is_within))] <- grouped_buffer$MAIN_RIV[unlist_is_within[which(!is.na(unlist_is_within))]]
   
   
   cat("  - Saving the table with the number of associated cover cells for each river\n")
   # get MAIN_RIV ids corresponding to river ids associated with cover points
+  # suppressWarnings is used because the as.numeric part introduces NAs (it's what we want, we don't care about the warning)
   suppressWarnings(
   as.data.frame(summary(as.factor(cover_df$is_within_river_buffer))) %>%
     tibble::rownames_to_column(var = "MAIN_RIV") %>% mutate(MAIN_RIV = as.numeric(MAIN_RIV)) %>%
@@ -188,6 +194,9 @@ for (k in 1:length(cover_files)){
     # get the closest input point for each cover point
     n_cover_per_points <- summary( as.factor( input_points$id_curr[apply(dist_mat, 1, function(x) which(x == min(x)))] ))
     
+    objects.list <- list("sub_coastal_cover","x_input","x_cover","y_input","y_cover","dist_mat")
+    rm(list = objects.list) ; invisible(gc())
+    
     return(n_cover_per_points)
     
   }
@@ -225,6 +234,8 @@ for (k in 1:length(cover_files)){
   
   pb$tick()
   
+  rm(coastal_cover) ; invisible(gc())
+  
   file_name <- ifelse(k != length(cover_files),
                       paste0("input_point_with_cover_nb_v",k,".txt"),
                       "input_point_with_cover_nb_vf.txt")
@@ -235,7 +246,7 @@ for (k in 1:length(cover_files)){
 }
 
 
-cat("3. Merging coastal and river information\n")
+cat("3. Merge coastal and river information\n")
 
 link_riv_cov_files <- list.files(file.path(OUTPUT_PATH, sim_name), pattern = "link_rivers_")
 
@@ -254,7 +265,7 @@ bind_rows(n_cover_per_river) %>%
 link_river_input <- read.table(file.path(sim_input_path, "Link_table.txt"), header = T)
 
 if (!all(n_cover_per_river$MAIN_RIV %in% link_river_input$MAIN_RIV)){
-  stop("error with river ids")
+  stop("Error: some rivers are not linked with the input points")
 }
 
 input_points %>%
@@ -272,6 +283,5 @@ cover_global_summary %>%
   dplyr::mutate(nb_cover_points = nb_river_cover_points + nb_coastal_cover_points) %>%
   dplyr::select(id_curr, x, y, nb_river_cover_points, nb_coastal_cover_points, nb_cover_points) -> nb_cover_per_input
 
-write.table(nb_cover_per_input,
-            file = file.path(OUTPUT_PATH, sim_name, "number_of_cover_points_per_input_point.txt"),
-            row.names = F)
+write.csv(nb_cover_per_input,
+          file = file.path(OUTPUT_PATH, sim_name, "number_of_cover_points_per_input_point.csv"))
