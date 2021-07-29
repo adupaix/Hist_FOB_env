@@ -55,7 +55,8 @@ input.to.xml <- function(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
                          last_release_year,
                          release_frequency,
                          record_frequency,
-                         n_cfg_per_dir
+                         n_cfg_per_dir,
+                         n_pbs_jobs
 ){
   
   cat(crayon::bold("\n\n###### Generating xml cfg files from points\n"))
@@ -88,8 +89,9 @@ input.to.xml <- function(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
   template <- file.path(RESOURCE_PATH, "template_cfg.xml")
   
   #Create the directory to save the cfg files
-  cfg_dir <- file.path(OUTPUT_PATH, dir_name, "cfgs")
-  dir.create(file.path(dir_path, "cfgs"), showWarnings = F)
+  cfg_dir <- paste0("cfgs_",first_release_year,"-",last_release_year)
+  cfg_path <- file.path(OUTPUT_PATH, dir_name, cfg_dir)
+  dir.create(file.path(dir_path, cfg_dir), showWarnings = F)
   
   # generate the initial times from the start/end dates and the frequency
   yrs = seq(first_release_year, last_release_year)
@@ -111,7 +113,7 @@ input.to.xml <- function(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
     i_chr <- as.character(i)
     i_chr <- paste0(substr(t, 1, nchar(t)-nchar(i_chr)), i_chr)
     
-    dir_name.i <- file.path(cfg_dir, paste0("cfgs_", i_chr))
+    dir_name.i <- file.path(cfg_path, paste0("cfgs_", i_chr))
     
     dir.create(dir_name.i)
     
@@ -148,7 +150,7 @@ input.to.xml <- function(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
   i_chr <- as.character(i)
   i_chr <- paste0(substr(t, 1, nchar(t)-nchar(i_chr)), i_chr)
   
-  dir_name.i <- file.path(cfg_dir, paste0("cfgs_", i_chr))
+  dir_name.i <- file.path(cfg_path, paste0("cfgs_", i_chr))
   
   dir.create(dir_name.i, showWarnings = F)
   
@@ -181,7 +183,9 @@ input.to.xml <- function(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
   
   close(pb)
   
-  txt.for.mpi(sim_input_path, cfg_dir)
+  txt.for.mpi(sim_input_path, cfg_path, cfg_dir, n_pbs_jobs)
+  
+  generate.jobs.pbs(RESOURCE_PATH, sim_input_path, cfg_path, cfg_dir, n_pbs_jobs, last_release_year)
   
 }
 
