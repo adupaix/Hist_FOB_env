@@ -24,34 +24,13 @@ package.list <- c("ncdf4","raster","foreach","abind")
 #'
 create.raster <- function(gsize){
   
-  if (gsize == 5) {
-    r <- raster(
-      nrows = 14,
-      ncols = 18,
-      xmn = 30,
-      xmx = 120,
+  r <- raster(
+      res = gsize,
+      xmn = 20,
+      xmx = 140,
       ymn = -40,
-      ymx = 30
-    )
-  } else if (gsize == 1) {
-    r <- raster(
-      nrows = 70,
-      ncols = 90,
-      xmn = 30,
-      xmx = 120,
-      ymn = -40,
-      ymx = 30
-    )
-  } else if (gsize == 2) {
-    r <- raster(
-      nrows = 35,
-      ncols = 45,
-      xmn = 30,
-      xmx = 120,
-      ymn = -40,
-      ymx = 30
-    )
-  }
+      ymx = 40
+  )
   
   r[] <- 0
   names(r) <- "occ"
@@ -107,27 +86,27 @@ for (j in 1:length(sims)){
                                latitude <- ncvar_get(nc, varid = "lat", start = c(1,k), count = c(-1,1)) #lit la latitude pour le pas de temps i
                                mortality.i <- ncvar_get(nc, varid = "mortality", start = c(1,k), count = c(-1,1)) #lit la mortalite pour le pas de temps i
                                    
-                               # remove not released, filtered (discharge threshold or ltime filter 1) and beached particles
+                               # remove not released, filtered and beached particles
                                longitude <- longitude[which(mortality.i == 0)]
                                latitude <- latitude[which(mortality.i == 0)]
                                    
-                                # create a raster of the area of interest
-                                r.i <- create.raster(gsize)
+                               # create a raster of the area of interest
+                               r.i <- create.raster(gsize)
                                    
-                                # get the cell number where each particle is
-                                cell_pos <- cellFromXY(r.i, cbind(longitude,latitude))
+                               # get the cell number where each particle is
+                               cell_pos <- cellFromXY(r.i, cbind(longitude,latitude))
                                    
-                                # count the number of particles in each cell, applying the weight
-                                nb_p_per_cell <- table(cell_pos)
+                               # count the number of particles in each cell
+                               nb_p_per_cell <- table(cell_pos)
                                    
-                                # fill the raster
-                                # the attribute of nb_p_per_cell used contains the cell number
+                               # fill the raster
+                               # the attribute of nb_p_per_cell used contains the cell number
                                    
-                                r.i[ as.numeric(attr(nb_p_per_cell, "dimnames")$cell_pos) ] <- nb_p_per_cell
+                               r.i[ as.numeric(attr(nb_p_per_cell, "dimnames")$cell_pos) ] <- nb_p_per_cell
                                    
-                                as.matrix(r.i)
+                               as.matrix(r.i)
                                    
-                                }
+                               }
     
     
   dimnames(nb_p_per_timestep)[[3]] <- format(position_date, "%Y-%m-%d_%H:%M:%S")
