@@ -17,9 +17,7 @@ sim_output_path <- file.path(DATA_PATH, "Output_Ichthyop", sim_name)
 
 point <- list()
 
-point$id <- "05897"
-
-year <- 2000
+point$id <- "00101"
 
 n_points_per_dir = 28*8*5
 
@@ -36,12 +34,14 @@ fnames <- list.files(file.path(sim_output_path,
 
 link_table <- read.link_cover_input(OUTPUT_PATH, sim_name)
 
-n_cover_per_river <- read.table(file.path(OUTPUT_PATH, sim_name, "n_cover_per_river.txt"),
+n_cover_per_river <- read.csv(file.path(OUTPUT_PATH, sim_name, "1.nb_cover", "n_cover_per_river.csv"),
                                 header = T)
+# n_cover_per_river <- read.table(file.path(OUTPUT_PATH, sim_name, "1.nb_cover", "n_cover_per_river.txt"),
+#                               header = T)
 
 # read rds file
 i=1
-data <- readRDS(file.path(sim_output_path, paste0("points_", num_sub_dir), point$id, fnames[i]))
+point$data <- readRDS(file.path(sim_output_path, paste0("points_", num_sub_dir), point$id, fnames[i]))
 
 sim_input_path <- file.path(DATA_PATH, "Input_Ichthyop", paste0(input_location, "_nlog_input_", forcing, "_", input_method))
 
@@ -56,7 +56,7 @@ point <- get.coords.release(sim_input_path,
 
 # get release date
 
-point$release_date <- as.POSIXct(dimnames(data)[[3]][1])
+point$release_date <- as.POSIXct(dimnames(point$data)[[3]][1])
 
 # get precipitations
 
@@ -64,72 +64,31 @@ point <- get.precipitations(DATA_PATH, point)
 
 # get rivers and associated discharge + cover
 
-point <- get.associated.rivers(sim_input_path, n_cover_per_river, filtered, point)
+point <- get.associated.rivers(sim_input_path, n_cover_per_river, embouchures, point)
 
 
 # get forest cover
 
 point <- get.number.of.cover.points(link_table, point)
 
-if (point$nb_river_cover_points != sum(point$rivers$cover)){
+if (point$nb_cover_points != point$nb_coastal_cover_points + sum(point$rivers$cover)){
   stop("Error")
 }
 
 
-#'@weight_density_maps
-#'********************
+# weight density map
 
-add.weight <- function(weight_method, data, point){
-  
-  # method 1 : don't apply any weight
-  if (weight_method == 1){
-    weight <- 1
-    
-    # method 2 : apply a weight depending on the water discharge of the river
-  }  else if (weight_method==2){
-    weight <- sum(point$rivers$dis_m3_pyr)
-    
-    # method 3: apply a weight depending on the surface of cover associated with the input point
-  } else if (weight_method == 3){
-    weight <- point$nb_cover_points
-    
-    # method 4: apply a weight depending on the area covered by forest in the river basins
-  } else if (weight_method == 4){
-    weight <- point$nb_coastal_cover_points + sum(point$rivers$cover * point$rivers$dis_m3_pyr)
-  }
-  
-  return(data*weight)
-}
+point <- add.weight(point, weight_method)
 
 
-#'@mortality
-#'**********
+# apply mortality
 
-apply.mortality <- function(ltime, ltime_method, data,
-                          sd = 20){
-  
-  timestep <- as.POSIXct(dimnames(data)[[3]][2]) - as.POSIXct(dimnames(data)[[3]][1])
-  
-  total_time_sim <- dim(data)[3]
-  
-  if (ltime_method == 1){
-    
-    prop_alive <- c( rep(1, ltime/as.numeric(timestep)), rep(0, (total_time_sim-ltime)/as.numeric(timestep)))
-    
-  } else if (ltime_method == 2){
-    
-    x <- seq(1, total_time_sim, 1)
-    
-    prop_alive <- 1 - cumsum(dnorm(x, ltime/as.numeric(timestep), sd/as.numeric(timestep)))
-    
-  }
-  
-  # multiply the matrix of each timestep by the proportion of particles alive
-  data <- sweep(data, 3, prop_alive, "*")
-  
-  # delete dates when no particles are left, to gain space
-  has_particles_left <- apply(data, 3, sum) != 0
-  data <- data[,,which(has_particles_left)]
-  
-}
+point <- apply.mortality(point, ltime, ltime_method, sd = ltime_sd)
 
+
+
+# Saving the point object
+
+outfile_name <- paste0(point$id, "_", point$release_date, ".rds")
+
+writeRDS(point, file.path(output_path_2, paste0("points_", num_sub_dir), point$id, outfile_name))
