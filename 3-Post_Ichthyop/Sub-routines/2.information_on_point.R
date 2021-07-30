@@ -17,7 +17,7 @@ sim_output_path <- file.path(DATA_PATH, "Output_Ichthyop", sim_name)
 
 point <- list()
 
-point$id <- "00101"
+point$id <- "05897"
 
 year <- 2000
 
@@ -100,3 +100,36 @@ add.weight <- function(weight_method, data, point){
   
   return(data*weight)
 }
+
+
+#'@mortality
+#'**********
+
+apply.mortality <- function(ltime, ltime_method, data,
+                          sd = 20){
+  
+  timestep <- as.POSIXct(dimnames(data)[[3]][2]) - as.POSIXct(dimnames(data)[[3]][1])
+  
+  total_time_sim <- dim(data)[3]
+  
+  if (ltime_method == 1){
+    
+    prop_alive <- c( rep(1, ltime/as.numeric(timestep)), rep(0, (total_time_sim-ltime)/as.numeric(timestep)))
+    
+  } else if (ltime_method == 2){
+    
+    x <- seq(1, total_time_sim, 1)
+    
+    prop_alive <- 1 - cumsum(dnorm(x, ltime/as.numeric(timestep), sd/as.numeric(timestep)))
+    
+  }
+  
+  # multiply the matrix of each timestep by the proportion of particles alive
+  data <- sweep(data, 3, prop_alive, "*")
+  
+  # delete dates when no particles are left, to gain space
+  has_particles_left <- apply(data, 3, sum) != 0
+  data <- data[,,which(has_particles_left)]
+  
+}
+
