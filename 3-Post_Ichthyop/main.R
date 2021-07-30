@@ -21,16 +21,18 @@ RESOURCE_PATH <- file.path(WD,"Resources")
 
 set.seed(10) # set for reproductibility (lognormale distribution in apply.ltime.1)
 
-# ARGUMENTS :                                                                             
-#===========
-#
+#' @arguments :
+#' **********
+#' 
 
 ### ltime (num): life time of logs to be used                         
-### ltime_method (num) : filter used for the life time : 1. lifetimes generated using a log normal law
+### ltime_method (num) : filter used for the life time : 1. lifetimes generated using a normal law
 #                                                         so that mean(ltimes)=ltime
-#                                                      2. life time fixed at ltime        
+#                                                      2. life time fixed at ltime
+### ltime_sd (num): standard deviation of the normal law, if ltime_method = 1
 ltime=360
 ltime_method = 2
+ltime_sd = 30 # in days
 
 ### weight_method (num): method used to give weight to input points
 # can be different from one only if the input_location is river
@@ -45,13 +47,13 @@ gsize = 2
 
 ### time scale used to aggregate the dates (day, month, quarter or year)
 ## !! quarter start in December: for example, first quarter of 2012 is from 12.2011 to 02.2012 included
-agg.time_scale = "day"
+# agg.time_scale = "day"
 
-### the mean water discharge of the input river is used as a filter 
-# only particles originating from a river with a maximum value > thr_disch (in m3/s) are kept 
-# if thr_disch = 0, only rivers with a maximum discharge > 0 m3/s will be kept
-# if you don't want any filter to be used, set thr_disch = NULL
-# a threshold of 100 m3/s was used to map the forest cover around the rivers
+#'## the mean water discharge of the input river is used as a filter 
+#' only particles originating from a river with a maximum value > thr_disch (in m3/s) are kept 
+#' if thr_disch = 0, only rivers with a maximum discharge > 0 m3/s will be kept
+#' if you don't want any filter to be used, set thr_disch = NULL
+#'@!! a threshold of 100 m3/s was used to map the forest cover around the rivers
 thr_disch = 100
 
 ### origin of the time in the output results
@@ -90,6 +92,9 @@ dispersion=9
 #                                                                                         
 bouncing=F
 
+### Year of the simulation
+year = 2000
+
 ## Run in parallel ?
 # First element of the vector:
 #    If F, runs in sequential
@@ -101,29 +106,27 @@ bouncing=F
 Parallel = c(T, 1/2)
 
 # Whether to delete the results obtained for these arguments (T) or not (F):
-# 1: arrays and matrices obtained with 1.read.ncs and maps obtained with 2.map.array
-# 2: only maps obtained with 2.map.array
-RESET = c(T,T)
+RESET = F
 
 # Arguments used for the ggplot:
 #-------------------------------
 # specify if the color scale is log transformed (T) or not (F)
-log_color_scale = F
+# log_color_scale = F
 
 # choose to fix the max of the color scale
 # if = F, the max is not fixed
 # if T, the max is fixed at the maximum value of the array
-common_scale_max = T
+# common_scale_max = T
 
 # specify the position of the color legend, one of c("null", "in_panel", "out_panel")
 # "null": no color legend shown
 # "in_panel": color legend in the bottom right corner of the map
 # "out_panel": color legend out of the map, on the right
-color_scale_pos = "out_panel"
+# color_scale_pos = "out_panel"
 
 
-# Get libraries:
-# ==============
+#' Get libraries:
+#' ***************
 
 source(file.path(FUNC_PATH, "install_libraries.R"))
 
@@ -133,20 +136,21 @@ srcUsedPackages <- c("RNetCDF","RANN","raster","foreach","tictoc","pryr","plyr",
 installAndLoad_packages(srcUsedPackages, loadPackages = TRUE)
 
 
-# Initialize analysis:
-#====================
+#' Initialize analysis:
+#' ********************
 
 source(file.path(ROUT_PATH,'0.init.R'))
 
 
-# 1. Generate arrays:
-#=================
+#' 1. Get the cover for each input point:
+#' ****************************************
 
-source(file.path(ROUT_PATH,'1.read.ncs.R'))
-
-
-# 2. Build maps:
-#==============
-if (agg.time_scale != "day"){
-source(file.path(ROUT_PATH,'2.map.array.R'))
+if(!nCoverExists | RESET == T){
+  source(file.path(ROUT_PATH,'1.link_cover_input.R'))
 }
+
+
+
+#' 2. Weight matrices according to the chosen method:
+#' **************************************************
+
