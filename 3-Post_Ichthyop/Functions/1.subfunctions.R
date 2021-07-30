@@ -89,34 +89,13 @@ get.weight <- function(init_pos, weight_method = 1){
 
 create.raster <- function(gsize){
   
-  if (gsize == 5) {
-    r <- raster(
-      nrows = 14,
-      ncols = 18,
-      xmn = 30,
-      xmx = 120,
-      ymn = -40,
-      ymx = 30
-    )
-  } else if (gsize == 1) {
-    r <- raster(
-      nrows = 70,
-      ncols = 90,
-      xmn = 30,
-      xmx = 120,
-      ymn = -40,
-      ymx = 30
-    )
-  } else if (gsize == 2) {
-    r <- raster(
-      nrows = 35,
-      ncols = 45,
-      xmn = 30,
-      xmx = 120,
-      ymn = -40,
-      ymx = 30
-    )
-  }
+  r <- raster(
+    res = gsize,
+    xmn = 20,
+    xmx = 140,
+    ymn = -40,
+    ymx = 40
+  )
   
   r[] <- 0
   names(r) <- "occ"
