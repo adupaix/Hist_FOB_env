@@ -53,29 +53,29 @@ generate.sim_name <- function(forcing,
 #######################################################################################
 #                     GENERATE WEIGHTS DEPENDING ON THE CHOSEN METHOD                 #
 #######################################################################################
-
-
-get.weight <- function(init_pos, weight_method = 1){
-  
-  # method 1 : don't apply any weight
-  if (weight_method == 1 | input_location == "mangrove"){
-    return(rep(1, dim(init_pos)[1])) 
-  
-  # method 2 : apply a weight depending on the water discharge of the river
-  }  else if (weight_method==2){
-    return(init_pos$dis_m3_pyr)
-  
-  # method 3: apply a weight depending on the percentage of the river basin covered by forest
-  } else if (weight_method == 3){
-    return(init_pos$for_pc_use)
-  
-  # method 4: apply a weight depending on the area covered by forest in the river basin
-    # (percentage of forest * river area in km2)
-  } else if (weight_method == 4){
-    return(init_pos$for_km_usu)
-  }
-  
-}
+# 
+# 
+# get.weight <- function(init_pos, weight_method = 1){
+#   
+#   # method 1 : don't apply any weight
+#   if (weight_method == 1 | input_location == "mangrove"){
+#     return(rep(1, dim(init_pos)[1])) 
+#   
+#   # method 2 : apply a weight depending on the water discharge of the river
+#   }  else if (weight_method==2){
+#     return(init_pos$dis_m3_pyr)
+#   
+#   # method 3: apply a weight depending on the percentage of the river basin covered by forest
+#   } else if (weight_method == 3){
+#     return(init_pos$for_pc_use)
+#   
+#   # method 4: apply a weight depending on the area covered by forest in the river basin
+#     # (percentage of forest * river area in km2)
+#   } else if (weight_method == 4){
+#     return(init_pos$for_km_usu)
+#   }
+#   
+# }
 
 
 
@@ -103,3 +103,48 @@ create.raster <- function(gsize){
   return(r)
 }
 
+
+
+#######################################################################################
+#            GET THE NUMBER OF COVER POINTS ASSOCIATED WITH AN INPUT POINT            #
+#######################################################################################
+# ARGUMENTS:                                                                          #
+# indexes (vector): number of the sub-sampled cover points used                       #
+# coastal_cover (sf): cover points, after the ones associated with rivers were removed#
+# input_points (sf): points used as input in Ichthyop                                 #
+#######################################################################################
+
+get.nb.cover.per.input <- function(indexes, coastal_cover, input_points){
+  
+  sub_coastal_cover <- data.frame(cbind(coastal_cover$id[indexes],
+                                        st_coordinates(coastal_cover[indexes,])))
+  names(sub_coastal_cover) <- c("id_cover", "x", "y")
+  
+  x_input <- t(matrix(input_points$x,
+                      nrow = length(input_points$x),
+                      ncol = length(sub_coastal_cover$x)))
+  
+  x_cover <- matrix(sub_coastal_cover$x,
+                    nrow = length(sub_coastal_cover$x),
+                    ncol = length(input_points$x))
+  
+  y_input <- t(matrix(input_points$y,
+                      nrow = length(input_points$y),
+                      ncol = length(sub_coastal_cover$y)))
+  
+  y_cover <- matrix(sub_coastal_cover$y,
+                    nrow = length(sub_coastal_cover$y),
+                    ncol = length(input_points$y))
+  
+  
+  dist_mat <- sqrt((x_cover - x_input)^2 + (y_cover - y_input)^2)
+  
+  # get the closest input point for each cover point
+  n_cover_per_points <- summary( as.factor( input_points$id_curr[apply(dist_mat, 1, function(x) which(x == min(x)))] ))
+  
+  objects.list <- list("sub_coastal_cover","x_input","x_cover","y_input","y_cover","dist_mat")
+  rm(list = objects.list) ; invisible(gc())
+  
+  return(n_cover_per_points)
+  
+}
