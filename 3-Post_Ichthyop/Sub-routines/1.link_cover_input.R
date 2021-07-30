@@ -14,7 +14,7 @@
 
 #'@arguments
 #'**********
-year = 2000 # year of the cover to be used
+# year = 2000 # year of the cover to be used
 
 buffer_size = 10^3 #in m
 
@@ -22,7 +22,6 @@ sim_output_path <- file.path(DATA_PATH, "Output_Ichthyop", sim_name)
 sim_input_path <- file.path(DATA_PATH, "Input_Ichthyop", paste0(input_location, "_nlog_input_", forcing, "_", input_method))
 
 
-cat("\14")
 cat(crayon::bold("Counting the number of cover points associated with each input point\n\n"))
 
 # get the cover files names
@@ -36,46 +35,11 @@ input_points <- read.table(file.path(sim_input_path, "IDs.txt"))
 names(input_points) <- c("x","y", "id_curr")
 input_points$nb_coastal_cover_points <- 0
 
-# read river
-cat("  - Reading and filtering rivers file\n")
-cat("      - Reading\n")
-
-rivers_IO <- readRDS(file.path(DATA_PATH, "river_data", "rivers_IO.rds"))
-
-cat("      - Filtering\n")
-
-#' filter rivers
-rivers_IO %>%
-  # garde uniquement les embouchures
-  # (identifiant de la portion de riviere = a l'identifiant principal de la riviere)
-  dplyr::filter(HYRIV_ID == MAIN_RIV) %>%
-  # garde uniquement les portions de riviere qui se jettent dans la mer
-  dplyr::filter(ENDORHEIC == 0) %>%
-  # garde uniquement les fleuves avec un debit maximal de plus d 100 m3 par seconde
-  dplyr::filter(dis_m3_pmx >= thr_disch) -> embouchures
-
-# keep only variables of interest
-rivers_IO %>%
-  dplyr::filter(MAIN_RIV %in% embouchures$HYRIV_ID) %>%
-  dplyr::filter(dis_m3_pmx >= thr_disch) %>%
-  dplyr::select(HYRIV_ID, #id de la portion de riviere
-                NEXT_DOWN,#id de la portion en aval
-                MAIN_RIV, # id de la portion qui se jette dans la mer
-                LENGTH_KM, # longueur de la portion en km
-                HYBAS_L12, # id du bassin versant,
-                #pour faire le lien avec l'autre base de donnees
-                dis_m3_pyr, # debit moyen en m3/s
-                dis_m3_pmn, # debit minimal en m3/s
-                dis_m3_pmx # debit maximal
-  ) -> filtered
-
-rm(embouchures) ; invisible(gc())
-
 # build buffer of 1km around the rivers
 cat("      - Generating buffer\n")
 
 # add a buffer
-filtered %>% 
+rivers_filtered %>% 
   st_transform(3857) %>%
   st_buffer(dist = buffer_size) %>%
   st_transform(4326) %>%
@@ -139,7 +103,7 @@ for (k in 1:length(cover_files)){
   )
   names(river_cover_summary)[2] <- "nb_river_cover_points"
   
-  # filtered %>%
+  # rivers_filtered %>%
   #   as.data.frame() %>%
   #   dplyr::select(HYRIV_ID, MAIN_RIV) %>%
   #   right_join(y = cover_df, by = c("MAIN_RIV" = "is_within_river_buffer")) %>%
@@ -149,7 +113,7 @@ for (k in 1:length(cover_files)){
   #   dplyr::filter(!is.na(MAIN_RIV)) -> river_cover_summary
   
   write.table(river_cover_summary,
-              file = file.path(OUTPUT_PATH, sim_name, paste0("link_rivers_",sub(".shp", "", cover_files[k]),".txt")),
+              file = file.path(output_path_1, paste0("link_rivers_",sub(".shp", "", cover_files[k]),".txt")),
               row.names = F)
   
   
@@ -161,46 +125,6 @@ for (k in 1:length(cover_files)){
     dplyr::filter(is.na(is_within_river_buffer)) -> coastal_cover
   
   rm(cover_df) ; invisible(gc())
-  
-  ## calcul distance entre cover et input
-  
-  #'@sub_function
-  #'***************
-  get.nb.cover.per.input <- function(indexes, coastal_cover, input_points){
-    
-    sub_coastal_cover <- data.frame(cbind(coastal_cover$id[indexes],
-                                          st_coordinates(coastal_cover[indexes,])))
-    names(sub_coastal_cover) <- c("id_cover", "x", "y")
-    
-    x_input <- t(matrix(input_points$x,
-                        nrow = length(input_points$x),
-                        ncol = length(sub_coastal_cover$x)))
-    
-    x_cover <- matrix(sub_coastal_cover$x,
-                      nrow = length(sub_coastal_cover$x),
-                      ncol = length(input_points$x))
-    
-    y_input <- t(matrix(input_points$y,
-                        nrow = length(input_points$y),
-                        ncol = length(sub_coastal_cover$y)))
-    
-    y_cover <- matrix(sub_coastal_cover$y,
-                      nrow = length(sub_coastal_cover$y),
-                      ncol = length(input_points$y))
-    
-    
-    dist_mat <- sqrt((x_cover - x_input)^2 + (y_cover - y_input)^2)
-    
-    # get the closest input point for each cover point
-    n_cover_per_points <- summary( as.factor( input_points$id_curr[apply(dist_mat, 1, function(x) which(x == min(x)))] ))
-    
-    objects.list <- list("sub_coastal_cover","x_input","x_cover","y_input","y_cover","dist_mat")
-    rm(list = objects.list) ; invisible(gc())
-    
-    return(n_cover_per_points)
-    
-  }
-  #'***************
   
   cat("  - Get input points associated with cover cells")
   
@@ -241,19 +165,19 @@ for (k in 1:length(cover_files)){
                       "input_point_with_cover_nb_vf.txt")
   
   write.table(input_points,
-              file = file.path(OUTPUT_PATH, sim_name, file_name))
+              file = file.path(output_path_1, file_name))
   
 }
 
 
 cat("3. Merge coastal and river information\n")
 
-link_riv_cov_files <- list.files(file.path(OUTPUT_PATH, sim_name), pattern = "link_rivers_")
+link_riv_cov_files <- list.files(output_path_1, pattern = "link_rivers_")
 
 n_cover_per_river <- list()
 
 for (i in 1:length(link_riv_cov_files)){
-  n_cover_per_river[[i]] <- read.table(file.path(OUTPUT_PATH, sim_name, link_riv_cov_files[i]), header = T)
+  n_cover_per_river[[i]] <- read.table(file.path(output_path_1, link_riv_cov_files[i]), header = T)
 }
 
 bind_rows(n_cover_per_river) %>%
@@ -262,8 +186,8 @@ bind_rows(n_cover_per_river) %>%
   ungroup() %>%
   rename("nb_river_cover_points" = "n") -> n_cover_per_river
 
-write.table(n_cover_per_river,
-            file.path(OUTPUT_PATH, sim_name, "n_cover_per_river.txt"),
+write.csv(n_cover_per_river,
+            file.path(output_path_1, "n_cover_per_river.csv"),
             row.names = F)
 
 link_river_input <- read.table(file.path(sim_input_path, "Link_table.txt"), header = T)
@@ -288,5 +212,5 @@ cover_global_summary %>%
   dplyr::select(id_curr, x, y, nb_river_cover_points, nb_coastal_cover_points, nb_cover_points) -> nb_cover_per_input
 
 write.csv(nb_cover_per_input,
-          file = file.path(OUTPUT_PATH, sim_name, "number_of_cover_points_per_input_point.csv"),
+          file = file.path(output_path_1, "number_of_cover_points_per_input_point.csv"),
           row.names = F)
