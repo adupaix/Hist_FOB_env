@@ -142,7 +142,7 @@ get.nb.cover.per.input <- function(indexes, coastal_cover, input_points){
   # get the closest input point for each cover point
   n_cover_per_points <- summary( as.factor( input_points$id_curr[apply(dist_mat, 1, function(x) which(x == min(x)))] ))
   
-  objects.list <- list("sub_coastal_cover","x_input","x_cover","y_input","y_cover","dist_mat")
+  objects.list <- c("sub_coastal_cover","x_input","x_cover","y_input","y_cover","dist_mat")
   rm(list = objects.list) ; invisible(gc())
   
   return(n_cover_per_points)
