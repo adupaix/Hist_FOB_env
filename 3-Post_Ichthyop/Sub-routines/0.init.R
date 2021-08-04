@@ -31,6 +31,13 @@ output_path_2 <- file.path(OUTPUT_PATH, sim_name, paste0("2.ltime",ltime_method,
 dir.create(output_path_1, recursive = T, showWarnings = F)
 dir.create(output_path_2, recursive = T, showWarnings = F)
 
+# If RESET is T, delete all the output files
+if (RESET == T){
+  try(file.remove(c(list.files(output_path_1, full.names = T),
+                    list.files(output_path_2, full.names = T)),
+                  recursive = T),
+      silent = T)
+}
 
 cat("\14")
 

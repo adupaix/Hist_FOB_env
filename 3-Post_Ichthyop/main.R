@@ -106,7 +106,7 @@ year = 2000
 Parallel = c(T, 1/2)
 
 # Whether to delete the results obtained for these arguments (T) or not (F):
-RESET = F
+RESET = T
 
 # Arguments used for the ggplot:
 #-------------------------------
@@ -145,7 +145,7 @@ source(file.path(ROUT_PATH,'0.init.R'))
 #' 1. Get the cover for each input point:
 #' ****************************************
 
-if(!nCoverExists | RESET == T){
+if(!nCoverExists){
   source(file.path(ROUT_PATH,'1.link_cover_input.R'))
 }
 
