@@ -22,12 +22,12 @@ sim_output_path <- file.path(DATA_PATH, "Output_Ichthyop", sim_name)
 sim_input_path <- file.path(DATA_PATH, "Input_Ichthyop", paste0(input_location, "_nlog_input_", forcing, "_", input_method))
 
 
-cat(crayon::bold("Counting the number of cover points associated with each input point\n\n"))
+cat(crayon::bold("\n\n1. Counting the number of cover points associated with each input point\n\n"))
 
 # get the cover files names
 cover_files <- list.files(path = file.path(DATA_PATH,
                                            "forest_cover",
-                                           paste0("forest_cover_pts_", year)),
+                                           paste0("forest_cover_", year)),
                           pattern = "shp")
 
 # read the input points to add a column containing the number of cover cells associated with each point
@@ -36,7 +36,7 @@ names(input_points) <- c("x","y", "id_curr")
 input_points$nb_coastal_cover_points <- 0
 
 # build buffer of 1km around the rivers
-cat("      - Generating buffer\n")
+cat("Generating buffer\n")
 
 # add a buffer
 rivers_filtered %>% 
@@ -55,78 +55,87 @@ for (k in 1:length(cover_files)){
   
   cat("1. Link river - cover\n")
   
-  cat("  - Reading cover file\n")
+  river_cover_fname <- file.path(output_path_1, paste0("link_rivers_",sub(".shp", "", cover_files[k]),".txt"))
   
-  # read the cover file
-  read_sf(file.path(DATA_PATH,
-                    "forest_cover",
-                    paste0("forest_cover_pts_", year),
-                    cover_files[k])) %>%
-    #select only the point and the id
-    dplyr::select(id, geometry) %>%
-    # transform it to lat/long coordinates
-    st_transform(4326) -> cover_df
-  
-  
-  cat("  - Getting the cover points inside the river buffer\n")
-  #' get the points of cover which are inside the buffers
-  #' return a list with for each point, the polygons inside which the point is
-  is_within <- st_intersects(st_geometry(cover_df), st_geometry(grouped_buffer))
-  
-  
-  # unlist the result, and keep only the first value (there shouldn't be any duplicates, but just in case...)
-  unlist_is_within <- unlist(lapply(is_within, function(x) ifelse(length(x)==0, NA, x[1])))
-  
-  # test if some points are counted twice (if it happens, need to determine the rule to follow)
-  if(length(unlist_is_within) != length(is_within)){
-    stop("Error: some points are associated with several rivers at the same time")
+  if (!file.exists(river_cover_fname)){
+    
+    cat("  - Reading cover file\n")
+    
+    # read the cover file
+    read_sf(file.path(DATA_PATH,
+                      "forest_cover",
+                      paste0("forest_cover_", year),
+                      cover_files[k])) -> cover_df 
+    # #select only the point and the id
+    # dplyr::select(id, geometry) %>%
+    # # transform it to lat/long coordinates
+    # st_transform(4326) -> cover_df
+    
+    
+    cat("  - Getting the cover points inside the river buffer\n")
+    #' get the points of cover which are inside the buffers
+    #' return a list with for each point, the polygons inside which the point is
+    is_within <- st_intersects(st_geometry(cover_df), st_geometry(grouped_buffer))
+    
+    
+    # unlist the result, and keep only the first value (there shouldn't be any duplicates, but just in case...)
+    unlist_is_within <- unlist(lapply(is_within, function(x) ifelse(length(x)==0, NA, x[1])))
+    
+    # test if some points are counted twice (if it happens, we need to determine the rule to follow)
+    if(length(unlist_is_within) != length(is_within)){
+      stop("Error: some points are associated with several rivers at the same time")
+    }
+    
+    rm(is_within) ; invisible(gc())
+    
+    cat("  - Filling the cover df with the river ids\n")
+    
+    # create the column which will contain the river id
+    cover_df %>% mutate(is_within_river_buffer = NA) -> cover_df
+    
+    # fill in the river id
+    cover_df$is_within_river_buffer[which(!is.na(unlist_is_within))] <- grouped_buffer$MAIN_RIV[unlist_is_within[which(!is.na(unlist_is_within))]]
+    
+    
+    cat("  - Saving the table with the number of associated cover cells for each river\n")
+    # get MAIN_RIV ids corresponding to river ids associated with cover points
+    #' @note that one cover cell is composed of nine 30mx30m cells, hence a float (and not an integer) is contained in the nb_river_cover_points column
+    #' this float needs to be multiplied by 8100 to get a surface in m2
+    as.data.frame(xtabs(couvert ~ is_within_river_buffer, data = cover_df)) %>%
+      rename("MAIN_RIV" = "is_within_river_buffer") %>%
+      mutate(MAIN_RIV = as.numeric(as.character(MAIN_RIV))) -> river_cover_summary
+    names(river_cover_summary)[2] <- "nb_river_cover_points"
+    
+    # rivers_filtered %>%
+    #   as.data.frame() %>%
+    #   dplyr::select(HYRIV_ID, MAIN_RIV) %>%
+    #   right_join(y = cover_df, by = c("MAIN_RIV" = "is_within_river_buffer")) %>%
+    #   # get the number of cover points associated with each river mouth
+    #   group_by(MAIN_RIV) %>%
+    #   summarise(n_cover_points = n(), .groups = "keep") %>%
+    #   dplyr::filter(!is.na(MAIN_RIV)) -> river_cover_summary
+    
+    write.table(river_cover_summary,
+                file = river_cover_fname,
+                row.names = F)
+  } else {
+    
+    cat("  - Reading existing river-cover link table\n")
+    
+    river_cover_summary <- read.table(river_cover_fname, row.names = F)
   }
-  
-  rm(is_within) ; invisible(gc())
-  
-  cat("  - Filling the cover df with the river ids\n")
-  
-  # create the column which will contain the river id
-  cover_df %>% mutate(is_within_river_buffer = NA) -> cover_df
-  
-  # fill in the river id
-  cover_df$is_within_river_buffer[which(!is.na(unlist_is_within))] <- grouped_buffer$MAIN_RIV[unlist_is_within[which(!is.na(unlist_is_within))]]
-  
-  
-  cat("  - Saving the table with the number of associated cover cells for each river\n")
-  # get MAIN_RIV ids corresponding to river ids associated with cover points
-  # suppressWarnings is used because the as.numeric part introduces NAs (it's what we want, we don't care about the warning)
-  suppressWarnings(
-  as.data.frame(summary(as.factor(cover_df$is_within_river_buffer))) %>%
-    tibble::rownames_to_column(var = "MAIN_RIV") %>% mutate(MAIN_RIV = as.numeric(MAIN_RIV)) %>%
-    dplyr::filter(!is.na(MAIN_RIV)) -> river_cover_summary
-  )
-  names(river_cover_summary)[2] <- "nb_river_cover_points"
-  
-  # rivers_filtered %>%
-  #   as.data.frame() %>%
-  #   dplyr::select(HYRIV_ID, MAIN_RIV) %>%
-  #   right_join(y = cover_df, by = c("MAIN_RIV" = "is_within_river_buffer")) %>%
-  #   # get the number of cover points associated with each river mouth
-  #   group_by(MAIN_RIV) %>%
-  #   summarise(n_cover_points = n(), .groups = "keep") %>%
-  #   dplyr::filter(!is.na(MAIN_RIV)) -> river_cover_summary
-  
-  write.table(river_cover_summary,
-              file = file.path(output_path_1, paste0("link_rivers_",sub(".shp", "", cover_files[k]),".txt")),
-              row.names = F)
   
   
   cat("2. Link input - coastal cover\n")
   
-  cat("  - Filter: keep only coastal cover points")
+  cat("  - Filter: keep only coastal cover points\n")
   
   cover_df %>%
     dplyr::filter(is.na(is_within_river_buffer)) -> coastal_cover
   
   rm(cover_df) ; invisible(gc())
   
-  cat("  - Get input points associated with cover cells")
+  cat("  - Get input points associated with cover cells\n")
   
   sample_size <- 1000
   
