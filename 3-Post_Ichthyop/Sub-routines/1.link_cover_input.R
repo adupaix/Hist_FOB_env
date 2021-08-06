@@ -24,6 +24,8 @@ sim_input_path <- file.path(DATA_PATH, "Input_Ichthyop", paste0(input_location, 
 
 cat(crayon::bold("\n\n1. Counting the number of cover points associated with each input point\n\n"))
 
+if(!nCoverExists){
+
 # get the cover files names
 cover_files <- list.files(path = file.path(DATA_PATH,
                                            "forest_cover",
@@ -71,6 +73,10 @@ for (k in 1:length(cover_files)){
     # # transform it to lat/long coordinates
     # st_transform(4326) -> cover_df
     
+    # test if the forest cover shp is in the right format
+    if(!identical(as.numeric(1:9), as.numeric(levels(as.factor(cover_df$couvert))))){
+      stop("Error: wrong forest cover file format (levels different from 1:9)")
+    }
     
     cat("  - Getting the cover points inside the river buffer\n")
     #' get the points of cover which are inside the buffers
@@ -223,3 +229,11 @@ cover_global_summary %>%
 write.csv(nb_cover_per_input,
           file = file.path(output_path_1, "number_of_cover_points_per_input_point.csv"),
           row.names = F)
+
+} else {
+  
+  cat("Reading existing file\n")
+  
+  nb_cover_per_input <- read.csv(file = file.path(output_path_1, "number_of_cover_points_per_input_point.csv"))
+  
+}
