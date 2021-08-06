@@ -34,13 +34,13 @@ ltime=360
 ltime_method = 2
 ltime_sd = 30 # in days
 
-#'## weight_method (num): method used to give weight to input points
+#'## weight_method (num): method used to give weight to release points
 #'   1. homogeneous weight for each particle
 #'   2. weight proportional to mean water discharge of rivers
-#'   3. weight proportional to the percentage of forest cover in the river basin
-#'   4. weight proportional to the surface of forest cover in the river basin
-#'   5. weight proportional to the precipitations
-weight_method = 2
+#'   3. weight proportional to the percentage of forest cover associated with the release point
+#'   4. weight proportional to the surface of forest cover in the river basins associated with the release point
+#'   5. weight proportional to the precipitations at the release point
+weight_method = 3
 
 ### size of the grid cells used (either 1, 2 or 5)
 gsize = 2
