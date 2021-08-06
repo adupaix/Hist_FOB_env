@@ -19,7 +19,7 @@ FUNC_PATH <- file.path(WD,"Functions")
 ROUT_PATH <- file.path(WD, "Sub-routines")
 RESOURCE_PATH <- file.path(WD,"Resources")
 
-set.seed(10) # set for reproductibility (lognormale distribution in apply.ltime.1)
+set.seed(10) # set for reproductibility (normale distribution in apply.ltime.1)
 
 #' @arguments :
 #' **********
@@ -34,13 +34,13 @@ ltime=360
 ltime_method = 2
 ltime_sd = 30 # in days
 
-### weight_method (num): method used to give weight to input points
-# can be different from one only if the input_location is river
-#   1. homogeneous weight for each particle
-#   2. weight proportional to mean water discharge of rivers
-#   3. weight proportional to the percentage of forest cover in the river basin
-#   4. weight proportional to the surface of forest cover in the river basin
-weight_method = 1
+#'## weight_method (num): method used to give weight to input points
+#'   1. homogeneous weight for each particle
+#'   2. weight proportional to mean water discharge of rivers
+#'   3. weight proportional to the percentage of forest cover in the river basin
+#'   4. weight proportional to the surface of forest cover in the river basin
+#'   5. weight proportional to the precipitations
+weight_method = 2
 
 ### size of the grid cells used (either 1, 2 or 5)
 gsize = 2
@@ -95,6 +95,9 @@ bouncing=F
 ### Year of the simulation
 year = 2000
 
+## number of simulations saved in each sub-directory of Ichthyop output
+n_points_per_dir = 28*8*5
+
 ## Run in parallel ?
 # First element of the vector:
 #    If F, runs in sequential
@@ -106,7 +109,7 @@ year = 2000
 Parallel = c(T, 1/2)
 
 # Whether to delete the results obtained for these arguments (T) or not (F):
-RESET = T
+RESET = F
 
 # Arguments used for the ggplot:
 #-------------------------------
@@ -145,12 +148,10 @@ source(file.path(ROUT_PATH,'0.init.R'))
 #' 1. Get the cover for each input point:
 #' ****************************************
 
-if(!nCoverExists){
-  source(file.path(ROUT_PATH,'1.link_cover_input.R'))
-}
-
+source(file.path(ROUT_PATH,'1.link_cover_input.R'))
 
 
 #' 2. Weight matrices according to the chosen method:
 #' **************************************************
 
+source(file.path(ROUT_PATH, "2.information_on_point.R"))
