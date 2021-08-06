@@ -25,8 +25,8 @@ sim_name <- generate.sim_name(forcing,
                                 bouncing)
   
 # Create output folder
-output_path_1 <- file.path(OUTPUT_PATH, sim_name, "1.nb_cover")
-output_path_2 <- file.path(OUTPUT_PATH, sim_name, paste0("2.ltime",ltime_method,"-",ltime,"_w",weight_method,
+output_path_1 <- file.path(OUTPUT_PATH, sim_name, year, "1.nb_cover")
+output_path_2 <- file.path(OUTPUT_PATH, sim_name, year, paste0("2.points_info_w",weight_method,
                                                          ifelse(is.null(thr_disch), "_no-thr-disch", paste0("_thr-disch",thr_disch))))
 dir.create(output_path_1, recursive = T, showWarnings = F)
 dir.create(output_path_2, recursive = T, showWarnings = F)
@@ -87,7 +87,7 @@ nCoverPoints <- file.path(output_path_1, "number_of_cover_points_per_input_point
 # meanPlotListName <- file.path(NEW_OUTPUT_PATH, paste0("Per_",agg.time_scale,"_2.mean_maps.rds"))
 # mapName <- file.path(NEW_OUTPUT_PATH, paste0("Per_",agg.time_scale,"_maps.png"))
 
-# Logical to know if files exist (to know if they have to be deleted in case any RESET is true)
+# Logical to know if files exist
 nCoverExists <- file.exists(nCoverPoints)
 
 # For parallel study:
