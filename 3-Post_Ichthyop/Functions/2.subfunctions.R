@@ -154,7 +154,7 @@ add.weight <- function(point, weight_method){
     
     # method 4: apply a weight depending on the area covered by forest in the river basins
   } else if (weight_method == 4){
-    point$weight <- sum(point$rivers$cover * point$rivers$dis_m3_pyr)
+    point$weight <- sum(point$rivers$cover)
   
     # method 5: apply a weight depending on the precipitations at the release point
   } else if (weight_method == 5){
