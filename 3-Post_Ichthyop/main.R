@@ -37,7 +37,7 @@ ltime_sd = 30 # in days
 #'## weight_method (num): method used to give weight to release points
 #'   1. homogeneous weight for each particle
 #'   2. weight proportional to mean water discharge of rivers
-#'   3. weight proportional to the percentage of forest cover associated with the release point
+#'   3. weight proportional to the surface of forest cover associated with the release point
 #'   4. weight proportional to the surface of forest cover in the river basins associated with the release point
 #'   5. weight proportional to the precipitations at the release point
 weight_method = 3
@@ -58,8 +58,8 @@ thr_disch = 100
 
 ### origin of the time in the output results
 # normally will not be used, as it is saved in the attributes of time by Ichthyop
-# except for simulations with PHILIN75.L12, where because the product mask is bad,
-# I had to overide the reading of attributes by Ichthyop
+# except for some simulations where a problem occured with the Ichthyop version,
+# hence I had to overide the reading of attributes by Ichthyop
 ## !! the format of origin_time has to be kept as it is
 origin_time = "year 1900 month 01 day 01 at 00:00"
 
@@ -92,20 +92,19 @@ dispersion=9
 #                                                                                         
 bouncing=F
 
-### Year of the simulation
+#'# Year of the simulation
 year = 2000
 
-## number of simulations saved in each sub-directory of Ichthyop output
+#'# number of simulations saved in each sub-directory of Ichthyop output
 n_points_per_dir = 28*8*5
 
-## Run in parallel ?
-# First element of the vector:
-#    If F, runs in sequential
-#    if T, runs in parallel
-# Second element of the vector: fraction of the cores to be used
-#
-## !! One part of the script can rapidly fill the RAM memory, to be taken into account when choose to run in parallel or not
-## !! If the script is running on a Windows machine, the script is executed in sequential
+#'# Run in parallel ?
+#' First element of the vector:
+#'    If F, runs in sequential
+#'    if T, runs in parallel
+#' Second element of the vector: fraction of the number of cores to be used
+#'
+#'# @!! If the script is running on a Windows machine, the script is executed in sequential
 Parallel = c(T, 1/2)
 
 # Whether to delete the results obtained for these arguments (T) or not (F):
