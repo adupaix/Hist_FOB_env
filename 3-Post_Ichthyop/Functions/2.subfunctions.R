@@ -164,35 +164,3 @@ add.weight <- function(point, weight_method){
   return(point)
 }
 
-
-#'@sub-function 7
-#'***************
-#' apply the mortality on the density map (modify point$data)
-
-apply.mortality <- function(point, ltime, ltime_method, sd = 30){
-  
-  timestep <- as.POSIXct(dimnames(point$data)[[3]][2]) - as.POSIXct(dimnames(point$data)[[3]][1])
-  
-  total_time_sim <- dim(point$data)[3]
-  
-  if (ltime_method == 1){
-    
-    x <- seq(1, total_time_sim, 1)
-    
-    prop_alive <- 1 - cumsum(dnorm(x, ltime/as.numeric(timestep), sd/as.numeric(timestep)))
-    
-  } else if (ltime_method == 2){
-    
-    prop_alive <- c( rep(1, ltime/as.numeric(timestep)), rep(0, (total_time_sim-ltime)/as.numeric(timestep)))
-    
-  }
-  
-  # multiply the matrix of each timestep by the proportion of particles alive
-  point$data <- sweep(point$data, 3, prop_alive, "*")
-  
-  # delete dates when no particles are left, to gain space
-  has_particles_left <- apply(point$data, 3, sum) != 0
-  point$data <- point$data[,,which(has_particles_left)]
-  
-  return(point)
-}
