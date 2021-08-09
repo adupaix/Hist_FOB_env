@@ -9,7 +9,7 @@
 #'#*******************************************************************************************************************
 
 rm(list = ls())
-gc()
+invisible(gc())
 
 WD <- file.path(getwd(),'3-Post_Ichthyop')
 DATA_PATH <- file.path(getwd(),'0-Data')
@@ -31,7 +31,7 @@ set.seed(10) # set for reproductibility (normale distribution in apply.ltime.1)
 #                                                      2. life time fixed at ltime
 ### ltime_sd (num): standard deviation of the normal law, if ltime_method = 1
 ltime=360
-ltime_method = 2
+ltime_method = 1
 ltime_sd = 30 # in days
 
 #'## weight_method (num): method used to give weight to release points
@@ -40,14 +40,10 @@ ltime_sd = 30 # in days
 #'   3. weight proportional to the surface of forest cover associated with the release point
 #'   4. weight proportional to the surface of forest cover in the river basins associated with the release point
 #'   5. weight proportional to the precipitations at the release point
-weight_method = 3
+weight_method = 1
 
 ### size of the grid cells used (either 1, 2 or 5)
 gsize = 2
-
-### time scale used to aggregate the dates (day, month, quarter or year)
-## !! quarter start in December: for example, first quarter of 2012 is from 12.2011 to 02.2012 included
-# agg.time_scale = "day"
 
 #'## the mean water discharge of the input river is used as a filter 
 #' only particles originating from a river with a maximum value > thr_disch (in m3/s) are kept 
@@ -59,7 +55,7 @@ thr_disch = 100
 ### origin of the time in the output results
 # normally will not be used, as it is saved in the attributes of time by Ichthyop
 # except for some simulations where a problem occured with the Ichthyop version,
-# hence I had to overide the reading of attributes by Ichthyop
+# hence I had to override the reading of attributes by Ichthyop
 ## !! the format of origin_time has to be kept as it is
 origin_time = "year 1900 month 01 day 01 at 00:00"
 
@@ -78,10 +74,6 @@ input_method = "allMask"
 
 ### dist (num): distance specified if the input_method above is 'kFromCoast'
 dist=100
-
-# !!! DELETED !!! Rename the old simulation outputs (delete "_ts6" from the name)
-# ### timestep (num): time step in ICHTHYOP simulation
-# timestep=6
 
 ### dispersion (num): dispersion coefficient in ICHTHYOP simulation. Enter 9 for 10^-9, and 
 #                   0 for no dispersion
@@ -104,27 +96,32 @@ n_points_per_dir = 28*8*5
 #'    if T, runs in parallel
 #' Second element of the vector: fraction of the number of cores to be used
 #'
-#'# @!! If the script is running on a Windows machine, the script is executed in sequential
+#'# @!! If the script is running on a Windows machine, the script is executed sequentially
 Parallel = c(T, 1/2)
 
-# Whether to delete the results obtained for these arguments (T) or not (F):
-RESET = F
+#' Whether to delete the results obtained for these arguments (T) or not (F):
+#'  each element of RESET concerns the outputs obtained from the corresponding sub-routine (1 to 4)
+RESET = c(F,F,T,T)
 
 # Arguments used for the ggplot:
 #-------------------------------
+### time scale used to aggregate the dates (month, quarter or year)
+## !! quarter starts in December: for example, first quarter of 2012 is from 12.2011 to 02.2012 included
+agg.time_scale = "month"
+
 # specify if the color scale is log transformed (T) or not (F)
-# log_color_scale = F
+log_color_scale = F
 
 # choose to fix the max of the color scale
 # if = F, the max is not fixed
 # if T, the max is fixed at the maximum value of the array
-# common_scale_max = T
+common_scale_max = T
 
 # specify the position of the color legend, one of c("null", "in_panel", "out_panel")
 # "null": no color legend shown
 # "in_panel": color legend in the bottom right corner of the map
 # "out_panel": color legend out of the map, on the right
-# color_scale_pos = "out_panel"
+color_scale_pos = "out_panel"
 
 
 #' Get libraries:
@@ -133,7 +130,7 @@ RESET = F
 source(file.path(FUNC_PATH, "install_libraries.R"))
 
 srcUsedPackages <- c("RNetCDF","RANN","raster","foreach","tictoc","pryr","plyr","lubridate","parallel","crayon",
-                     "dplyr","sf","ggplot2","ggspatial", "doParallel", "ggpubr","abind", "progress")
+                     "dplyr","sf","ggplot2","ggspatial", "doParallel", "ggpubr","abind", "progress","tidyr", "doSNOW")
 
 installAndLoad_packages(srcUsedPackages, loadPackages = TRUE)
 
@@ -150,7 +147,17 @@ source(file.path(ROUT_PATH,'0.init.R'))
 source(file.path(ROUT_PATH,'1.link_cover_input.R'))
 
 
-#' 2. Weight matrices according to the chosen method:
+#' 2. Calculate weights depending on the chosen method:
 #' **************************************************
 
 source(file.path(ROUT_PATH, "2.information_on_point.R"))
+
+#' 3. Apply weights and mortality:
+#' ******************************
+
+source(file.path(ROUT_PATH, "3.weight_and_mortality.R"))
+
+#' 4. Build maps:
+#' ***************
+
+source(file.path(ROUT_PATH, "4.build_maps.R"))
