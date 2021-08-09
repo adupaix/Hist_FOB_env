@@ -14,15 +14,13 @@
 
 #'@arguments
 #'**********
-# year = 2000 # year of the cover to be used
 
 buffer_size = 10^3 #in m
 
 sim_output_path <- file.path(DATA_PATH, "Output_Ichthyop", sim_name)
 sim_input_path <- file.path(DATA_PATH, "Input_Ichthyop", paste0(input_location, "_nlog_input_", forcing, "_", input_method))
 
-
-cat(crayon::bold("\n\n1. Counting the number of cover points associated with each input point\n\n"))
+msg <- crayon::bold("\n\n1. Counting the number of cover points associated with each input point\n\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
 if(!nCoverExists){
 
@@ -38,7 +36,7 @@ names(input_points) <- c("x","y", "id_curr")
 input_points$nb_coastal_cover_points <- 0
 
 # build buffer of 1km around the rivers
-cat("Generating buffer\n")
+msg <- "Generating buffer\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
 # add a buffer
 rivers_filtered %>% 
@@ -53,15 +51,15 @@ rivers_filtered %>%
 
 for (k in 1:length(cover_files)){
   
-  cat(crayon::bold("\nCover file n",k,"/",length(cover_files),"\n"))
+  msg <- crayon::bold("\nCover file n",k,"/",length(cover_files),"\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
-  cat("1. Link river - cover\n")
+  msg <- "1. Link river - cover\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
   river_cover_fname <- file.path(output_path_1, paste0("link_rivers_",sub(".shp", "", cover_files[k]),".txt"))
   
   if (!file.exists(river_cover_fname)){
     
-    cat("  - Reading cover file\n")
+    msg <- "  - Reading cover file\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
     
     # read the cover file
     read_sf(file.path(DATA_PATH,
@@ -78,7 +76,7 @@ for (k in 1:length(cover_files)){
       stop("Error: wrong forest cover file format (levels different from 1:9)")
     }
     
-    cat("  - Getting the cover points inside the river buffer\n")
+    msg <- "  - Getting the cover points inside the river buffer\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
     #' get the points of cover which are inside the buffers
     #' return a list with for each point, the polygons inside which the point is
     is_within <- st_intersects(st_geometry(cover_df), st_geometry(grouped_buffer))
@@ -94,7 +92,7 @@ for (k in 1:length(cover_files)){
     
     rm(is_within) ; invisible(gc())
     
-    cat("  - Filling the cover df with the river ids\n")
+    msg <- "  - Filling the cover df with the river ids\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
     
     # create the column which will contain the river id
     cover_df %>% mutate(is_within_river_buffer = NA) -> cover_df
@@ -103,7 +101,7 @@ for (k in 1:length(cover_files)){
     cover_df$is_within_river_buffer[which(!is.na(unlist_is_within))] <- grouped_buffer$MAIN_RIV[unlist_is_within[which(!is.na(unlist_is_within))]]
     
     
-    cat("  - Saving the table with the number of associated cover cells for each river\n")
+    msg <- "  - Saving the table with the number of associated cover cells for each river\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
     # get MAIN_RIV ids corresponding to river ids associated with cover points
     #' @note that one cover cell is composed of nine 30mx30m cells, hence a float (and not an integer) is contained in the nb_river_cover_points column
     #' this float needs to be multiplied by 8100 to get a surface in m2
@@ -126,22 +124,22 @@ for (k in 1:length(cover_files)){
                 row.names = F)
   } else {
     
-    cat("  - Reading existing river-cover link table\n")
+    msg <- "  - Reading existing river-cover link table\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
     
     river_cover_summary <- read.table(river_cover_fname, row.names = F)
   }
   
   
-  cat("2. Link input - coastal cover\n")
+  msg <- "2. Link input - coastal cover\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
-  cat("  - Filter: keep only coastal cover points\n")
+  msg <- "  - Filter: keep only coastal cover points\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
   cover_df %>%
     dplyr::filter(is.na(is_within_river_buffer)) -> coastal_cover
   
   rm(cover_df) ; invisible(gc())
   
-  cat("  - Get input points associated with cover cells\n")
+  msg <- "  - Get input points associated with cover cells\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
   sample_size <- 1000
   
@@ -185,7 +183,7 @@ for (k in 1:length(cover_files)){
 }
 
 
-cat("3. Merge coastal and river information\n")
+msg <- "3. Merge coastal and river information\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
 link_riv_cov_files <- list.files(output_path_1, pattern = "link_rivers_")
 
@@ -230,9 +228,14 @@ write.csv(nb_cover_per_input,
           file = file.path(output_path_1, "number_of_cover_points_per_input_point.csv"),
           row.names = F)
 
+#' save a log
+sink(logName1, append = F)
+cat("Execution time :", format(Sys.time()))
+sink()
+
 } else {
   
-  cat("Reading existing file\n")
+  msg <- "Reading existing file\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
   nb_cover_per_input <- read.csv(file = file.path(output_path_1, "number_of_cover_points_per_input_point.csv"))
   
