@@ -23,7 +23,6 @@ sim_name <- generate.sim_name(forcing,
                                 input_location,
                                 input_method,
                                 dist,
-                                dispersion,
                                 bouncing)
   
 # Create output folder

@@ -52,14 +52,6 @@ gsize = 2
 #'@!! a threshold of 100 m3/s was used to map the forest cover around the rivers
 thr_disch = 100
 
-### origin of the time in the output results
-# normally will not be used, as it is saved in the attributes of time by Ichthyop
-# except for some simulations where a problem occured with the Ichthyop version,
-# hence I had to override the reading of attributes by Ichthyop
-## !! the format of origin_time has to be kept as it is
-origin_time = "year 1900 month 01 day 01 at 00:00"
-
-
 # Arguments used for the Ichthyop simulation
 #-------------------------------------------
 ### forcing (chr): forcing product used in ICHTHYOP simulation (oscar/globcurrent/nemo)     
@@ -74,10 +66,6 @@ input_method = "allMask"
 
 ### dist (num): distance specified if the input_method above is 'kFromCoast'
 dist=100
-
-### dispersion (num): dispersion coefficient in ICHTHYOP simulation. Enter 9 for 10^-9, and 
-#                   0 for no dispersion
-dispersion=9
 
 ### bouncing (log): weither the particles in the ICHTHYOP simulation were bouncing on coast 
 #                 (TRUE) or if they were beaching (FALSE, default)                        

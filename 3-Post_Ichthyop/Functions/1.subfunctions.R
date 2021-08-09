@@ -23,7 +23,6 @@ generate.sim_name <- function(forcing,
                               input_location,
                               input_method,
                               dist,
-                              dispersion,
                               bouncing,
                               ltime = 0,
                               ltime_method = 0){
@@ -36,8 +35,6 @@ generate.sim_name <- function(forcing,
     sim_name <- paste0(sim_name, "_", input_method)
   }
   
-  # sim_name <- paste0(sim_name,"_d",dispersion)
-  
   if (bouncing == T){
     sim_name <- paste0(sim_name,"_bouncing")
   }
@@ -49,35 +46,6 @@ generate.sim_name <- function(forcing,
   return(sim_name)
   
 }
-
-#######################################################################################
-#                     GENERATE WEIGHTS DEPENDING ON THE CHOSEN METHOD                 #
-#######################################################################################
-# 
-# 
-# get.weight <- function(init_pos, weight_method = 1){
-#   
-#   # method 1 : don't apply any weight
-#   if (weight_method == 1 | input_location == "mangrove"){
-#     return(rep(1, dim(init_pos)[1])) 
-#   
-#   # method 2 : apply a weight depending on the water discharge of the river
-#   }  else if (weight_method==2){
-#     return(init_pos$dis_m3_pyr)
-#   
-#   # method 3: apply a weight depending on the percentage of the river basin covered by forest
-#   } else if (weight_method == 3){
-#     return(init_pos$for_pc_use)
-#   
-#   # method 4: apply a weight depending on the area covered by forest in the river basin
-#     # (percentage of forest * river area in km2)
-#   } else if (weight_method == 4){
-#     return(init_pos$for_km_usu)
-#   }
-#   
-# }
-
-
 
 #######################################################################################
 #                     CREATE AN EMPTY RASTER IN THE INDIAN OCEAN                      #
