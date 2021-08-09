@@ -1,146 +1,53 @@
+#'@sub-function 1
+#'***************
+#' apply the mortality on the density map (modify array.k)
 
-
-#######################################################################################
-#               FROM ONE MATRIX OF THE ARRAY RETURNS A GGPLOT                         #
-#######################################################################################
-# ARGUMENTS:                                                                          #
-#                                                                                     #
-# OUTPUT: ggplot                                                                      #
-#######################################################################################
-
-matrix.to.ggplot <- function(array.i, dimname.i, gsize,
-                             log_color_scale, fixed_scale_max,
-                             color_scale_pos){
+apply.mortality <- function(array.k, ltime, ltime_method, sd = 30){
   
-  r.i <- raster(array.i)
-  extent(r.i) <- extent(create.raster(gsize))
+  timestep <- as.POSIXct(dimnames(array.k)[[3]][2]) - as.POSIXct(dimnames(array.k)[[3]][1])
   
-  # df from the raster
-  df.i <- as.data.frame(r.i, xy = TRUE)
+  total_time_sim <- dim(array.k)[3]
   
-  ### PLOT
-  p <- build.ggplot(df = df.i, titre = dimname.i, col_title = "Mean number\nof particles",
-                    log_color_scale, fixed_scale_max, color_scale_pos)
+  if (ltime_method == 1){
+    
+    x <- seq(1, total_time_sim, 1)
+    
+    prop_alive <- round( 1 - cumsum(dnorm(x, ltime/as.numeric(timestep), sd/as.numeric(timestep))), digits = 4 )
+    
+  } else if (ltime_method == 2){
+    
+    prop_alive <- c( rep(1, ltime/as.numeric(timestep)), rep(0, (total_time_sim-ltime)/as.numeric(timestep)))
+    
+  }
   
-  return(p)
+  # multiply the matrix of each timestep by the proportion of particles alive
+  array.k <- sweep(array.k, 3, prop_alive, "*")
   
+  # delete dates when no particles are left, to gain space
+  has_particles_left <- apply(array.k, 3, sum) != 0
+  array.k <- array.k[,,which(has_particles_left)]
+  
+  return(array.k)
 }
 
+#'@sub-function 2
+#'***************
+#' function to comibne arrays in the foreach loop
 
-#######################################################################################
-#                          GENERATES THE GGPLOT                                       #
-#######################################################################################
-# ARGUMENTS:                                                                          #
-# df (data.frame): obtained from the raster containing one time_scale of the array    #
-# titre (chr): title of the ggplot                                                    #
-# col_title (chr): title of the colour legend                                         #
-# log_color_scale (log): color scale linear or with log10 transformation              #
-# color_scale_pos (chr): position of the color scale, either inside the map, outside  #
-#                        or no color scale                                            #
-#                                                                                     #
-# OUTPUT: ggplot                                                                      #
-#######################################################################################
-
-build.ggplot <- function(df, titre, col_title, log_color_scale, fixed_scale_max,
-                         color_scale_pos){
+f.for.combining <- function(x,y){
   
-  # get the max of the color scale
-  if (fixed_scale_max != 0){
-    max = fixed_scale_max
-  } else{
-    max = max(df$layer[is.na(df$layer) == FALSE &
-                         is.infinite(df$layer) == FALSE])
-  }
-  
-  if (log_color_scale == T){
-    min = min(df$layer[is.na(df$layer) == FALSE &
-                         is.infinite(df$layer) == FALSE &
-                         df$layer != 0])
-  }
-  
-  p <- ggplot() +
-    geom_sf() +
-    coord_sf(
-      xlim = c(35, 120),
-      ylim = c(-30, 25),
-      expand = FALSE,
-      crs = st_crs(4326)
-    ) +
-    geom_raster(data = df, aes(x, y, fill = layer)) +
-    borders(fill = "grey30", colour = "grey30")
-  
-  ### Echelle de couleur
-  # transformation log
-  if (log_color_scale == T){
-    p <- p + scale_fill_gradientn(
-      trans = "log10",
-      colors = c("gray80", "blue", "yellow", "red"),
-      name = col_title,
-      limits = c(min, max))
-    #sans transformation log
+  if(!identical(dim(x),dim(y))){
+    if (dim(x)[3] > dim(y)[3]){
+      x2 <- x
+      y2 <- abind::abind(y, array(0, dim = c(dim(y)[1:2],dim(x)[3]-dim(y)[3])))
+    } else {
+      x2 <- y
+      y2 <- abind::abind(x, array(0, dim = c(dim(x)[1:2],dim(y)[3]-dim(x)[3])))
+    }
   } else {
-    p <- p + scale_fill_gradientn(
-      colors = c("gray80", "blue", "yellow", "red"),
-      name = col_title,
-      limits = c(0,max))
+    x2 <- x
+    y2 <- y
   }
   
-  
-  
-  p <- p + labs(title = titre) +
-    xlab("Longitude") +
-    ylab("Latitude") +
-    theme(plot.title = element_text(hjust = 0.5),
-          legend.title = element_text(hjust = 0.5)) +
-    # echelle distance
-    annotation_scale(location = "bl", width_hint = 0.5) +
-    # fleche nord
-    annotation_north_arrow(
-      location = "tr",
-      which_north = "true",
-      pad_x = unit(0.75, "in"),
-      pad_y = unit(0.5, "in"),
-      style = north_arrow_fancy_orienteering
-    )
-  
-  
-  ### Position de la legend de couleur
-  # pas de legende
-  if (color_scale_pos == "null"){
-    p <- p + guides(fill = F)
-    
-    # legend a l'interieur de la carte
-  } else if (color_scale_pos == "in_panel"){
-    # legende a l interieur
-    p <- p + theme(
-      panel.border = element_rect(colour = "black", fill = NA),
-      legend.position = c(1, 0),
-      legend.justification = c(1, 0),
-      legend.background = element_rect(
-        fill = "white",
-        linetype = "solid",
-        colour = "black"
-      ),
-      legend.title.align = .5
-    )
-    
-    # legende a l exterieur de la carte
-  } else if (color_scale_pos == "out_panel"){
-    p <- p + theme(
-      panel.border = element_rect(colour = "black", fill = NA),
-      # legend.position = c(1, 0),
-      # legend.justification = c(1, 0),
-      legend.background = element_rect(
-        fill = "white",
-        linetype = "solid",
-        colour = "black"
-      ),
-      legend.title.align = .5
-    )
-  }
-  
-  
-  
-  return(p)
-  
+  return(sweep(x2, 1:3, y2, "+"))
 }
