@@ -15,6 +15,8 @@
 # source(file.path(FUNC_PATH, "1.read.river.data.R"))
 source(file.path(FUNC_PATH, "1.subfunctions.R"))
 source(file.path(FUNC_PATH,'2.subfunctions.R'))
+source(file.path(FUNC_PATH,'3.subfunctions.R'))
+source(file.path(FUNC_PATH,'4.subfunctions.R'))
 
 # Create the name of the simulation from the arguments
 sim_name <- generate.sim_name(forcing,
@@ -26,30 +28,50 @@ sim_name <- generate.sim_name(forcing,
   
 # Create output folder
 output_path_1 <- file.path(OUTPUT_PATH, sim_name, year, "1.nb_cover")
-output_path_2 <- file.path(OUTPUT_PATH, sim_name, year, paste0("2.points_info_w",weight_method,
-                                                         ifelse(is.null(thr_disch), "_no-thr-disch", paste0("_thr-disch",thr_disch))))
+output_path_2_more <- file.path(OUTPUT_PATH, sim_name, year, paste0("w",weight_method,
+                                                                    "ltime",ltime_method,"-",ltime,"-sd",ltime_sd,
+                                                                    ifelse(is.null(thr_disch), "_no-thr-disch", paste0("_thr-disch",thr_disch))))
+output_path_2 <- file.path(output_path_2_more, "2.info_on_points")
+output_path_3 <- file.path(output_path_2_more, "3.arrays_by_release_date")
+output_path_4 <- file.path(output_path_2_more, paste0("4.maps_",agg.time_scale))
 dir.create(output_path_1, recursive = T, showWarnings = F)
 dir.create(output_path_2, recursive = T, showWarnings = F)
+dir.create(output_path_3, recursive = T, showWarnings = F)
+dir.create(output_path_4, recursive = T, showWarnings = F)
 
 # If RESET is T, delete all the output files
-if (RESET == T){
-  try(file.remove(c(list.files(output_path_1, full.names = T),
-                    list.files(output_path_2, full.names = T)),
+if (RESET[1] == T){
+  try(file.remove(list.files(output_path_1, full.names = T),
+                  recursive = T),
+      silent = T)
+} else if (RESET[2] == T){
+  try(file.remove(list.files(output_path_2, full.names = T),
+                  recursive = T),
+      silent = T)
+} else if (RESET[3] == T){
+  try(file.remove(list.files(output_path_3, full.names = T),
+                  recursive = T),
+      silent = T)
+} else if (RESET[4] == T){
+  try(file.remove(list.files(output_path_4, full.names = T),
                   recursive = T),
       silent = T)
 }
 
-cat("\14")
+lines.to.cat <- c()
+
+msg <- "\14" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
 #'@read_rivers
 #'**********
-cat(bold("0. Initializing:\n\n"))
-cat("Reading and filtering rivers file\n")
-cat("    - Reading\n")
+
+msg <- bold("0. Initializing:\n\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+msg <- "Reading and filtering rivers file\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+msg <- "    - Reading\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
 rivers_IO <- readRDS(file.path(DATA_PATH, "river_data", "rivers_IO.rds"))
 
-cat("    - Filtering\n")
+msg <- "    - Filtering\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
 #' filter rivers
 rivers_IO %>%
@@ -77,18 +99,24 @@ rivers_IO %>%
   ) -> rivers_filtered
 
 #' Create output files names
+logName1 <- file.path(output_path_1, "log.txt")
 nCoverPoints <- file.path(output_path_1, "number_of_cover_points_per_input_point.csv")
-#' 
-# logName <- file.path(NEW_OUTPUT_PATH, paste0("Per_",agg.time_scale,"_0.log.txt"))
-# globalName <- file.path(NEW_OUTPUT_PATH, "1.global_array.rds")
-# meanAggName <- file.path(NEW_OUTPUT_PATH, paste0("Per_",agg.time_scale,"_2.mean_aggregated_array.rds"))
-# aggregateName <- file.path(NEW_OUTPUT_PATH, paste0("Per_",agg.time_scale,"_3.aggregated_array.rds"))
-# plotListName <- file.path(NEW_OUTPUT_PATH, paste0("Per_",agg.time_scale,"_3.maps.rds"))
-# meanPlotListName <- file.path(NEW_OUTPUT_PATH, paste0("Per_",agg.time_scale,"_2.mean_maps.rds"))
-# mapName <- file.path(NEW_OUTPUT_PATH, paste0("Per_",agg.time_scale,"_maps.png"))
 
-# Logical to know if files exist
+logName2 <- file.path(output_path_2, "log.txt")
+weightInput <- c(file.path(output_path_2, "weight_per_points_matrix.csv"),
+                 file.path(output_path_2, "weight_per_points_matrix.csv"))
+
+logName3 <- file.path(output_path_3, "log.txt")
+
+logName4 <- file.path(output_path_4, "log.txt")
+plotListName <- file.path(output_path_4, "plot_list.rds")
+pngMapsName <- file.path(output_path_4, paste0(agg.time_scale,"ly_maps.png"))
+
+# Logical to know if output files exist
 nCoverExists <- file.exists(nCoverPoints)
+weightExists <- all(file.exists(weightInput))
+log3Exists <- file.exists(logName3)
+log4Exists <- file.exists(logName4)
 
 # For parallel study:
 # On Windows, or if don't want to parralelize, set cores number to 1
