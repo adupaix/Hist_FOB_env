@@ -28,7 +28,7 @@ sim_name <- generate.sim_name(forcing,
 # Create output folder
 output_path_1 <- file.path(OUTPUT_PATH, sim_name, year, "1.nb_cover")
 output_path_2_more <- file.path(OUTPUT_PATH, sim_name, year, paste0("w",weight_method,
-                                                                    "ltime",ltime_method,"-",ltime,"-sd",ltime_sd,
+                                                                    "_ltime",ltime_method,"-",ltime,"-sd",ltime_sd,
                                                                     ifelse(is.null(thr_disch), "_no-thr-disch", paste0("_thr-disch",thr_disch))))
 output_path_2 <- file.path(output_path_2_more, "2.info_on_points")
 output_path_3 <- file.path(output_path_2_more, "3.arrays_by_release_date")
@@ -40,20 +40,20 @@ dir.create(output_path_4, recursive = T, showWarnings = F)
 
 # If RESET is T, delete all the output files
 if (RESET[1] == T){
-  try(file.remove(list.files(output_path_1, full.names = T),
-                  recursive = T),
+  try(unlink(list.files(output_path_1, full.names = T),
+             recursive = T),
       silent = T)
 } else if (RESET[2] == T){
-  try(file.remove(list.files(output_path_2, full.names = T),
-                  recursive = T),
+  try(unlink(list.files(output_path_2, full.names = T),
+             recursive = T),
       silent = T)
 } else if (RESET[3] == T){
-  try(file.remove(list.files(output_path_3, full.names = T),
-                  recursive = T),
+  try(unlink(list.files(output_path_3, full.names = T),
+             recursive = T),
       silent = T)
 } else if (RESET[4] == T){
-  try(file.remove(list.files(output_path_4, full.names = T),
-                  recursive = T),
+  try(unlink(list.files(output_path_4, full.names = T),
+             recursive = T),
       silent = T)
 }
 
