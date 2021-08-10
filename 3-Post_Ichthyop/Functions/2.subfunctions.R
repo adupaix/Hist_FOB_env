@@ -138,29 +138,24 @@ get.number.of.cover.points <- function(link_table, point){
 #' @sub-function 6
 #' ***************
 #' weight point$data according to the method used
-add.weight <- function(point, weight_method){
+get.weights <- function(point){
   
   # method 1 : don't apply any weight
-  if (weight_method == 1){
-    point$weight <- 1
+  w1 <- 1
     
-    # method 2 : apply a weight depending on the water discharge of the associated rivers
-  }  else if (weight_method==2){
-    point$weight <- sum(point$rivers$dis_m3_pyr)
-    
-    # method 3: apply a weight depending on the surface of cover associated with the input point
-  } else if (weight_method == 3){
-    point$weight <- point$nb_cover_points
-    
-    # method 4: apply a weight depending on the area covered by forest in the river basins
-  } else if (weight_method == 4){
-    point$weight <- sum(point$rivers$cover)
+  # method 2 : apply a weight depending on the water discharge of the associated rivers
+  w2 <- sum(point$rivers$dis_m3_pyr)
   
-    # method 5: apply a weight depending on the precipitations at the release point
-  } else if (weight_method == 5){
-    point$weight <- point$precip
-  }
+  # method 3: apply a weight depending on the surface of cover associated with the input point
+  w3 <- point$forest_surface
   
-  return(point)
+  # method 4: apply a weight depending on the area covered by forest in the river basins
+  w4 <- sum(point$rivers$cover * 900 / 10^6)
+    
+  # method 5: apply a weight depending on the precipitations at the release point
+  w5 <- point$precip
+  
+  
+  return(c(w1,w2,w3,w4,w5))
 }
 

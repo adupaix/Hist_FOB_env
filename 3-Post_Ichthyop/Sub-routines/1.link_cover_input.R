@@ -17,9 +17,6 @@
 
 buffer_size = 10^3 #in m
 
-sim_output_path <- file.path(DATA_PATH, "Output_Ichthyop", sim_name)
-sim_input_path <- file.path(DATA_PATH, "Input_Ichthyop", paste0(input_location, "_nlog_input_", forcing, "_", input_method))
-
 msg <- crayon::bold("\n\n1. Counting the number of cover points associated with each input point\n\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
 if(!nCoverExists){

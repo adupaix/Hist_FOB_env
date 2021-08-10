@@ -10,9 +10,6 @@
 
 
 # Load functions used in the following sub-routines:
-
-# source(file.path(FUNC_PATH, "1.nc.to.Array.R"))
-# source(file.path(FUNC_PATH, "1.read.river.data.R"))
 source(file.path(FUNC_PATH, "1.subfunctions.R"))
 source(file.path(FUNC_PATH,'2.subfunctions.R'))
 source(file.path(FUNC_PATH,'3.subfunctions.R'))
@@ -27,16 +24,21 @@ sim_name <- generate.sim_name(forcing,
   
 # Create output folder
 output_path_1 <- file.path(OUTPUT_PATH, sim_name, year, "1.nb_cover")
-output_path_2_more <- file.path(OUTPUT_PATH, sim_name, year, paste0("w",weight_method,
-                                                                    "_ltime",ltime_method,"-",ltime,"-sd",ltime_sd,
+output_path_2 <- file.path(OUTPUT_PATH, sim_name, year, "2.info_on_points")
+output_path_3_more <- file.path(OUTPUT_PATH, sim_name, year, paste0("w",weight_method,
+                                                                    "_ltime",ltime_method,"-",ltime,
+                                                                    ifelse(ltime_method == 1, paste0("-sd",ltime_sd), ""),
                                                                     ifelse(is.null(thr_disch), "_no-thr-disch", paste0("_thr-disch",thr_disch))))
-output_path_2 <- file.path(output_path_2_more, "2.info_on_points")
-output_path_3 <- file.path(output_path_2_more, "3.arrays_by_release_date")
-output_path_4 <- file.path(output_path_2_more, paste0("4.maps_",agg.time_scale))
+output_path_3 <- file.path(output_path_3_more, "3.arrays_by_release_date")
+output_path_4 <- file.path(output_path_3_more, paste0("4.maps_",agg.time_scale))
 dir.create(output_path_1, recursive = T, showWarnings = F)
 dir.create(output_path_2, recursive = T, showWarnings = F)
 dir.create(output_path_3, recursive = T, showWarnings = F)
 dir.create(output_path_4, recursive = T, showWarnings = F)
+
+# create paths
+sim_output_path <- file.path(DATA_PATH, "Output_Ichthyop", sim_name)
+sim_input_path <- file.path(DATA_PATH, "Input_Ichthyop", paste0(input_location, "_nlog_input_", forcing, "_", input_method))
 
 # If RESET is T, delete all the output files
 if (RESET[1] == T){
@@ -97,21 +99,36 @@ rivers_IO %>%
                 dis_m3_pmx # debit maximal
   ) -> rivers_filtered
 
+
+# Information on weighting methods
+weight_informations <- data.frame(cbind(1:5,
+                                        c("Homogeneous weight",
+                                          "Weight proportional to mean water discharge of associated rivers",
+                                          "Weight proportional to forest cover surface",
+                                          "Weight proportional to forest cover surface of associated river basins",
+                                          "Weight proportional to monthly precipitation")))
+n_weight_methods <- dim(weight_informations)[1]
+
+
 #' Create output files names
 logName1 <- file.path(output_path_1, "log.txt")
 nCoverPoints <- file.path(output_path_1, "number_of_cover_points_per_input_point.csv")
 
 logName2 <- file.path(output_path_2, "log.txt")
-weightInput <- c(file.path(output_path_2, "weight_per_points_matrix.csv"),
-                 file.path(output_path_2, "weight_per_points_matrix.csv"))
+weightInput <- c(file.path(output_path_2, "weight_per_points_summary.csv"),
+                 file.path(output_path_2, paste0("weight_per_points_matrix_w",1:n_weight_methods,".csv")))
 
 logName3 <- file.path(output_path_3, "log.txt")
 
 logName4 <- file.path(output_path_4, "log.txt")
-globArrayName <- file.path(output_path_2_more, "4.global_array.rds")
+globArrayName <- file.path(output_path_3_more, "4.global_array.rds")
 aggArrayName <- file.path(output_path_4, "aggregated_array.rds")
 plotListName <- file.path(output_path_4, "plot_list.rds")
-pngMapsName <- file.path(output_path_4, paste0(agg.time_scale,"ly_maps.png"))
+pngMapsName <- file.path(output_path_4, paste0(paste0("w",weight_method,
+                                                      "_ltime",ltime_method,"-",ltime,
+                                                      ifelse(ltime_method == 1, paste0("-sd",ltime_sd), ""),
+                                                      ifelse(is.null(thr_disch), "_no-thr-disch", paste0("_thr-disch",thr_disch))),
+                                                "_", agg.time_scale,"ly_maps.png"))
 
 # Logical to know if output files exist
 nCoverExists <- file.exists(nCoverPoints)
@@ -128,14 +145,6 @@ if (.Platform$OS.type == "windows" | as.logical(Parallel[1]) == F) {
 } else { #use a fraction of the available cores
   nb_cores = trunc(detectCores() * as.numeric(Parallel[2]))
 }
-
-# Information on weighting methods
-weight_informations <- data.frame(cbind(1:5,
-                                        c("Homogeneous weight",
-                                          "Weight proportional to mean water discharge of associated rivers",
-                                          "Weight proportional to forest cover surface",
-                                          "Weight proportional to forest cover surface of associated river basins",
-                                          "Weight proportional to monthly precipitation")))
 
 # # Do not delete
 # DoNotDeleteMe <- c("DoNotDeleteMe", ls())

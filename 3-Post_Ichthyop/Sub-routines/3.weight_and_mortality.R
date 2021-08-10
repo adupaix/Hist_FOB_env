@@ -18,25 +18,40 @@ msg <- bold("\n\n3. Applying weight and mortality\n\n") ; cat(msg) ; lines.to.ca
 
 if(!log3Exists){
   
+  # retrieve the point_ids and the corresponding sub directory
   sub_dirs <- weight_per_points_matrix$sub_dir
   points_id <- weight_per_points_matrix$point_id
   
   #'@!!!!
   # points_id <- points_id[1:100]
   
+  # keep only the weights in the data frame
   weight_per_points_matrix %>% select(-point_id, -sub_dir) -> weight_per_points_matrix
-  for (i in 1:dim(weight_per_points_matrix)[2]){weight_per_points_matrix[,i] <- as.numeric(weight_per_points_matrix[,i])}
+  # change them to numeric
+  for (i in 1:dim(weight_per_points_matrix)[2]){weight_per_points_matrix[,i] <- as.numeric(as.character(weight_per_points_matrix[,i]))}
   
+  # keep only the input points with non null weight at at least one release date
+  input_to_keep <- apply(weight_per_points_matrix, 1, sum) != 0
+  
+  if(any(is.na(input_to_keep))){
+    stop("Error: some points don't have any associated weight")
+  }
+  
+  weight_per_points_matrix <- weight_per_points_matrix[input_to_keep,]
+  sub_dirs <- sub_dirs[input_to_keep]
+  points_id <- points_id[input_to_keep]
+  
+  # for each of the release dates
   for (i in 1:dim(weight_per_points_matrix)[2]){
     
+    # get the release date in the column name
     release_date.i <- as.Date(sub("X", "", gsub("\\.", "-", names(weight_per_points_matrix)[i])))
     
     cat(lines.to.cat)
     cat("Release date", i, "/", dim(weight_per_points_matrix)[2], " - ",format(release_date.i), "\n")
     
+    # get the weights associated with each release points at the given date
     weight.i <- as.numeric(as.character(weight_per_points_matrix[,i]))
-    # non_null_points %>% dplyr::filter(release_date == release_date.i) -> non_null_points.i
-    
     
     cl <- makeCluster(nb_cores)
     registerDoSNOW(cl)

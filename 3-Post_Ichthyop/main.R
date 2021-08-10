@@ -19,7 +19,7 @@ FUNC_PATH <- file.path(WD,"Functions")
 ROUT_PATH <- file.path(WD, "Sub-routines")
 RESOURCE_PATH <- file.path(WD,"Resources")
 
-set.seed(10) # set for reproductibility (normale distribution in apply.ltime.1)
+set.seed(10) # set for reproductibility
 
 #' @arguments :
 #' **********
@@ -32,8 +32,8 @@ set.seed(10) # set for reproductibility (normale distribution in apply.ltime.1)
 #'                                                        3. life time fixed at ltime
 #'## ltime_sd (num): standard deviation of the normal law, if ltime_method = 1
 ltime=360
-ltime_method = 1
-ltime_sd = 30 # in days
+ltime_method = 2
+ltime_sd = 30 # in days, used if ltime_method == 1
 
 #'## weight_method (num): method used to give weight to release points
 #'   1. homogeneous weight for each particle
@@ -90,7 +90,7 @@ Parallel = c(T, 1/2)
 
 #' Whether to delete the results obtained for these arguments (T) or not (F):
 #'  each element of RESET concerns the outputs obtained from the corresponding sub-routine (1 to 4)
-RESET = c(F,F,T,T)
+RESET = c(F,F,F,F)
 
 # Arguments used for the ggplot:
 #-------------------------------
