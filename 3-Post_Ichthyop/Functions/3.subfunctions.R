@@ -16,6 +16,12 @@ apply.mortality <- function(array.k, ltime, ltime_method, sd = 30){
     
   } else if (ltime_method == 2){
     
+    x <- seq(1, total_time_sim, 1)
+    
+    prop_alive <- round( 1 - cumsum(dpois(x, ltime/as.numeric(timestep))), digits = 4 )
+    
+  } else if (ltime_method == 3){
+    
     prop_alive <- c( rep(1, ltime/as.numeric(timestep)), rep(0, (total_time_sim-ltime)/as.numeric(timestep)))
     
   }

@@ -25,11 +25,12 @@ set.seed(10) # set for reproductibility (normale distribution in apply.ltime.1)
 #' **********
 #' 
 
-### ltime (num): life time of logs to be used                         
-### ltime_method (num) : filter used for the life time : 1. lifetimes generated using a normal law
-#                                                         so that mean(ltimes)=ltime
-#                                                      2. life time fixed at ltime
-### ltime_sd (num): standard deviation of the normal law, if ltime_method = 1
+#'## ltime (num): life time of logs to be used                         
+#'## ltime_method (num) : filter used for the life time : 1. lifetimes generated using a normal law
+#'                                                        so that mean(ltimes)=ltime
+#'                                                        2. lifetimes generated using a poisson law with lambda = ltime
+#'                                                        3. life time fixed at ltime
+#'## ltime_sd (num): standard deviation of the normal law, if ltime_method = 1
 ltime=360
 ltime_method = 1
 ltime_sd = 30 # in days
