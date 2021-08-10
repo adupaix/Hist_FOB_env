@@ -75,8 +75,12 @@ if(!log3Exists){
   
   #' save a log
   sink(logName3, append = F)
-  cat("Execution time :", format(Sys.time()))
+  cat("Date & time :", format(Sys.time()), "\n")
   cat("\n Number of generated .rds files:", length(list.files(output_path_3))-1)
+  cat("\n\n  Weighting method :", paste(weight_informations[weight_method,], collapse = " - "))
+  cat("\n\n  Life time method :", ltime_method)
+  cat("\n  Mean life time :", ltime)
+  if (ltime_method == 1){cat("\n  Life time standard deviation:", ltime_sd)}
   sink()
   
   

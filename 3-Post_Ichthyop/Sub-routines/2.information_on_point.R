@@ -74,15 +74,8 @@ if (!weightExists){
                                         
                                         fname <- sub(".*/","",rds_files[k])
                                         
-                                        
-                                        #'@comment trouver une solution ici pour accelerer (parallelisation?). La lecture du fichier prend ~0.016s, ce qui amene a 2h45 pour lire tous les fichiers
-                                        #' ou sinon, lecture apres, sauvegarde juste les infos sur le point
-                                        # point$data <- readRDS(file.path(sim_output_path, paste0("points_", num_sub_dir), point$id, fnames[i]))
-                                        
-                                        
                                         #'@get_information_on_release_point
                                         #'***********************************
-                                        
                                         
                                         # get release coordinates
                                         point <- get.coords.release(sim_input_path,
@@ -113,12 +106,6 @@ if (!weightExists){
                                         # weight density map
                                         
                                         point <- add.weight(point, weight_method)
-                                        
-                                        
-                                        # apply mortality
-                                        
-                                        # point <- apply.mortality(point, ltime, ltime_method, sd = ltime_sd)
-                                        
                                         
                                         if (point$weight != 0){
                                           # fill in non_null_points
@@ -204,7 +191,9 @@ if (!weightExists){
   
   #' save a log
   sink(logName2, append = F)
-  cat("Execution time :", format(Sys.time()))
+  cat("Date & time :", format(Sys.time()), "\n")
+  cat("\n  Weighting method :", paste(weight_informations[weight_method,], collapse = " - "))
+  cat("\n  Number of non null release points :", dim(weight_per_points_matrix)[1])
   sink()
   
 } else {

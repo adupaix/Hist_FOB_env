@@ -230,7 +230,11 @@ write.csv(nb_cover_per_input,
 
 #' save a log
 sink(logName1, append = F)
-cat("Execution time :", format(Sys.time()))
+cat("Date & time :", format(Sys.time()), "\n")
+cat("\n  Year:", year)
+cat("\n  Forcing product:", forcing)
+cat("\n  Location of input points :", input_location)
+cat("\n  Method for input points :", input_method)
 sink()
 
 } else {
