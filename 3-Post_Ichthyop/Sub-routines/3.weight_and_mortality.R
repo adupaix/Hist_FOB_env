@@ -22,7 +22,7 @@ if(!log3Exists){
   points_id <- weight_per_points_matrix$point_id
   
   #'@!!!!
-  points_id <- points_id[1:100]
+  # points_id <- points_id[1:100]
   
   weight_per_points_matrix %>% select(-point_id, -sub_dir) -> weight_per_points_matrix
   for (i in 1:dim(weight_per_points_matrix)[2]){weight_per_points_matrix[,i] <- as.numeric(weight_per_points_matrix[,i])}
@@ -76,7 +76,7 @@ if(!log3Exists){
   #' save a log
   sink(logName3, append = F)
   cat("Execution time :", format(Sys.time()))
-  cat("\n Number of generated files:", length(list.files(output_path_3)))
+  cat("\n Number of generated .rds files:", length(list.files(output_path_3))-1)
   sink()
   
   
