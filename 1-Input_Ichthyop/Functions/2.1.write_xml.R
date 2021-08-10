@@ -88,13 +88,39 @@ write.cfg.xml <- function(initial_time,
 
 
 
-txt.for.mpi <- function(sim_input_path, cfg_dir){
+txt.for.mpi <- function(sim_input_path, cfg_path, cfg_dir, n_pbs_jobs){
   
-  lignes <- paste0("java -jar ichthyop-private/target/ichthyop-3.3.10.jar ",sim_input_path,"/cfgs/", list.files(cfg_dir, recursive = T))
+  lignes <- paste0("java -jar ichthyop-private/target/ichthyop-3.3.10.jar ",sim_input_path,"/",cfg_dir,"/", list.files(cfg_path, recursive = T))
+  l = length(lignes)
   
-  file.create(file.path(cfg_dir, "list_commands.txt"))
-  cmds <- file(file.path(cfg_dir, "list_commands.txt"), open = "w")
-  writeLines(lignes, cmds)
-  close(cmds)
+  for (i in 1:n_pbs_jobs){
+    indexes = floor((i-1)*l/n_pbs_jobs + 1) : floor(i*l/n_pbs_jobs)
+    
+    file.create(file.path(cfg_path, paste0("list_commands",i,".txt")))
+    cmds <- file(file.path(cfg_path, paste0("list_commands",i,".txt")), open = "w")
+    writeLines(lignes[indexes], cmds)
+    close(cmds)
+  }
   
+}
+
+
+
+
+generate.jobs.pbs <- function(RESOURCE_PATH, sim_input_path, cfg_path, cfg_dir, n_pbs_jobs, last_release_year){
+  
+  template <- file.path(RESOURCE_PATH, "template_job.pbs")
+  
+  tplate <- scan(template, what = "", sep = "\n", quiet = T)
+  
+  for (i in 1:n_pbs_jobs){
+    
+    pbs_text <- tplate
+    pbs_text[length(pbs_text)] <- paste0("time $MPI_LAUNCH -np 280 ichthyop-mpi/ichthyopmpi ", sim_input_path, "/", cfg_dir, "/list_commands", i, ".txt &> out.log")
+    
+    file.create(file.path(cfg_path, paste0("sim_ichthyop-",last_release_year,"-",i,".pbs")))
+    job <- file(file.path(cfg_path, paste0("sim_ichthyop-",last_release_year,"-",i,".pbs")), open = "w")
+    writeLines(pbs_text, job)
+    close(job)
+  }
 }

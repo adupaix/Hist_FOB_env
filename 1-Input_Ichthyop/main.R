@@ -35,7 +35,12 @@ arguments <- list(DATA_PATH = DATA_PATH,
 #'
 Parallel = c(T, 1/2),
                   
-#'                            
+#'
+#' reset (logical) : if T, calculates the input points position in any case
+#'                   if F, tries to read the input points positions in the output folder
+reset = F,
+
+#'                                                                           
 #' save (logical) : if T, save a txt file ready for use in ichthyop                  
 #' return_format (chr): either "sf", returns an sf object with points and associated 
 #'                                   river characteristics                           
@@ -76,7 +81,7 @@ curr_prod = "PHILIN12.L75") # one of c("PHILIN12.L75","oscar","nemo","globcurren
 #'## record_frequency (num): frequency at which the particles positions are to be save (in days)
 #'
 #'## n_cfg_per_dir (num): number of cfg files to save per directory
-#'## ICHTHYOP_PATH (chr): path to where the Ichthyop version to be used is installed
+#'## n_pbs_jobs (num): number of pbs jobs to run on the cluster
 
 generate_xml = T
 
@@ -88,15 +93,16 @@ sim_input_path <- "/home1/datawork/adupaix/input-ichthyop"
 sim_output_path <- "/home1/scratch/adupaix/ichthyop-output"
 
 
-#~ Fixed arguments
+#~ Arguments to generate the xml files
 transport_duration = 500 #in days
 
-first_release_year = 1999 # release from the first of January of this year
-last_release_year = 2000 # to December of this year
+first_release_year = 1989 # release from the first of January of this year
+last_release_year = 1990 # to December of this year
 release_frequency = 2 # nb of release per month
 record_frequency = 1 #in days (interval between two recorded positions)
 
-n_cfg_per_dir = 28*8*5
+n_cfg_per_dir = 28*8*5 # number of .xml file per directory
+n_pbs_jobs = 5 #number of .pbs jobs to run in the cluster (to generate the command_list files)
 
 
 
@@ -150,6 +156,7 @@ if (input_method == "allMask" & generate_xml == T){
                last_release_year,
                release_frequency,
                record_frequency,
-               n_cfg_per_dir
+               n_cfg_per_dir,
+               n_pbs_jobs
   )
 }

@@ -1,7 +1,7 @@
 
 
 #' Title
-#'
+#' @author : Yannick Baidai
 #' @param srcUsedPackages : require packages
 #' @param loadPackages : load or not after installation
 installAndLoad_packages <-function(srcUsedPackages = srcUsedPackages, loadPackages =TRUE)
@@ -42,7 +42,7 @@ installAndLoad_packages <-function(srcUsedPackages = srcUsedPackages, loadPackag
     }
     if(!is.na(notLoaded))
     {
-      warning(paste0("Error at the loading of the The following package(s) : \n", notLoaded))
+      warning(paste0("Error at the loading of the following package(s) : \n", notLoaded))
     }
   }
 }
