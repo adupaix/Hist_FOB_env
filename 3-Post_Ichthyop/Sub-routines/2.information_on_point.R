@@ -13,7 +13,7 @@
 
 
 msg <- bold("\n\n2. Getting information on input points\n\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-msg <- paste("  - Weighting method:",weight_method, "\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+msg <- paste(" Weighting method:",weight_method, "\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
 if (!weightExists){
   
@@ -44,7 +44,7 @@ if (!weightExists){
       dir.create(file.path(output_path_2, sub_dirs[i]), recursive = T, showWarnings = F)
       
       rds_files <- list.files(file.path(sim_output_path, sub_dirs[i]), recursive = T, pattern = ".rds")
-      rds_files <- grep("infos", rds_files, invert = T, value = T)
+      # rds_files <- grep("infos", rds_files, invert = T, value = T)
       
       # rds_files <- rds_files[1:5000]
       
@@ -160,7 +160,7 @@ if (!weightExists){
     #' remove NAs
     non_null_points %>% dplyr::filter(!is.na(release_date)) -> non_null_points
     #' format release dates back to date
-    non_null_points$release_date <- as.Date("1990-01-01")+ as.difftime(as.numeric(non_null_points$release_date), units = "days")
+    non_null_points$release_date <- as.Date("1990-01-01")+ as.difftime(as.numeric(as.character(non_null_points$release_date)), units = "days")
     
   } else if (weight_method == 1){
     
