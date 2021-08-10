@@ -88,7 +88,7 @@ if(!log3Exists){
   
   msg <- "Files already generated\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
-  weighted_arrays <- list.files(output_path_3)
+  weighted_arrays <- list.files(output_path_3, pattern = ".rds")
   
 }
 
