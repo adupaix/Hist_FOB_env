@@ -15,95 +15,102 @@ msg <- paste0("Time scale of aggregation: ", agg.time_scale, "\n\n") ; cat(msg) 
 
 if (!log4Exists){
   
-  msg <- "    - Reading weighted arrays\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-  
-  # cl <- makeCluster(nb_cores)
-  # registerDoSNOW(cl)
-  pb <- txtProgressBar(max = length(weighted_arrays), style = 3)
-  progress <- function(n) setTxtProgressBar(pb, n)
-  opts <- list(progress = progress)
-  
-  glob_array <- foreach(i = 1:length(weighted_arrays),
-                        .packages = srcUsedPackages,
-                        .options.snow = opts,
-                        .combine = function(x,y) abind::abind(x,y, along = 3)) %do% {
-                          
-                          array.i <- readRDS(file.path(output_path_3, weighted_arrays[i]))
-                        }
-  
-  close(pb)
-  # stopCluster(cl)
-  # registerDoSEQ()
-  
-  # arrange the array by time
-  glob_array <- glob_array[,,order(dimnames(glob_array)[[3]])]
-  
-  nm <- dimnames(glob_array)[[3]]
-  
-  # aggregate the array by timestamp, to have one data.frame per timestamp (instead of per timestamp per simulation)
-  glob_array <- foreach(day.i = unique(nm),
-                        .combine = function(x,y) abind::abind(x,y, along = 3)) %do% {
-                          
-                          array.i <- glob_array[,,which(dimnames(glob_array)[[3]] == day.i)]
-                          apply(array.i, c(1,2), sum)
-                          
-                        }
-  nm <- unique(nm)
-  dimnames(glob_array)[[3]] <- nm
-  
-  msg <- "    - Generating the mean aggregated array\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-  
-  if (agg.time_scale == "month"){
-    new_nm <- paste0(year(nm),
-                     "-",
-                     ifelse(nchar(month(nm)) == 2, month(nm), paste0("0",month(nm)))
-    )
+  if (!globArrayExists){
+    msg <- "    - Reading weighted arrays and suming them into a global array\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
     
-  } else if (agg.time_scale == "quarter"){
-    new_nm <- sub("\\.", "\\.Q", quarter(nm, fiscal_start = 11, with_year = T))
+    glob_array <- foreach(i = 1:length(weighted_arrays),
+                          .packages = srcUsedPackages,
+                          .combine = function(x,y) abind::abind(x,y, along = 3)) %do% {
+                            
+                            array.i <- readRDS(file.path(output_path_3, weighted_arrays[i]))
+                          }
     
-  } else if (agg.time_scale == "year"){
-    new_nm <- year(nm)
+    
+    # arrange the array by time
+    glob_array <- glob_array[,,order(dimnames(glob_array)[[3]])]
+    
+    nm <- dimnames(glob_array)[[3]]
+    
+    # aggregate the array by timestamp, to have one data.frame per timestamp (instead of per timestamp per simulation)
+    glob_array <- foreach(day.i = unique(nm),
+                          .combine = function(x,y) abind::abind(x,y, along = 3)) %do% {
+                            
+                            array.i <- glob_array[,,which(dimnames(glob_array)[[3]] == day.i)]
+                            apply(array.i, c(1,2), sum)
+                            
+                          }
+    nm <- unique(nm)
+    dimnames(glob_array)[[3]] <- nm
+    
+    saveRDS(glob_array, file = globArrayName)
+    
+  } else {
+    
+    msg <- "    - Reading global array from file\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+    
+    glob_array <- readRDS(globArrayName)
+    
+    nm <- dimnames(glob_array)[[3]]
+    
   }
   
-  dimnames(glob_array)[[3]] <- new_nm
-  nm_time_scale <- sort(unique(new_nm))
   
-  # cl <- makeCluster(nb_cores)
-  # registerDoSNOW(cl)
-  pb <- txtProgressBar(max = length(weighted_arrays), style = 3)
-  progress <- function(n) setTxtProgressBar(pb, n)
-  opts <- list(progress = progress)
-  
-  mean_agg_array <- foreach(time_scale.i = nm_time_scale,
-                            .combine = function(x,y) abind::abind(x,y, along = 3)) %dopar% {
-                              
-                              array.i <- glob_array[,,which(dimnames(glob_array)[[3]] == time_scale.i)]
-                              apply(array.i, c(1,2), get("mean"))
-                              
-                            }
-  
-  close(pb)
-  # stopCluster(cl)
-  # registerDoSEQ()
-  
-  if (length(dim(mean_agg_array))==3){
-    dimnames(mean_agg_array)[[3]] <- nm_time_scale
+  if (!aggArrayExists){
+    
+    msg <- "    - Generating the mean aggregated array\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+    
+    if (agg.time_scale == "month"){
+      new_nm <- paste0(year(nm),
+                       "-",
+                       ifelse(nchar(month(nm)) == 2, month(nm), paste0("0",month(nm)))
+      )
+      
+    } else if (agg.time_scale == "quarter"){
+      new_nm <- sub("\\.", "\\.Q", quarter(nm, fiscal_start = 11, with_year = T))
+      
+    } else if (agg.time_scale == "year"){
+      new_nm <- year(nm)
+    }
+    
+    dimnames(glob_array)[[3]] <- new_nm
+    nm_time_scale <- sort(unique(new_nm))
+    
+    mean_agg_array <- foreach(time_scale.i = nm_time_scale,
+                              .combine = function(x,y) abind::abind(x,y, along = 3)) %do% {
+                                
+                                array.i <- glob_array[,,which(dimnames(glob_array)[[3]] == time_scale.i)]
+                                apply(array.i, c(1,2), get("mean"))
+                                
+                              }
+    
+    
+    if (length(dim(mean_agg_array))==3){
+      dimnames(mean_agg_array)[[3]] <- nm_time_scale
+    }
+    
+    saveRDS(mean_agg_array, file = aggArrayName)
+    
+  } else {
+    
+    msg <- "    - Reading aggregated array from file\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+    
+    mean_agg_array <- readRDS(aggArrayName)
+    
   }
-  
   
   #' selecting only the year of interest
   
   msg <- paste0("    - Selecting the year of interest : ",year,"\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
   is_of_year_of_interest <- grepl(year, dimnames(mean_agg_array)[[3]])
+  nm <- dimnames(mean_agg_array)[[3]][is_of_year_of_interest]
   mean_agg_array <- mean_agg_array[,,is_of_year_of_interest]
   
   msg <- "    - Building maps\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
   mean.ggplot.list <- list()
   
-  time_scale <- 1:dim(mean_agg_array)[3]
+  time_scale <- ifelse(length(dim(mean_agg_array)) == 3, 1:dim(mean_agg_array)[3], 1)
   
   if (common_scale_max == T){
     fixed_scale_max <- ceiling(max(mean_agg_array))
@@ -112,14 +119,24 @@ if (!log4Exists){
   }
   
   # for each time_scale, we build a map and save it in the list
-  for (i in time_scale){
+  if (length(time_scale)>1){
+    for (i in time_scale){
+      
+      array.i <- mean_agg_array[,,i]
+      dimname.i <- nm[i]
+      
+      mean.ggplot.list[[i]] <- matrix.to.ggplot(array.i, dimname.i, gsize,
+                                                log_color_scale, fixed_scale_max,
+                                                color_scale_pos)
+    }
+  } else if (time_scale == 1){
+    array.i <- mean_agg_array
+    dimname.i <- nm
     
-    array.i <- mean_agg_array[,,i]
-    dimname.i <- dimnames(mean_agg_array)[[3]][i]
+    mean.ggplot.list <- matrix.to.ggplot(array.i, dimname.i, gsize,
+                                         log_color_scale, fixed_scale_max,
+                                         color_scale_pos)
     
-    mean.ggplot.list[[i]] <- matrix.to.ggplot(array.i, dimname.i, gsize,
-                                              log_color_scale, fixed_scale_max,
-                                              color_scale_pos)
   }
   
   msg <- "    - Saving maps\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
@@ -128,21 +145,28 @@ if (!log4Exists){
   cat("\n\n List of maps saved in:", plotListName, "\n")
   
   # save an image of the mean maps
-  l = length(mean.ggplot.list)
-  n_col <- ceiling(sqrt(l))
-  n_row <- ceiling(l / n_col)
-  p <- ggarrange(plotlist = mean.ggplot.list,
-                 ncol = n_col, nrow = n_row,
-                 align = "hv", labels = "AUTO",
-                 common.legend = common_scale_max,
-                 legend = "right")
+  if (length(time_scale)>1){
+    l = length(mean.ggplot.list)
+    n_col <- ceiling(sqrt(l))
+    n_row <- ceiling(l / n_col)
+    p <- ggarrange(plotlist = mean.ggplot.list,
+                   ncol = n_col, nrow = n_row,
+                   align = "hv", labels = "AUTO",
+                   common.legend = common_scale_max,
+                   legend = "right")
+    
+    ggsave(pngMapsName, p, width = ifelse(common_scale_max, 180*n_col + 20, 180*n_col),
+           height = 120*n_row, units = "mm")
+  } else if (time_scale == 1){
+    ggsave(pngMapsName, mean.ggplot.list, width = ifelse(common_scale_max, 200, 180),
+           height = 120, units = "mm")
+  }
   
-  ggsave(pngMapsName, p, width = ifelse(common_scale_max, 180*n_col + 20, 180*n_col),
-         height = 120*n_row, units = "mm")
   
   #' save a log
   sink(logName4, append = F)
-  cat("Execution time :", format(Sys.time()))
+  cat("Date & time :", format(Sys.time()), "\n")
+  cat("\n  Time scale of aggregation:", agg.time_scale)
   sink()
   
   
