@@ -131,7 +131,7 @@ if (!log4Exists){
   l = length(mean.ggplot.list)
   n_col <- ceiling(sqrt(l))
   n_row <- ceiling(l / n_col)
-  p <- ggarrange(plotlist = toplot.ggplot.list,
+  p <- ggarrange(plotlist = mean.ggplot.list,
                  ncol = n_col, nrow = n_row,
                  align = "hv", labels = "AUTO",
                  common.legend = common_scale_max,
