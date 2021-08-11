@@ -154,3 +154,8 @@ source(file.path(ROUT_PATH, "3.weight_and_mortality.R"))
 #' ***************
 
 source(file.path(ROUT_PATH, "4.build_maps.R"))
+
+
+#' Clean environment:
+#' ***************
+rm(list = ls()[!ls() %in% toKeep]) 

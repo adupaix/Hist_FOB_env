@@ -19,7 +19,7 @@ buffer_size = 10^3 #in m
 
 msg <- crayon::bold("\n1. Counting the number of cover points associated with each input point\n\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
-if(!nCoverExists){
+if(!Exists$nCover){
 
 # get the cover files names
 cover_files <- list.files(path = file.path(DATA_PATH,
@@ -52,7 +52,7 @@ for (k in 1:length(cover_files)){
   
   msg <- "1. Link river - cover\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
-  river_cover_fname <- file.path(output_path_1, paste0("link_rivers_",sub(".shp", "", cover_files[k]),".txt"))
+  river_cover_fname <- file.path(output_paths[[1]], paste0("link_rivers_",sub(".shp", "", cover_files[k]),".txt"))
   
   if (!file.exists(river_cover_fname)){
     
@@ -175,19 +175,19 @@ for (k in 1:length(cover_files)){
                       "input_point_with_cover_nb_vf.txt")
   
   write.table(input_points,
-              file = file.path(output_path_1, file_name))
+              file = file.path(output_paths[[1]], file_name))
   
 }
 
 
 msg <- "3. Merge coastal and river information\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
-link_riv_cov_files <- list.files(output_path_1, pattern = "link_rivers_")
+link_riv_cov_files <- list.files(output_paths[[1]], pattern = "link_rivers_")
 
 n_cover_per_river <- list()
 
 for (i in 1:length(link_riv_cov_files)){
-  n_cover_per_river[[i]] <- read.table(file.path(output_path_1, link_riv_cov_files[i]), header = T)
+  n_cover_per_river[[i]] <- read.table(file.path(output_paths[[1]], link_riv_cov_files[i]), header = T)
 }
 
 bind_rows(n_cover_per_river) %>%
@@ -197,7 +197,7 @@ bind_rows(n_cover_per_river) %>%
   rename("nb_river_cover_points" = "n") -> n_cover_per_river
 
 write.csv(n_cover_per_river,
-            file.path(output_path_1, "n_cover_per_river.csv"),
+            file.path(output_paths[[1]], "n_cover_per_river.csv"),
             row.names = F)
 
 link_river_input <- read.table(file.path(sim_input_path, "Link_table.txt"), header = T)
@@ -222,11 +222,11 @@ cover_global_summary %>%
   dplyr::select(id_curr, x, y, nb_river_cover_points, nb_coastal_cover_points, nb_cover_points) -> nb_cover_per_input
 
 write.csv(nb_cover_per_input,
-          file = file.path(output_path_1, "number_of_cover_points_per_input_point.csv"),
+          file = file.path(output_paths[[1]], "number_of_cover_points_per_input_point.csv"),
           row.names = F)
 
 #' save a log
-sink(logName1, append = F)
+sink(Names$log1, append = F)
 cat("Date & time :", format(Sys.time()), "\n")
 cat("\n  Year:", year)
 cat("\n  Forcing product:", forcing)
@@ -238,6 +238,10 @@ sink()
   
   msg <- "Reading existing file\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
-  nb_cover_per_input <- read.csv(file = file.path(output_path_1, "number_of_cover_points_per_input_point.csv"))
-  
 }
+
+#'@output_for_next_subroutine
+nb_cover_per_input <- read.csv(file = file.path(output_paths[[1]], "number_of_cover_points_per_input_point.csv"))
+
+#' Do not delete
+toKeep <- c(toKeep, "nb_cover_per_input")

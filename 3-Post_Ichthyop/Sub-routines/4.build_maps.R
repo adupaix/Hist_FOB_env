@@ -13,9 +13,9 @@
 msg <- bold("\n\n4. Building maps\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 msg <- paste0("Time scale of aggregation: ", agg.time_scale, "\n\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
-if (!mapsExist){
+if (!Exists$maps){
   
-  if (!globArrayExists){
+  if (!Exists$globArray){
     msg <- "    - Reading weighted arrays and suming them into a global array\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
     
     #' read all the weighted arrays (one per release date)
@@ -24,7 +24,7 @@ if (!mapsExist){
                           .packages = srcUsedPackages,
                           .combine = function(x,y) abind::abind(x,y, along = 3)) %do% {
                             
-                            array.i <- readRDS(file.path(output_path_3, weighted_arrays[i]))
+                            array.i <- readRDS(file.path(output_paths[[3]], weighted_arrays[i]))
                           }
     
     
@@ -47,14 +47,14 @@ if (!mapsExist){
     dimnames(glob_array)[[3]] <- nm
     
     #' save the global array: it contains one global density map for each timestep 
-    saveRDS(glob_array, file = globArrayName)
+    saveRDS(glob_array, file = Names$globArray)
     
   } else {
     #' if the global array was already generated, read it
     
     msg <- "    - Reading global array from file\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
     
-    glob_array <- readRDS(globArrayName)
+    glob_array <- readRDS(Names$globArray)
     
   }
   
@@ -62,7 +62,7 @@ if (!mapsExist){
   nm <- dimnames(glob_array)[[3]]
   
   
-  if (!aggArrayExists){
+  if (!Exists$aggArray){
     
     msg <- "    - Generating the mean aggregated array\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
     
@@ -101,14 +101,14 @@ if (!mapsExist){
     }
     
     #' save the aggregated array
-    saveRDS(mean_agg_array, file = aggArrayName)
+    saveRDS(mean_agg_array, file = Names$aggArray)
     
   } else {
     #' if the aggregated array was already generated, read it
     
     msg <- "    - Reading aggregated array from file\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
     
-    mean_agg_array <- readRDS(aggArrayName)
+    mean_agg_array <- readRDS(Names$aggArray)
     
   }
   
@@ -162,8 +162,8 @@ if (!mapsExist){
   
   msg <- "    - Saving maps\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
-  saveRDS(mean.ggplot.list, plotListName)
-  cat("\n\n List of maps saved in:", plotListName, "\n")
+  saveRDS(mean.ggplot.list, Names$plotList)
+  cat("\n\n List of maps saved in:", Names$plotList, "\n")
   
   #' save an image of the map(s)
   if (length(time_scale)>1){
@@ -176,16 +176,16 @@ if (!mapsExist){
                    common.legend = common_scale_max,
                    legend = "right")
     
-    ggsave(pngMapsName, p, width = ifelse(common_scale_max, 180*n_col + 20, 180*n_col),
+    ggsave(Names$pngMaps, p, width = ifelse(common_scale_max, 180*n_col + 20, 180*n_col),
            height = 120*n_row, units = "mm")
   } else if (time_scale == 1){
-    ggsave(pngMapsName, mean.ggplot.list, width = ifelse(common_scale_max, 200, 180),
+    ggsave(Names$pngMaps, mean.ggplot.list, width = ifelse(common_scale_max, 200, 180),
            height = 120, units = "mm")
   }
   
   
   #' save a log
-  sink(logName4, append = F)
+  sink(Names$log4, append = F)
   cat("Date & time :", format(Sys.time()), "\n")
   cat("\n  Time scale of aggregation:", agg.time_scale)
   sink()
@@ -193,10 +193,14 @@ if (!mapsExist){
   
 } else {
   
-  #' if the maps were arleady generated, just print a message
+  #' if the maps were already generated, read them and the arrays
   msg <- "Maps already exist\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
+  glob_array <- readRDS(Names$globArray)
+  mean_agg_array <- readRDS(Names$aggArray)
+  mean.ggplot.list <- readRDS(Names$plotList)
 }
 
 
-
+#' Do not delete
+toKeep <- c(toKeep, "glob_array", "mean_agg_array", "mean.ggplot.list")

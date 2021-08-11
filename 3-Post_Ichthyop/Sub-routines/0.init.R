@@ -15,6 +15,9 @@ source(file.path(FUNC_PATH,'2.subfunctions.R'))
 source(file.path(FUNC_PATH,'3.subfunctions.R'))
 source(file.path(FUNC_PATH,'4.subfunctions.R'))
 
+#' Do not delete
+toKeep <- c("toKeep", ls())
+
 # Create the name of the simulation from the arguments (function in Functions/1.subfunctions)
 sim_name <- generate.sim_name(forcing,
                                 input_location,
@@ -24,19 +27,20 @@ sim_name <- generate.sim_name(forcing,
   
 #' Create output folders
 #'     Names
-output_path_1 <- file.path(OUTPUT_PATH, sim_name, year, "1.nb_cover")
-output_path_2 <- file.path(OUTPUT_PATH, sim_name, year, "2.info_on_points")
+output_paths <- list()
+output_paths[[1]] <- file.path(OUTPUT_PATH, sim_name, year, "1.nb_cover")
+output_paths[[2]] <- file.path(OUTPUT_PATH, sim_name, year, "2.info_on_points")
 output_path_3_more <- file.path(OUTPUT_PATH, sim_name, year, paste0("w",weight_method,
                                                                     "_ltime",ltime_method,"-",ltime,
                                                                     ifelse(ltime_method == 1, paste0("-sd",ltime_sd), ""),
                                                                     ifelse(is.null(thr_disch), "_no-thr-disch", paste0("_thr-disch",thr_disch))))
-output_path_3 <- file.path(output_path_3_more, "3.arrays_by_release_date")
-output_path_4 <- file.path(output_path_3_more, paste0("4.maps_",agg.time_scale))
+output_paths[[3]] <- file.path(output_path_3_more, "3.arrays_by_release_date")
+output_paths[[4]] <- file.path(output_path_3_more, paste0("4.maps_",agg.time_scale))
 #'     Create
-dir.create(output_path_1, recursive = T, showWarnings = F)
-dir.create(output_path_2, recursive = T, showWarnings = F)
-dir.create(output_path_3, recursive = T, showWarnings = F)
-dir.create(output_path_4, recursive = T, showWarnings = F)
+dir.create(output_paths[[1]], recursive = T, showWarnings = F)
+dir.create(output_paths[[2]], recursive = T, showWarnings = F)
+dir.create(output_paths[[3]], recursive = T, showWarnings = F)
+dir.create(output_paths[[4]], recursive = T, showWarnings = F)
 
 
 # create paths used to read data from the simulation and from the 1-Input_Ichthyop folder
@@ -46,19 +50,19 @@ sim_input_path <- file.path(DATA_PATH, "Input_Ichthyop", paste0(input_location, 
 
 # If RESET is T, delete all the output files
 if (RESET[1] == T){
-  try(unlink(list.files(output_path_1, full.names = T),
+  try(unlink(list.files(output_paths[[1]], full.names = T),
              recursive = T),
       silent = T)
 } else if (RESET[2] == T){
-  try(unlink(list.files(output_path_2, full.names = T),
+  try(unlink(list.files(output_paths[[2]], full.names = T),
              recursive = T),
       silent = T)
 } else if (RESET[3] == T){
-  try(unlink(list.files(output_path_3, full.names = T),
+  try(unlink(list.files(output_paths[[3]], full.names = T),
              recursive = T),
       silent = T)
 } else if (RESET[4] == T){
-  try(unlink(list.files(output_path_4, full.names = T),
+  try(unlink(list.files(output_paths[[4]], full.names = T),
              recursive = T),
       silent = T)
 }
@@ -85,34 +89,38 @@ n_weight_methods <- dim(weight_informations)[1]
 
 
 #' Create output files names
+Names <- list()
 #'       Sub-routine 1
-logName1 <- file.path(output_path_1, "log.txt")
-nCoverPoints <- file.path(output_path_1, "number_of_cover_points_per_input_point.csv")
+Names$log1 <- file.path(output_paths[[1]], "log.txt")
+Names$nCoverPoints <- file.path(output_paths[[1]], "number_of_cover_points_per_input_point.csv")
 #'       Sub-routine 2
-logName2 <- file.path(output_path_2, "log.txt")
-weightInput <- c(file.path(output_path_2, "weight_per_points_summary.csv"),
-                 file.path(output_path_2, paste0("weight_per_points_matrix_w",weight_method,".csv")))
+Names$log2 <- file.path(output_paths[[2]], "log.txt")
+Names$weightInput <- c(file.path(output_paths[[2]], "weight_per_points_summary.csv"),
+                 file.path(output_paths[[2]], paste0("weight_per_points_matrix_w",weight_method,".csv")))
 #'       Sub-routine 3
-logName3 <- file.path(output_path_3, "log.txt")
+Names$log3 <- file.path(output_paths[[3]], "log.txt")
 #'       Sub-routine 4
-logName4 <- file.path(output_path_4, "log.txt")
-globArrayName <- file.path(output_path_3_more, "4.global_array.rds")
-aggArrayName <- file.path(output_path_4, "aggregated_array.rds")
-plotListName <- file.path(output_path_4, paste0(ifelse(log_color_scale == T, "log_",""), "plot_list.rds"))
-pngMapsName <- file.path(output_path_4, paste0(ifelse(log_color_scale == T, "log_",""),
+Names$log4 <- file.path(output_paths[[4]], "log.txt")
+Names$globArray <- file.path(output_path_3_more, "4.global_array.rds")
+Names$aggArray <- file.path(output_paths[[4]], "aggregated_array.rds")
+Names$plotList <- file.path(output_paths[[4]], paste0(ifelse(log_color_scale == T, "log_",""), "plot_list.rds"))
+Names$pngMaps <- file.path(output_paths[[4]], paste0(ifelse(log_color_scale == T, "log_",""),
                                                "w",weight_method,
                                                "_ltime",ltime_method,"-",ltime,
                                                ifelse(ltime_method == 1, paste0("-sd",ltime_sd), ""),
                                                ifelse(is.null(thr_disch), "_no-thr-disch", paste0("_thr-disch",thr_disch)),
                                                "_", agg.time_scale,"ly_maps.png"))
 
+rm(output_path_3_more)
+
 # Logical to know if output files exist
-nCoverExists <- file.exists(nCoverPoints)
-weightExists <- all(file.exists(weightInput))
-log3Exists <- file.exists(logName3)
-globArrayExists <- file.exists(globArrayName)
-aggArrayExists <- file.exists(aggArrayName)
-mapsExist <- file.exists(pngMapsName)
+Exists <- list()
+Exists$nCover <- file.exists(Names$nCoverPoints)
+Exists$weight <- all(file.exists(Names$weightInput))
+Exists$log3 <- file.exists(Names$log3)
+Exists$globArray <- file.exists(Names$globArray)
+Exists$aggArray <- file.exists(Names$aggArray)
+Exists$maps <- file.exists(Names$pngMaps)
 
 # For parallel:
 # On Windows, or if don't want to parralelize, set cores number to 1
@@ -122,13 +130,12 @@ if (.Platform$OS.type == "windows" | as.logical(Parallel[1]) == F) {
   nb_cores = trunc(detectCores() * as.numeric(Parallel[2]))
 }
 
-
 #'@read_rivers
 #'**********
 #' The 2 first sub routines need to use data on rivers
 #' If none of these 2 subroutines need to be run, we do not
 #' read the rivers data
-if (!nCoverExists | !weightExists){
+if (!Exists$nCover | !Exists$weight){
   
   msg <- "Reading and filtering rivers file\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   msg <- "    - Reading\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
@@ -164,7 +171,3 @@ if (!nCoverExists | !weightExists){
   
 }
 
-# # Do not delete
-# DoNotDeleteMe <- c("DoNotDeleteMe", ls())
-# 
-# 
