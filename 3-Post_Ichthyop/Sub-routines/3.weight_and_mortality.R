@@ -50,43 +50,48 @@ if(!log3Exists){
     cat(lines.to.cat)
     cat("Release date", i, "/", dim(weight_per_points_matrix)[2], " - ",format(release_date.i), "\n")
     
-    # get the weights associated with each release points at the given date
-    weight.i <- as.numeric(as.character(weight_per_points_matrix[,i]))
-    
-    cl <- makeCluster(nb_cores)
-    registerDoSNOW(cl)
-    pb <- txtProgressBar(max = length(points_id), style = 3)
-    progress <- function(n) setTxtProgressBar(pb, n)
-    opts <- list(progress = progress)
-    
-    #' read, weight and sum all the arrays for the release date i
-    array.i <- foreach(k = 1:length(points_id),
-                       .combine = f.for.combining,
-                       .packages = srcUsedPackages,
-                       .options.snow = opts) %dopar% {
-                         
-                         array.k <- readRDS(file.path(sim_output_path, sub_dirs[k], points_id[k], paste0(points_id[k], "_", release_date.i, ".rds")))
-                         
-                         array.k <- array.k * weight.i[k]
-                         
-                         array.k
-                         
-                       }
-    
-    close(pb)
-    stopCluster(cl)
-    registerDoSEQ()
-    
-    #' apply mortality
-    array.i <- apply.mortality(array.i, ltime, ltime_method, ltime_sd)
-    
-    #' save the results
     fname <- file.path(output_path_3, paste0(format(release_date.i),".rds"))
-    saveRDS(array.i, fname)
+    
+    if (file.exists(fname)){
+      cat("Weight file already generated") ; Sys.sleep(0.1)
+    } else {
+      # get the weights associated with each release points at the given date
+      weight.i <- as.numeric(as.character(weight_per_points_matrix[,i]))
+      
+      cl <- makeCluster(nb_cores)
+      registerDoSNOW(cl)
+      pb <- txtProgressBar(max = length(points_id), style = 3)
+      progress <- function(n) setTxtProgressBar(pb, n)
+      opts <- list(progress = progress)
+      
+      #' read, weight and sum all the arrays for the release date i
+      array.i <- foreach(k = 1:length(points_id),
+                         .combine = f.for.combining,
+                         .packages = srcUsedPackages,
+                         .options.snow = opts) %dopar% {
+                           
+                           array.k <- readRDS(file.path(sim_output_path, sub_dirs[k], points_id[k], paste0(points_id[k], "_", release_date.i, ".rds")))
+                           
+                           array.k <- array.k * weight.i[k]
+                           
+                           array.k
+                           
+                         }
+      
+      close(pb)
+      stopCluster(cl)
+      registerDoSEQ()
+      
+      #' apply mortality
+      array.i <- apply.mortality(array.i, ltime, ltime_method, ltime_sd)
+      
+      #' save the results
+      saveRDS(array.i, fname)
+    }
     
   }
   
-  weighted_arrays <- list.files(output_path_3)
+  weighted_arrays <- list.files(output_path_3, pattern = ".rds")
   
   #' save a log
   sink(logName3, append = F)
