@@ -13,7 +13,7 @@
 msg <- bold("\n\n4. Building maps\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 msg <- paste0("Time scale of aggregation: ", agg.time_scale, "\n\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
-if (!log4Exists){
+if (!mapsExist){
   
   if (!globArrayExists){
     msg <- "    - Reading weighted arrays and suming them into a global array\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
@@ -110,7 +110,11 @@ if (!log4Exists){
   
   mean.ggplot.list <- list()
   
-  time_scale <- ifelse(length(dim(mean_agg_array)) == 3, 1:dim(mean_agg_array)[3], 1)
+  if (length(dim(mean_agg_array)) == 3){
+    time_scale <- 1:dim(mean_agg_array)[3]
+  } else {
+    time_scale <- 1
+  }
   
   if (common_scale_max == T){
     fixed_scale_max <- ceiling(max(mean_agg_array))
