@@ -1,28 +1,29 @@
 #'#*******************************************************************************************************************
 #'@author : Amael DUPAIX
-#'@update : 2021-02-24
-#'@email : 
+#'@update : 2021-08-11
+#'@email : amael.dupaix@ens-lyon.fr
 #'#*******************************************************************************************************************
-#'@description :  Initialize the analysis (functions, paths, file names, log file)
+#'@description :  Initialize the analysis (functions, paths, file names, log files)
 #'#*******************************************************************************************************************
 #'@revision
 #'#*******************************************************************************************************************
 
 
-# Load functions used in the following sub-routines:
+#' Load functions used in the following sub-routines:
 source(file.path(FUNC_PATH, "1.subfunctions.R"))
 source(file.path(FUNC_PATH,'2.subfunctions.R'))
 source(file.path(FUNC_PATH,'3.subfunctions.R'))
 source(file.path(FUNC_PATH,'4.subfunctions.R'))
 
-# Create the name of the simulation from the arguments
+# Create the name of the simulation from the arguments (function in Functions/1.subfunctions)
 sim_name <- generate.sim_name(forcing,
                                 input_location,
                                 input_method,
                                 dist,
                                 bouncing)
   
-# Create output folder
+#' Create output folders
+#'     Names
 output_path_1 <- file.path(OUTPUT_PATH, sim_name, year, "1.nb_cover")
 output_path_2 <- file.path(OUTPUT_PATH, sim_name, year, "2.info_on_points")
 output_path_3_more <- file.path(OUTPUT_PATH, sim_name, year, paste0("w",weight_method,
@@ -31,14 +32,17 @@ output_path_3_more <- file.path(OUTPUT_PATH, sim_name, year, paste0("w",weight_m
                                                                     ifelse(is.null(thr_disch), "_no-thr-disch", paste0("_thr-disch",thr_disch))))
 output_path_3 <- file.path(output_path_3_more, "3.arrays_by_release_date")
 output_path_4 <- file.path(output_path_3_more, paste0("4.maps_",agg.time_scale))
+#'     Create
 dir.create(output_path_1, recursive = T, showWarnings = F)
 dir.create(output_path_2, recursive = T, showWarnings = F)
 dir.create(output_path_3, recursive = T, showWarnings = F)
 dir.create(output_path_4, recursive = T, showWarnings = F)
 
-# create paths
+
+# create paths used to read data from the simulation and from the 1-Input_Ichthyop folder
 sim_output_path <- file.path(DATA_PATH, "Output_Ichthyop", sim_name)
 sim_input_path <- file.path(DATA_PATH, "Input_Ichthyop", paste0(input_location, "_nlog_input_", forcing, "_", input_method))
+
 
 # If RESET is T, delete all the output files
 if (RESET[1] == T){
@@ -59,16 +63,16 @@ if (RESET[1] == T){
       silent = T)
 }
 
+
+#' Print messages
 lines.to.cat <- c()
-
 msg <- "\14" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-
-#'@read_rivers
-#'**********
-
 msg <- bold("0. Initializing\n\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
-# Information on weighting methods
+
+#' Information on weighting methods
+#'     Will be used in logs (log.txt)
+#'     and to know how many weighting method are considered
 weight_informations <- data.frame(cbind(1:6,
                                         c("Homogeneous weight",
                                           "Weight proportional to mean water discharge of associated rivers",
@@ -81,15 +85,16 @@ n_weight_methods <- dim(weight_informations)[1]
 
 
 #' Create output files names
+#'       Sub-routine 1
 logName1 <- file.path(output_path_1, "log.txt")
 nCoverPoints <- file.path(output_path_1, "number_of_cover_points_per_input_point.csv")
-
+#'       Sub-routine 2
 logName2 <- file.path(output_path_2, "log.txt")
 weightInput <- c(file.path(output_path_2, "weight_per_points_summary.csv"),
                  file.path(output_path_2, paste0("weight_per_points_matrix_w",weight_method,".csv")))
-
+#'       Sub-routine 3
 logName3 <- file.path(output_path_3, "log.txt")
-
+#'       Sub-routine 4
 logName4 <- file.path(output_path_4, "log.txt")
 globArrayName <- file.path(output_path_3_more, "4.global_array.rds")
 aggArrayName <- file.path(output_path_4, "aggregated_array.rds")
@@ -109,7 +114,7 @@ globArrayExists <- file.exists(globArrayName)
 aggArrayExists <- file.exists(aggArrayName)
 mapsExist <- file.exists(pngMapsName)
 
-# For parallel study:
+# For parallel:
 # On Windows, or if don't want to parralelize, set cores number to 1
 if (.Platform$OS.type == "windows" | as.logical(Parallel[1]) == F) {
   nb_cores = 1
@@ -117,6 +122,12 @@ if (.Platform$OS.type == "windows" | as.logical(Parallel[1]) == F) {
   nb_cores = trunc(detectCores() * as.numeric(Parallel[2]))
 }
 
+
+#'@read_rivers
+#'**********
+#' The 2 first sub routines need to use data on rivers
+#' If none of these 2 subroutines need to be run, we do not
+#' read the rivers data
 if (!nCoverExists | !weightExists){
   
   msg <- "Reading and filtering rivers file\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
@@ -157,32 +168,3 @@ if (!nCoverExists | !weightExists){
 # DoNotDeleteMe <- c("DoNotDeleteMe", ls())
 # 
 # 
-# 
-# # Create log file
-# sink(logName, append = T)
-#   
-# cat("#### From simulation results to maps ####\n=========================================\n Date & Time:",format(Sys.time()),"\n\n")
-# cat("1. GENERATING ARRAY FROM SIMULATION RESULTS")
-# cat("\n Execution time :", format(Sys.time()))
-# cat("\n\n### SIMULATION CHARACTERISTICS")
-# cat(paste("\n Forcing product :", forcing))
-# cat(paste("\n Location of input points :", input_location))
-# cat(paste("\n Method for input points :", input_method))
-# 
-# if (input_method == "kFromCoast"){
-#   cat(paste0("\n Distance of input from coast : ", dist, "km"))
-# }
-# cat(paste0("\n Dispersion coefficient : 10^-", dispersion, " m^2/s^3"))
-# cat(paste0("\n Bouncing on coast : ", bouncing, "\n\n"))
-# 
-# cat("### ARGUMENTS USED")
-# cat(paste("\n Life time :", ltime, "days"))
-# cat(paste("\n Life time method :", ltime_method))
-# cat(paste("\n Weighting method :", weight_method))
-# cat(paste("\n Grid cell size :", gsize, "degrees"))
-# cat(paste("\n Aggregating time scale :", agg.time_scale))
-# cat(paste("\n Discharge threshold :", ifelse(is.null(thr_disch), "NULL", paste(thr_disch, "m3/s"))))
-# cat(paste("\n Using parallelization :", as.logical(Parallel[1])))
-# cat(paste("\n Number of cores used :", ifelse(Parallel[1]==F, 1, trunc(detectCores() * Parallel[2]))))
-# 
-# sink()

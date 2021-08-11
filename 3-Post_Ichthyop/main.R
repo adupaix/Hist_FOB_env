@@ -8,9 +8,11 @@
 #'@revision
 #'#*******************************************************************************************************************
 
+#' empty environment
 rm(list = ls())
 invisible(gc())
 
+#' generate basic paths
 WD <- file.path(getwd(),'3-Post_Ichthyop')
 DATA_PATH <- file.path(getwd(),'0-Data')
 
@@ -42,7 +44,7 @@ ltime_sd = 30 # in days, used if ltime_method == 1
 #'   4. weight proportional to the surface of forest cover in the river basins associated with the release point
 #'   5. weight proportional to the surface of coastal forest cover associated with the release point
 #'   6. weight proportional to the precipitations at the release point
-weight_method = 5
+weight_method = 6
 
 #'## size of the grid cells used (2° or a multiple of 2°)
 #' fixed because of the post-processing script performed on the cluster

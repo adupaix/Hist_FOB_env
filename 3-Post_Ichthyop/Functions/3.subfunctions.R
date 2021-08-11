@@ -38,7 +38,11 @@ apply.mortality <- function(array.k, ltime, ltime_method, sd = 30){
 
 #'@sub-function 2
 #'***************
-#' function to comibne arrays in the foreach loop
+#' function to combine arrays in the foreach loop
+#'   Sums the two 3D matrices term by term
+#'   checking if their 3rd dimension has the same length
+#'   If its not the case (eg. dim(x)[3] > dim(y)[3])
+#'   complete the smallest matrix (in that case y) with zeros
 
 f.for.combining <- function(x,y){
   

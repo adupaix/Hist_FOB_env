@@ -18,6 +18,8 @@ if (!mapsExist){
   if (!globArrayExists){
     msg <- "    - Reading weighted arrays and suming them into a global array\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
     
+    #' read all the weighted arrays (one per release date)
+    #' and stack them
     glob_array <- foreach(i = 1:length(weighted_arrays),
                           .packages = srcUsedPackages,
                           .combine = function(x,y) abind::abind(x,y, along = 3)) %do% {
@@ -29,9 +31,10 @@ if (!mapsExist){
     # arrange the array by time
     glob_array <- glob_array[,,order(dimnames(glob_array)[[3]])]
     
+    #' get the names (it contains the date)
     nm <- dimnames(glob_array)[[3]]
     
-    # aggregate the array by timestamp, to have one data.frame per timestamp (instead of per timestamp per simulation)
+    #' aggregate the array by timestamp, to have one data.frame per timestamp (instead of per timestamp per release date)
     glob_array <- foreach(day.i = unique(nm),
                           .combine = function(x,y) abind::abind(x,y, along = 3)) %do% {
                             
@@ -39,26 +42,31 @@ if (!mapsExist){
                             apply(array.i, c(1,2), sum)
                             
                           }
+    #' rename the new array to have the proper dates
     nm <- unique(nm)
     dimnames(glob_array)[[3]] <- nm
     
+    #' save the global array: it contains one global density map for each timestep 
     saveRDS(glob_array, file = globArrayName)
     
   } else {
+    #' if the global array was already generated, read it
     
     msg <- "    - Reading global array from file\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
     
     glob_array <- readRDS(globArrayName)
     
-    nm <- dimnames(glob_array)[[3]]
-    
   }
+  
+  #' get all the dates
+  nm <- dimnames(glob_array)[[3]]
   
   
   if (!aggArrayExists){
     
     msg <- "    - Generating the mean aggregated array\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
     
+    #' generate the new names depending on the aggregation time scale of interest
     if (agg.time_scale == "month"){
       new_nm <- paste0(year(nm),
                        "-",
@@ -72,9 +80,12 @@ if (!mapsExist){
       new_nm <- year(nm)
     }
     
+    #' rename the global array
     dimnames(glob_array)[[3]] <- new_nm
     nm_time_scale <- sort(unique(new_nm))
     
+    #' for each time step of the time scale of interest (either month, quarter, etc)
+    #' calculate the mean of the density maps
     mean_agg_array <- foreach(time_scale.i = nm_time_scale,
                               .combine = function(x,y) abind::abind(x,y, along = 3)) %do% {
                                 
@@ -83,14 +94,17 @@ if (!mapsExist){
                                 
                               }
     
-    
+    #' if the time scale of interest is not "year" (only one matrix obtained)
+    #' rename the obtained matrices with the month/quarter
     if (length(dim(mean_agg_array))==3){
       dimnames(mean_agg_array)[[3]] <- nm_time_scale
     }
     
+    #' save the aggregated array
     saveRDS(mean_agg_array, file = aggArrayName)
     
   } else {
+    #' if the aggregated array was already generated, read it
     
     msg <- "    - Reading aggregated array from file\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
     
@@ -99,7 +113,6 @@ if (!mapsExist){
   }
   
   #' selecting only the year of interest
-  
   msg <- paste0("    - Selecting the year of interest : ",year,"\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
   is_of_year_of_interest <- grepl(year, dimnames(mean_agg_array)[[3]])
@@ -110,19 +123,23 @@ if (!mapsExist){
   
   mean.ggplot.list <- list()
   
+  #' if mean_agg_array has 3 dimensions (agg.time_scale != "year")
   if (length(dim(mean_agg_array)) == 3){
     time_scale <- 1:dim(mean_agg_array)[3]
   } else {
     time_scale <- 1
   }
   
+  #' if the scale is the same for all the maps
   if (common_scale_max == T){
+    #' fix the max
     fixed_scale_max <- ceiling(max(mean_agg_array))
   } else{
+    #' else fix at zero (see limits in ?ggplot2::scale_fill_gradientn)
     fixed_scale_max <- 0
   }
   
-  # for each time_scale, we build a map and save it in the list
+  #' for each time_scale, we build a map and save it in the list
   if (length(time_scale)>1){
     for (i in time_scale){
       
@@ -148,7 +165,7 @@ if (!mapsExist){
   saveRDS(mean.ggplot.list, plotListName)
   cat("\n\n List of maps saved in:", plotListName, "\n")
   
-  # save an image of the mean maps
+  #' save an image of the map(s)
   if (length(time_scale)>1){
     l = length(mean.ggplot.list)
     n_col <- ceiling(sqrt(l))
@@ -176,6 +193,7 @@ if (!mapsExist){
   
 } else {
   
+  #' if the maps were arleady generated, just print a message
   msg <- "Maps already exist\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
 }

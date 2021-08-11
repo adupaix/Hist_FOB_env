@@ -3,7 +3,8 @@
 #'@update : 2021-07-29
 #'@email : amael.dupaix@ens-lyon.fr
 #'#*******************************************************************************************************************
-#'@description :  Sub-functions of the 2nd sub-routine which weights the simulations and applies mortality
+#'@description :  Sub-functions of the 2nd sub-routine which calculates the weights
+#' for each (release point)-(release date) pairs
 #'#*******************************************************************************************************************
 #'@revision
 #'#*******************************************************************************************************************
@@ -11,7 +12,7 @@
 #'
 #'@sub-function 1
 #'***************
-#'read the link table generate in the sub-routine 1
+#'read the link table generated in the sub-routine 1
 read.link_cover_input <- function(OUTPUT_PATH, sim_name){
   
   link_table <- read.csv(file.path(OUTPUT_PATH, sim_name, "1.nb_cover", "number_of_cover_points_per_input_point.csv"), header = T)
@@ -30,12 +31,6 @@ get.coords.release <- function(sim_input_path, point){
   
   point$x <- coords[coords$V3 == as.numeric(point$id),1]
   point$y <- coords[coords$V3 == as.numeric(point$id),2]
-  
-  # get the coordinates of the points which are at less than 1/4° of the point
-  # dists <- sqrt((point$x-coords[,1])^2 + (point$y-coords[,2])^2)
-  # df <- coords[which(dists < 1/4 & coords$V3 != as.numeric(point$id)),]
-  # names(df) <- c("x","y","id")
-  # point$close_points <- df
   
   return(point)
 }
