@@ -66,47 +66,17 @@ msg <- "\14" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 #'@read_rivers
 #'**********
 
-msg <- bold("0. Initializing:\n\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-msg <- "Reading and filtering rivers file\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-msg <- "    - Reading\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-
-rivers_IO <- readRDS(file.path(DATA_PATH, "river_data", "rivers_IO.rds"))
-
-msg <- "    - Filtering\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-
-#' filter rivers
-rivers_IO %>%
-  # garde uniquement les embouchures
-  # (identifiant de la portion de riviere = a l'identifiant principal de la riviere)
-  dplyr::filter(HYRIV_ID == MAIN_RIV) %>%
-  # garde uniquement les portions de riviere qui se jettent dans la mer
-  dplyr::filter(ENDORHEIC == 0) %>%
-  # garde uniquement les fleuves avec un debit maximal de plus d 100 m3 par seconde
-  dplyr::filter(dis_m3_pmx >= thr_disch) -> embouchures
-
-# keep only variables of interest
-rivers_IO %>%
-  dplyr::filter(MAIN_RIV %in% embouchures$HYRIV_ID) %>%
-  dplyr::filter(dis_m3_pmx >= thr_disch) %>%
-  dplyr::select(HYRIV_ID, #id de la portion de riviere
-                NEXT_DOWN,#id de la portion en aval
-                MAIN_RIV, # id de la portion qui se jette dans la mer
-                LENGTH_KM, # longueur de la portion en km
-                HYBAS_L12, # id du bassin versant,
-                #pour faire le lien avec l'autre base de donnees
-                dis_m3_pyr, # debit moyen en m3/s
-                dis_m3_pmn, # debit minimal en m3/s
-                dis_m3_pmx # debit maximal
-  ) -> rivers_filtered
-
+msg <- bold("0. Initializing\n\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
 # Information on weighting methods
-weight_informations <- data.frame(cbind(1:5,
+weight_informations <- data.frame(cbind(1:6,
                                         c("Homogeneous weight",
                                           "Weight proportional to mean water discharge of associated rivers",
                                           "Weight proportional to forest cover surface",
                                           "Weight proportional to forest cover surface of associated river basins",
+                                          "Weight proportional to coastal forest cover surface",
                                           "Weight proportional to monthly precipitation")))
+weight_informations$X2 <- as.character(weight_informations$X2)
 n_weight_methods <- dim(weight_informations)[1]
 
 
@@ -123,20 +93,21 @@ logName3 <- file.path(output_path_3, "log.txt")
 logName4 <- file.path(output_path_4, "log.txt")
 globArrayName <- file.path(output_path_3_more, "4.global_array.rds")
 aggArrayName <- file.path(output_path_4, "aggregated_array.rds")
-plotListName <- file.path(output_path_4, "plot_list.rds")
-pngMapsName <- file.path(output_path_4, paste0(paste0("w",weight_method,
-                                                      "_ltime",ltime_method,"-",ltime,
-                                                      ifelse(ltime_method == 1, paste0("-sd",ltime_sd), ""),
-                                                      ifelse(is.null(thr_disch), "_no-thr-disch", paste0("_thr-disch",thr_disch))),
-                                                "_", agg.time_scale,"ly_maps.png"))
+plotListName <- file.path(output_path_4, paste0(ifelse(log_color_scale == T, "log_",""), "plot_list.rds"))
+pngMapsName <- file.path(output_path_4, paste0(ifelse(log_color_scale == T, "log_",""),
+                                               "w",weight_method,
+                                               "_ltime",ltime_method,"-",ltime,
+                                               ifelse(ltime_method == 1, paste0("-sd",ltime_sd), ""),
+                                               ifelse(is.null(thr_disch), "_no-thr-disch", paste0("_thr-disch",thr_disch)),
+                                               "_", agg.time_scale,"ly_maps.png"))
 
 # Logical to know if output files exist
 nCoverExists <- file.exists(nCoverPoints)
 weightExists <- all(file.exists(weightInput))
 log3Exists <- file.exists(logName3)
-log4Exists <- file.exists(logName4)
 globArrayExists <- file.exists(globArrayName)
 aggArrayExists <- file.exists(aggArrayName)
+mapsExist <- file.exists(pngMapsName)
 
 # For parallel study:
 # On Windows, or if don't want to parralelize, set cores number to 1
@@ -144,6 +115,42 @@ if (.Platform$OS.type == "windows" | as.logical(Parallel[1]) == F) {
   nb_cores = 1
 } else { #use a fraction of the available cores
   nb_cores = trunc(detectCores() * as.numeric(Parallel[2]))
+}
+
+if (!nCoverExists | !weightExists){
+  
+  msg <- "Reading and filtering rivers file\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+  msg <- "    - Reading\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+  
+  rivers_IO <- readRDS(file.path(DATA_PATH, "river_data", "rivers_IO.rds"))
+  
+  msg <- "    - Filtering\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+  
+  #' filter rivers
+  rivers_IO %>%
+    # garde uniquement les embouchures
+    # (identifiant de la portion de riviere = a l'identifiant principal de la riviere)
+    dplyr::filter(HYRIV_ID == MAIN_RIV) %>%
+    # garde uniquement les portions de riviere qui se jettent dans la mer
+    dplyr::filter(ENDORHEIC == 0) %>%
+    # garde uniquement les fleuves avec un debit maximal de plus d 100 m3 par seconde
+    dplyr::filter(dis_m3_pmx >= thr_disch) -> embouchures
+  
+  # keep only variables of interest
+  rivers_IO %>%
+    dplyr::filter(MAIN_RIV %in% embouchures$HYRIV_ID) %>%
+    dplyr::filter(dis_m3_pmx >= thr_disch) %>%
+    dplyr::select(HYRIV_ID, #id de la portion de riviere
+                  NEXT_DOWN,#id de la portion en aval
+                  MAIN_RIV, # id de la portion qui se jette dans la mer
+                  LENGTH_KM, # longueur de la portion en km
+                  HYBAS_L12, # id du bassin versant,
+                  #pour faire le lien avec l'autre base de donnees
+                  dis_m3_pyr, # debit moyen en m3/s
+                  dis_m3_pmn, # debit minimal en m3/s
+                  dis_m3_pmx # debit maximal
+    ) -> rivers_filtered
+  
 }
 
 # # Do not delete
