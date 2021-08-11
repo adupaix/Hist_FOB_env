@@ -40,8 +40,9 @@ ltime_sd = 30 # in days, used if ltime_method == 1
 #'   2. weight proportional to mean water discharge of rivers
 #'   3. weight proportional to the surface of forest cover associated with the release point
 #'   4. weight proportional to the surface of forest cover in the river basins associated with the release point
-#'   5. weight proportional to the precipitations at the release point
-weight_method = 1
+#'   5. weight proportional to the surface of coastal forest cover associated with the release point
+#'   6. weight proportional to the precipitations at the release point
+weight_method = 3
 
 ### size of the grid cells used (either 1, 2 or 5)
 gsize = 2
@@ -99,7 +100,7 @@ RESET = c(F,F,F,F)
 agg.time_scale = "month"
 
 # specify if the color scale is log transformed (T) or not (F)
-log_color_scale = F
+log_color_scale = T
 
 # choose to fix the max of the color scale
 # if = F, the max is not fixed

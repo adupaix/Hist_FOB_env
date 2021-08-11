@@ -152,10 +152,12 @@ get.weights <- function(point){
   # method 4: apply a weight depending on the area covered by forest in the river basins
   w4 <- sum(point$rivers$cover * 900 / 10^6)
     
-  # method 5: apply a weight depending on the precipitations at the release point
-  w5 <- point$precip
+  # method 5: apply a weight depending on the coastal area covered by forest
+  w5 <- point$forest_surface - sum(point$rivers$cover * 900 / 10^6)
   
+  # method 6: apply a weight depending on the precipitations at the release point
+  w6 <- point$precip
   
-  return(c(w1,w2,w3,w4,w5))
+  return(c(w1,w2,w3,w4,w5,w6))
 }
 
