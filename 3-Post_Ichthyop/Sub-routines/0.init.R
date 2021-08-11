@@ -86,7 +86,7 @@ nCoverPoints <- file.path(output_path_1, "number_of_cover_points_per_input_point
 
 logName2 <- file.path(output_path_2, "log.txt")
 weightInput <- c(file.path(output_path_2, "weight_per_points_summary.csv"),
-                 file.path(output_path_2, paste0("weight_per_points_matrix_w",1:n_weight_methods,".csv")))
+                 file.path(output_path_2, paste0("weight_per_points_matrix_w",weight_method,".csv")))
 
 logName3 <- file.path(output_path_3, "log.txt")
 
