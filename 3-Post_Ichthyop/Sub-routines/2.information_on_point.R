@@ -44,7 +44,7 @@ if (!weightExists){
     rds_files <- list.files(file.path(sim_output_path, sub_dirs[i]), recursive = T, pattern = ".rds")
     
     #'@!!!
-    rds_files <- rds_files[1:480]
+    # rds_files <- rds_files[1:480]
       
     #'@arguments
     #'**********

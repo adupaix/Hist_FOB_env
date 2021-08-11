@@ -17,7 +17,7 @@
 
 buffer_size = 10^3 #in m
 
-msg <- crayon::bold("\n\n1. Counting the number of cover points associated with each input point\n\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+msg <- crayon::bold("\n1. Counting the number of cover points associated with each input point\n\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
 if(!nCoverExists){
 
