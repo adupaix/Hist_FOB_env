@@ -90,7 +90,7 @@ if (!Exists$maps){
                               .combine = function(x,y) abind::abind(x,y, along = 3)) %do% {
                                 
                                 array.i <- glob_array[,,which(dimnames(glob_array)[[3]] == time_scale.i)]
-                                apply(array.i, c(1,2), get("mean"))
+                                apply(array.i, c(1,2), get(agg.function))
                                 
                               }
     

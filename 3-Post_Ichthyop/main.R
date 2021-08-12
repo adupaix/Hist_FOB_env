@@ -44,7 +44,7 @@ ltime_sd = 30 # in days, used if ltime_method == 1
 #'   4. weight proportional to the surface of forest cover in the river basins associated with the release point
 #'   5. weight proportional to the surface of coastal forest cover associated with the release point
 #'   6. weight proportional to the precipitations at the release point
-weight_method = 6
+weight_method = 3
 
 #'## size of the grid cells used (2° or a multiple of 2°)
 #' fixed because of the post-processing script performed on the cluster
@@ -58,7 +58,7 @@ gsize = 2
 thr_disch = 100
 
 # Arguments used for the Ichthyop simulation
-#-------------------------------------------
+#'****************************************
 ### forcing (chr): forcing product used in ICHTHYOP simulation (oscar/globcurrent/nemo)     
 forcing="PHILIN12.L75"
 ### input_location (chr): either "river" or "mangrove"
@@ -84,6 +84,7 @@ year = 2000
 n_points_per_dir = 28*8*5
 
 #'# Run in parallel ?
+#'********************
 #' First element of the vector:
 #'    If F, runs in sequential
 #'    if T, runs in parallel
@@ -92,15 +93,22 @@ n_points_per_dir = 28*8*5
 #'# @!! If the script is running on a Windows machine, the script is executed sequentially
 Parallel = c(T, 1/2)
 
+#' Reset ?
+#' *****
 #' Whether to delete the results obtained for these arguments (T) or not (F):
 #'  each element of RESET concerns the outputs obtained from the corresponding sub-routine (1 to 4)
 RESET = c(F,F,F,F)
 
-# Arguments used for the ggplot:
-#-------------------------------
-### time scale used to aggregate the dates (month, quarter or year)
-## !! quarter starts in December: for example, first quarter of 2012 is from 12.2011 to 02.2012 included
+#' Arguments used for the ggplot:
+#'******************************
+#'## time scale used to aggregate the dates (month, quarter or year)
+#'# @!! quarter starts in December: for example, first quarter of 2012 is from 12.2011 to 02.2012 included
 agg.time_scale = "month"
+
+#' specify which function is used to aggregate the array before building the maps
+#' if "mean', build maps of the mean density of particles for every month/quarter/year
+#' if "sd", build maps of standard deviation
+agg.function = "mean"
 
 # specify if the color scale is log transformed (T) or not (F)
 log_color_scale = F
