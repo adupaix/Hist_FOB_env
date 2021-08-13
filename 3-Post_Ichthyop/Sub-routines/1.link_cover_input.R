@@ -183,7 +183,7 @@ for (k in 1:length(cover_files)){
     rm(coastal_cover) ; invisible(gc())
     
     write.table(input_points,
-                file = file.path(output_paths[[1]], coastal_cover_fname))
+                file = coastal_cover_fname)
     
   } else {
     
