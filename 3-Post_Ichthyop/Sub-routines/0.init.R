@@ -93,7 +93,8 @@ n_weight_methods <- dim(weight_informations)[1]
 Names <- list()
 #'       Sub-routine 1
 Names$log1 <- file.path(output_paths[[1]], "log.txt")
-Names$coverFinal <- file.path(output_paths[[1]], "number_of_cover_points_per_input_point.csv")
+Names$coverRiver <- file.path(output_paths[[1]], "n_cover_per_river.csv")
+Names$coverGlobal <- file.path(output_paths[[1]], "number_of_cover_points_per_input_point.csv")
 #'       Sub-routine 2
 Names$log2 <- file.path(output_paths[[2]], "log.txt")
 Names$weightInput <- c(file.path(output_paths[[2]], "weight_per_points_summary.csv"),
@@ -121,7 +122,7 @@ rm(output_path_3_more)
 
 # Logical to know if output files exist
 Exists <- list()
-Exists$coverFinal <- file.exists(Names$coverFinal)
+Exists$cover <- all(file.exists(c(Names$coverGlobal, Names$coverRiver)))
 Exists$weight <- all(file.exists(Names$weightInput))
 Exists$log3 <- file.exists(Names$log3)
 Exists$globArray <- file.exists(Names$globArray)
@@ -141,7 +142,7 @@ if (.Platform$OS.type == "windows" | as.logical(Parallel[1]) == F) {
 #' The 2 first sub routines need to use data on rivers
 #' If none of these 2 subroutines need to be run, we do not
 #' read the rivers data
-if (!Exists$coverFinal | !Exists$weight){
+if (!Exists$cover | !Exists$weight){
   
   msg <- "Reading and filtering rivers file\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   msg <- "    - Reading\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)

@@ -19,7 +19,7 @@ buffer_size = 10^3 #in m
 
 msg <- crayon::bold("\n1. Counting the number of cover points associated with each input point\n\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
-if(!Exists$coverFinal){
+if(!Exists$cover){
 
 # get the cover files names
 cover_files <- list.files(path = file.path(DATA_PATH,
@@ -307,7 +307,7 @@ if(!file.exists(fname)){
     rename("nb_river_cover_points" = "n") -> n_cover_per_river
 
   write.csv(n_cover_per_river,
-            file.path(output_paths[[1]], "n_cover_per_river.csv"),
+            file = Names$coverRiver,
             row.names = F)
 
   link_river_input <- read.table(file.path(sim_input_path, "Link_table.txt"), header = T)
@@ -332,7 +332,7 @@ if(!file.exists(fname)){
     dplyr::select(id_curr, x, y, nb_river_cover_points, nb_coastal_cover_points, nb_cover_points, nb_coastal_points) -> nb_cover_per_input
 
   write.csv(nb_cover_per_input,
-            file = file.path(output_paths[[1]], "number_of_cover_points_per_input_point.csv"),
+            file = Names$coverGlobal,
             row.names = F)
 
   #' save a log
@@ -351,7 +351,9 @@ if(!file.exists(fname)){
 }
 
 #'@output_for_next_subroutine
-nb_cover_per_input <- read.csv(file = file.path(output_paths[[1]], "number_of_cover_points_per_input_point.csv"))
+nb_cover_per_input <- read.csv(file = Names$coverGlobal)
+n_cover_per_river <- read.csv(file = Names$coverRiver)
+
 
 #' Do not delete
-toKeep <- c(toKeep, "nb_cover_per_input")
+toKeep <- c(toKeep, "nb_cover_per_input", "n_cover_per_river")

@@ -18,10 +18,6 @@ if (!Exists$weight){
   
   sub_dirs <- list.files(sim_output_path)
   
-  #' get the table containing the number of cover points associated with each river
-  n_cover_per_river <- read.csv(file.path(OUTPUT_PATH, sim_name, year, "1.nb_cover", "n_cover_per_river.csv"),
-                                header = T)
-    
   #' Get the table linking river ids with input point ids
   link_river_input <- read.table(file.path(sim_input_path, "Link_table.txt"), header = T)
   #' keep only the rivers above the threshold in link_river_input
