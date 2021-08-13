@@ -12,12 +12,12 @@ Script to generate a river template used to map forest cover around the Indian O
 
 Scripts to generate a data frame containing the coordinates of the input locations for Ichthyop
 
-Also generates Ichthyop cfg files, using a provided template
+Also generates Ichthyop cfg files and .pbs scripts to run jobs on a cluster, using provided templates
 
 ## `2-Launch_Ichthyop_datarmor`
 
-Scripts used to launch Ichthyop simulations and to pre-process Ichthyop results, on a cluster.
+Scripts used to launch Ichthyop simulations and to pre-process Ichthyop results, on the cluster.
 
 ## `3-Post_Ichthyop`
 
-Scripts to process Ichthyop outputs, using precipitation, forest cover, and river discharge data
+Scripts to process Ichthyop outputs, using precipitations, coastline, forest cover, and river discharge data
