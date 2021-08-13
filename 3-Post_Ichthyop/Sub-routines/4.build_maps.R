@@ -11,7 +11,8 @@
 #'#*******************************************************************************************************************
 
 msg <- bold("\n\n4. Building maps\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-msg <- paste0("Time scale of aggregation: ", agg.time_scale, "\n\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+msg <- paste0("Time scale of aggregation: ", agg.time_scale, "\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+msg <- paste0("\n  Extent: [", paste(area_to_map, collapse = ","), "]\n\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
 if (!Exists$maps){
   
@@ -119,6 +120,32 @@ if (!Exists$maps){
   nm <- dimnames(mean_agg_array)[[3]][is_of_year_of_interest]
   mean_agg_array <- mean_agg_array[,,is_of_year_of_interest]
   
+  #' selecting the area of interest
+  #' uses the extent specified in area_to_map
+  new_extent <- raster::extent(area_to_map)
+  
+  if(length(dim(mean_agg_array)) == 3){
+      
+    new_mean_agg_array <- foreach (i = 1:dim(mean_agg_array)[3],
+                                   .combine = function(x,y) abind::abind(x,y, along = 3)) %do% {
+                                     r <- create.raster(gsize = 2)
+                                     r[] <- mean_agg_array[,,i]
+                                     r <- crop(r, new_extent)
+                                     as.matrix(r)
+                                     }
+    dimnames(new_mean_agg_array)  <- dimnames(mean_agg_array)
+  } else {
+    r <- create.raster(gsize = 2)
+    r[] <- mean_agg_array
+    r <- crop(r, new_extent)
+    new_mean_agg_array <- as.matrix(r)
+  }
+  
+  mean_agg_array <- new_mean_agg_array
+  
+  rm(new_mean_agg_array) ; invisible(gc())
+  
+  
   msg <- "    - Building maps\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
   mean.ggplot.list <- list()
@@ -146,17 +173,17 @@ if (!Exists$maps){
       array.i <- mean_agg_array[,,i]
       dimname.i <- nm[i]
       
-      mean.ggplot.list[[i]] <- matrix.to.ggplot(array.i, dimname.i, gsize,
+      mean.ggplot.list[[i]] <- matrix.to.ggplot(array.i, dimname.i,
                                                 log_color_scale, fixed_scale_max,
-                                                color_scale_pos)
+                                                color_scale_pos, area_to_map)
     }
   } else if (time_scale == 1){
     array.i <- mean_agg_array
     dimname.i <- nm
     
-    mean.ggplot.list <- matrix.to.ggplot(array.i, dimname.i, gsize,
+    mean.ggplot.list <- matrix.to.ggplot(array.i, dimname.i,
                                          log_color_scale, fixed_scale_max,
-                                         color_scale_pos)
+                                         color_scale_pos, area_to_map)
     
   }
   
@@ -164,6 +191,10 @@ if (!Exists$maps){
   
   saveRDS(mean.ggplot.list, Names$plotList)
   cat("\n\n List of maps saved in:", Names$plotList, "\n")
+  
+  #get the size of the panel compared to the maximum size (when extent corresponds to the whole IO)
+  xratio <- (area_to_map[2]-area_to_map[1]) / (140-20)
+  yratio <- (area_to_map[4]-area_to_map[3]) / (40-(-40))
   
   #' save an image of the map(s)
   if (length(time_scale)>1){
@@ -176,11 +207,11 @@ if (!Exists$maps){
                    common.legend = common_scale_max,
                    legend = "right")
     
-    ggsave(Names$pngMaps, p, width = ifelse(common_scale_max, 180*n_col + 20, 180*n_col),
-           height = 120*n_row, units = "mm")
+    ggsave(Names$pngMaps, p, width = ifelse(common_scale_max, xratio*180*n_col + 20, xratio*180*n_col),
+           height = yratio*120*n_row, units = "mm")
   } else if (time_scale == 1){
-    ggsave(Names$pngMaps, mean.ggplot.list, width = ifelse(common_scale_max, 200, 180),
-           height = 120, units = "mm")
+    ggsave(Names$pngMaps, mean.ggplot.list, width = ifelse(common_scale_max, xratio*200, xratio*180),
+           height = yratio*120, units = "mm")
   }
   
   
@@ -188,6 +219,7 @@ if (!Exists$maps){
   sink(Names$log4, append = F)
   cat("Date & time :", format(Sys.time()), "\n")
   cat("\n  Time scale of aggregation:", agg.time_scale)
+  cat(paste0("\n  Extent: [", paste(area_to_map, collapse = ","), "]"))
   sink()
   
   

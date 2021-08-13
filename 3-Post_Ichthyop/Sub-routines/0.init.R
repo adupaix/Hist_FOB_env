@@ -104,9 +104,13 @@ Names$log3 <- file.path(output_paths[[3]], "log.txt")
 Names$log4 <- file.path(output_paths[[4]], "log.txt")
 Names$globArray <- file.path(output_path_3_more, "4.global_array.rds")
 Names$aggArray <- file.path(output_paths[[4]], paste0("aggregated_array_",agg.function,".rds"))
-Names$plotList <- file.path(output_paths[[4]], paste0("plot_list_", agg.function, ifelse(log_color_scale == T, "_log",""),".rds"))
+Names$plotList <- file.path(output_paths[[4]], paste0("plot_list_", agg.function,
+                                                      ifelse(log_color_scale == T, "_log_","_"),
+                                                      paste(area_to_map, collapse = ""),
+                                                      ".rds"))
 Names$pngMaps <- file.path(output_paths[[4]], paste0(ifelse(log_color_scale == T, "log_",""),
                                                      agg.function,
+                                                     "_", paste(area_to_map, collapse = ""),
                                                      "_w",weight_method,
                                                      "_ltime",ltime_method,"-",ltime,
                                                      ifelse(ltime_method == 1, paste0("-sd",ltime_sd), ""),

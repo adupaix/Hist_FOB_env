@@ -7,19 +7,20 @@
 # OUTPUT: ggplot                                                                      #
 #######################################################################################
 
-matrix.to.ggplot <- function(array.i, dimname.i, gsize,
+matrix.to.ggplot <- function(array.i, dimname.i,
                              log_color_scale, fixed_scale_max,
-                             color_scale_pos){
+                             color_scale_pos, area_to_map){
 
   r.i <- raster(array.i)
-  extent(r.i) <- extent(create.raster(gsize))
-
+  extent(r.i) <- extent(area_to_map)
+  
   # df from the raster
   df.i <- as.data.frame(r.i, xy = TRUE)
 
   ### PLOT
   p <- build.ggplot(df = df.i, titre = dimname.i, col_title = "Mean number\nof particles",
-                    log_color_scale, fixed_scale_max, color_scale_pos)
+                    log_color_scale, fixed_scale_max, color_scale_pos,
+                    area_to_map)
 
   return(p)
 
@@ -41,7 +42,7 @@ matrix.to.ggplot <- function(array.i, dimname.i, gsize,
 #######################################################################################
 
 build.ggplot <- function(df, titre, col_title, log_color_scale, fixed_scale_max,
-                         color_scale_pos){
+                         color_scale_pos, area_to_map){
 
   # get the max of the color scale
   if (fixed_scale_max != 0){
@@ -56,12 +57,15 @@ build.ggplot <- function(df, titre, col_title, log_color_scale, fixed_scale_max,
                          is.infinite(df$layer) == FALSE &
                          df$layer != 0])
   }
+  
+  xlimits <- area_to_map[1:2]
+  ylimits <- area_to_map[3:4]
 
   p <- ggplot() +
     geom_sf() +
     coord_sf(
-      xlim = c(20, 140),
-      ylim = c(-40, 40),
+      xlim = xlimits,
+      ylim = ylimits,
       expand = FALSE,
       crs = st_crs(4326)
     ) +

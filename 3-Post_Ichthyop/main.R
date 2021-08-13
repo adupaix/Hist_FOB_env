@@ -44,7 +44,7 @@ ltime_sd = 30 # in days, used if ltime_method == 1
 #'   4. weight proportional to the surface of forest cover in the river basins associated with the release point
 #'   5. weight proportional to the surface of coastal forest cover associated with the release point
 #'   6. weight proportional to the precipitations at the release point
-weight_method = 3
+weight_method = 1
 
 #'## size of the grid cells used (2° or a multiple of 2°)
 #' fixed because of the post-processing script performed on the cluster
@@ -54,7 +54,7 @@ gsize = 2
 #' only particles originating from a river with a maximum value > thr_disch (in m3/s) are kept 
 #' if thr_disch = 0, only rivers with a maximum discharge > 0 m3/s will be kept
 #' if you don't want any filter to be used, set thr_disch = NULL
-#'@!! a threshold of 100 m3/s was used to map the forest cover around the rivers
+#'@!!Fixed a threshold of 100 m3/s was used to map the forest cover around the rivers
 thr_disch = 100
 
 # Arguments used for the Ichthyop simulation
@@ -123,6 +123,13 @@ common_scale_max = T
 # "in_panel": color legend in the bottom right corner of the map
 # "out_panel": color legend out of the map, on the right
 color_scale_pos = "out_panel"
+
+#' specify the area of interest for the map
+#' vector containing c(xmin, xmax, ymin, ymax)
+#' c(20,140,-40,40): whole Indian Ocean basin
+#' c(20,80, -30,30): west of the Indian Ocean
+#' c(80,110, 0,30): gulf of Bengal
+area_to_map = c(20,140,-40,40)
 
 
 #' Get libraries:
