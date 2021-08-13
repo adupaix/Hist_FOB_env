@@ -6,7 +6,7 @@
 #'@email : 
 #'#*******************************************************************************************************************
 #'@description :  In case an error occurred in the datarmor job (typically required time exceeded)
-#' Script to generate a new command_list.txt (named 'command_list2.txt')
+#' Script to generate a new command_list.txt (named 'command_list_new.txt')
 #' containing only the commands of the simulations that were not performed
 #'#*******************************************************************************************************************
 #'@revision
@@ -42,7 +42,7 @@ for (i in 1:length(dirs)){
   for (j in 1:length(subdirs)){
     
     # number of files in points_01/00001, etc
-    nfiles <- length(list.files(file.path(path, dirs[i], subdirs[j])))
+    nfiles <- length(list.files(file.path(path, dirs[i], subdirs[j]), pattern = "nc"))
     
     if (nfiles == nsim){
       # if there are enough files in the folder, we save it as performed
@@ -78,9 +78,9 @@ for (i in 1:iter){
 new_lignes <- c(new_lignes,
                 unique( grep(paste(sim_a_faire[(n*(iter)+1):length(sim_a_faire)],collapse="|"), lignes, value = T) ))
 
-#' save the command lines list in 'list_commands2.txt'
-file.create("/home1/datahome/adupaix/list_commands2.txt")
-cmds <- file("/home1/datahome/adupaix/list_commands2.txt", open = "w")
+#' save the command lines list in 'list_commands_new.txt'
+file.create("/home1/datahome/adupaix/list_commands_new.txt")
+cmds <- file("/home1/datahome/adupaix/list_commands_new.txt", open = "w")
 writeLines(new_lignes, cmds)
 close(cmds)
 
