@@ -108,11 +108,126 @@ get.nb.cover.per.input <- function(indexes, coastal_cover, input_points){
   dist_mat <- sqrt((x_cover - x_input)^2 + (y_cover - y_input)^2)
   
   # get the closest input point for each cover point
-  n_cover_per_points <- summary( as.factor( input_points$id_curr[apply(dist_mat, 1, function(x) which(x == min(x)))] ))
+  n_cover_per_points <- summary( as.factor( input_points$id_curr[apply(dist_mat, 1, function(x) which(x == min(x)))] ), maxsum = 10^3)
   
   objects.list <- c("sub_coastal_cover","x_input","x_cover","y_input","y_cover","dist_mat")
   rm(list = objects.list) ; invisible(gc())
   
   return(n_cover_per_points)
   
+}
+
+
+#################################################################################
+#                    DELETE THE POINTS IN THE CHINESE SEA                       #
+#################################################################################
+# ARGUMENTS :                                                                   #
+# coords (data.frame) : coordinate of the points, in rows c("long","lat")       #
+# class (chr) : class of the "coords". Either "df" if it's a data.frame with    #
+#                                     points coordinates                        #
+#                                    Or "sf" if the argument is an sf object    #
+#               The output has the same class as "coords"                       #
+#                                                                               #
+# OUTPUT : data.frame with the coordinates without the points in the chinese sea#
+#################################################################################
+
+delete.chinese.sea <- function(coords, class){
+  
+  
+  ##Polygon of the Chinese Sea
+  N = matrix(data=NA,nrow=7,ncol=2)
+  N[1,] = c(140,-3);
+  N[2,] = c(115,-5);
+  N[3,] = c(110,-5);
+  N[4,] = c(102,5);
+  N[5,] = c(102,40);
+  N[6,] = c(140,40);
+  N[7,] = N[1,];
+  
+  N <- data.frame(N)
+  names(N) <- c("longitude","latitude")
+  tmp = Polygon(N)
+  ttt = Polygons(list(tmp),ID=1)
+  polys = SpatialPolygons(list(ttt))
+  crs = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+  proj4string(polys) = crs
+  
+  if (class == "df"){
+    
+    names(coords) <- c("x","y")
+    
+    ##SpatialPoints with the coordinates
+    SPoints = SpatialPoints(coords,proj4string = crs)
+    
+    ## SpatialPoints left
+    rm_points <- gDifference(SPoints,polys)
+    
+    coords <- data.frame(rm_points@coords)
+    rownames(coords) <- c()
+  } else if (class == "sf"){
+    polys <- st_as_sf(polys) %>% st_transform(st_crs(coords))
+    
+    coords <- st_difference(coords, polys)
+  }
+  
+  return(coords)
+}
+
+
+#################################################################################
+#                    DELETE THE POINTS IN THE MEDITERRANEAN                     #
+#                        AND CASPIAN SEAS                                       #
+#################################################################################
+# ARGUMENTS :                                                                   #
+# coords (data.frame) : coordinate of the points, in rows c("long","lat")       #
+# class (chr) : class of the "coords". Either "df" if it's a data.frame with    #
+#                                     points coordinates                        #
+#                                    Or "sf" if the argument is an sf object    #
+#               The output has the same class as "coords"                       #
+#                                                                               #
+# OUTPUT : data.frame with the coordinates without the points in the chinese sea#
+#################################################################################
+
+delete.med.and.caspian.sea <- function(coords, class){
+  
+  
+  ##Polygon of the NW part of the study area
+  N = matrix(data=NA,nrow=9,ncol=2)
+  N[1,] = c(20,20);
+  N[2,] = c(30,20);
+  N[3,] = c(30,30.5);
+  N[4,] = c(40,30.5);
+  N[5,] = c(50,35);
+  N[6,] = c(60,35);
+  N[7,] = c(60,40);
+  N[8,] = c(20,40);
+  N[9,] = N[1,];
+  
+  N <- data.frame(N)
+  names(N) <- c("longitude","latitude")
+  tmp = Polygon(N)
+  ttt = Polygons(list(tmp),ID=1)
+  polys = SpatialPolygons(list(ttt))
+  crs = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+  proj4string(polys) = crs
+  
+  if (class == "df"){
+    
+    names(coords) <- c("x","y")
+    
+    ##SpatialPoints with the coordinates
+    SPoints = SpatialPoints(coords,proj4string = crs)
+    
+    ## SpatialPoints left
+    rm_points <- gDifference(SPoints,polys)
+    
+    coords <- data.frame(rm_points@coords)
+    rownames(coords) <- c()
+  } else if (class == "sf"){
+    polys <- st_as_sf(polys) %>% st_transform(st_crs(coords))
+    
+    coords <- st_difference(coords, polys)
+  }
+  
+  return(coords)
 }

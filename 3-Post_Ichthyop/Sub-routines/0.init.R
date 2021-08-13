@@ -77,8 +77,9 @@ msg <- bold("0. Initializing\n\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, 
 #' Information on weighting methods
 #'     Will be used in logs (log.txt)
 #'     and to know how many weighting method are considered
-weight_informations <- data.frame(cbind(1:6,
-                                        c("Homogeneous weight",
+weight_informations <- data.frame(cbind(1:7,
+                                        c("No weight",
+                                          "Weight proportional to associated coastline length",
                                           "Weight proportional to mean water discharge of associated rivers",
                                           "Weight proportional to forest cover surface",
                                           "Weight proportional to forest cover surface of associated river basins",
@@ -92,7 +93,7 @@ n_weight_methods <- dim(weight_informations)[1]
 Names <- list()
 #'       Sub-routine 1
 Names$log1 <- file.path(output_paths[[1]], "log.txt")
-Names$nCoverPoints <- file.path(output_paths[[1]], "number_of_cover_points_per_input_point.csv")
+Names$coverFinal <- file.path(output_paths[[1]], "number_of_cover_points_per_input_point.csv")
 #'       Sub-routine 2
 Names$log2 <- file.path(output_paths[[2]], "log.txt")
 Names$weightInput <- c(file.path(output_paths[[2]], "weight_per_points_summary.csv"),
@@ -102,20 +103,21 @@ Names$log3 <- file.path(output_paths[[3]], "log.txt")
 #'       Sub-routine 4
 Names$log4 <- file.path(output_paths[[4]], "log.txt")
 Names$globArray <- file.path(output_path_3_more, "4.global_array.rds")
-Names$aggArray <- file.path(output_paths[[4]], "aggregated_array.rds")
-Names$plotList <- file.path(output_paths[[4]], paste0(ifelse(log_color_scale == T, "log_",""), "plot_list.rds"))
+Names$aggArray <- file.path(output_paths[[4]], paste0("aggregated_array_",agg.function,".rds"))
+Names$plotList <- file.path(output_paths[[4]], paste0("plot_list_", agg.function, ifelse(log_color_scale == T, "_log",""),".rds"))
 Names$pngMaps <- file.path(output_paths[[4]], paste0(ifelse(log_color_scale == T, "log_",""),
-                                               "w",weight_method,
-                                               "_ltime",ltime_method,"-",ltime,
-                                               ifelse(ltime_method == 1, paste0("-sd",ltime_sd), ""),
-                                               ifelse(is.null(thr_disch), "_no-thr-disch", paste0("_thr-disch",thr_disch)),
-                                               "_", agg.time_scale,"ly_maps.png"))
+                                                     agg.function,
+                                                     "_w",weight_method,
+                                                     "_ltime",ltime_method,"-",ltime,
+                                                     ifelse(ltime_method == 1, paste0("-sd",ltime_sd), ""),
+                                                     ifelse(is.null(thr_disch), "_no-thr-disch", paste0("_thr-disch",thr_disch)),
+                                                     "_", agg.time_scale,"ly_maps.png"))
 
 rm(output_path_3_more)
 
 # Logical to know if output files exist
 Exists <- list()
-Exists$nCover <- file.exists(Names$nCoverPoints)
+Exists$coverFinal <- file.exists(Names$coverFinal)
 Exists$weight <- all(file.exists(Names$weightInput))
 Exists$log3 <- file.exists(Names$log3)
 Exists$globArray <- file.exists(Names$globArray)
@@ -135,7 +137,7 @@ if (.Platform$OS.type == "windows" | as.logical(Parallel[1]) == F) {
 #' The 2 first sub routines need to use data on rivers
 #' If none of these 2 subroutines need to be run, we do not
 #' read the rivers data
-if (!Exists$nCover | !Exists$weight){
+if (!Exists$coverFinal | !Exists$weight){
   
   msg <- "Reading and filtering rivers file\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   msg <- "    - Reading\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)

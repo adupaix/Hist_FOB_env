@@ -19,7 +19,7 @@ buffer_size = 10^3 #in m
 
 msg <- crayon::bold("\n1. Counting the number of cover points associated with each input point\n\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
-if(!Exists$nCover){
+if(!Exists$coverFinal){
 
 # get the cover files names
 cover_files <- list.files(path = file.path(DATA_PATH,
@@ -32,29 +32,35 @@ input_points <- read.table(file.path(sim_input_path, "IDs.txt"))
 names(input_points) <- c("x","y", "id_curr")
 input_points$nb_coastal_cover_points <- 0
 
-# build buffer of 1km around the rivers
-msg <- "Generating buffer\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
-# add a buffer
-rivers_filtered %>% 
-  st_transform(3857) %>%
-  st_buffer(dist = buffer_size) %>%
-  st_transform(4326) %>%
-  # and fusion the polygons by rivers (one geometry per river instead of one per segment)
-  group_by(MAIN_RIV) %>%
-  summarise(.groups = "keep") %>%
-  ungroup() -> grouped_buffer
+river_cover_fnames <- file.path(output_paths[[1]], paste0("link_rivers_",sub(".shp", "", cover_files),".txt"))
+
+# if any of the file counting the number of cover points per river is missing, we need the buffer around the rivers
+if ( !all(file.exists(river_cover_fnames))){
+  # build buffer of 1km around the rivers
+  msg <- "Generating buffer on rivers\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+  
+  # add a buffer
+  rivers_filtered %>% 
+    st_transform(3857) %>%
+    st_buffer(dist = buffer_size) %>%
+    st_transform(4326) %>%
+    # and fusion the polygons by rivers (one geometry per river instead of one per segment)
+    group_by(MAIN_RIV) %>%
+    summarise(.groups = "keep") %>%
+    ungroup() -> grouped_buffer
+}
 
 
 for (k in 1:length(cover_files)){
   
-  msg <- crayon::bold("\nCover file n",k,"/",length(cover_files),"\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+  msg <- paste("\nCover file n",k,"/",length(cover_files),"\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
   msg <- "1. Link river - cover\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
-  river_cover_fname <- file.path(output_paths[[1]], paste0("link_rivers_",sub(".shp", "", cover_files[k]),".txt"))
+  # river_cover_fname <- file.path(output_paths[[1]], paste0("link_rivers_",sub(".shp", "", cover_files[k]),".txt"))
   
-  if (!file.exists(river_cover_fname)){
+  if (!file.exists(river_cover_fnames[k])){
     
     msg <- "  - Reading cover file\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
     
@@ -117,38 +123,55 @@ for (k in 1:length(cover_files)){
     #   dplyr::filter(!is.na(MAIN_RIV)) -> river_cover_summary
     
     write.table(river_cover_summary,
-                file = river_cover_fname,
+                file = river_cover_fnames[k],
                 row.names = F)
   } else {
     
     msg <- "  - Reading existing river-cover link table\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
     
-    river_cover_summary <- read.table(river_cover_fname, row.names = F)
+    river_cover_summary <- read.table(river_cover_fnames[k])
   }
   
+  coastal_cover_fname <- file.path(output_paths[[1]],
+                                   ifelse(k != length(cover_files),
+                                          paste0("input_point_with_cover_nb_v",k,".txt"),
+                                          "input_point_with_cover_nb_vf.txt"))
   
   msg <- "2. Link input - coastal cover\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
-  msg <- "  - Filter: keep only coastal cover points\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-  
-  cover_df %>%
-    dplyr::filter(is.na(is_within_river_buffer)) -> coastal_cover
-  
-  rm(cover_df) ; invisible(gc())
-  
-  msg <- "  - Get input points associated with cover cells\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-  
-  sample_size <- 1000
-  
-  niter <- floor( dim(coastal_cover)[1] / sample_size )
-  
-  pb <- progress_bar$new(format = "[:bar] :percent | Cover points sample :current / :total",
-                         total = niter+1
-  )
-  
-  for (i in 1:niter){
+  if (!file.exists(coastal_cover_fname)){
     
-    indexes <- ((i-1)*sample_size+1):(i*sample_size)
+    msg <- "  - Filter: keep only coastal cover points\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+    
+    cover_df %>%
+      dplyr::filter(is.na(is_within_river_buffer)) -> coastal_cover
+    
+    rm(cover_df) ; invisible(gc())
+    
+    msg <- "  - Get input points associated with cover cells\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+    
+    sample_size <- 1000
+    
+    niter <- floor( dim(coastal_cover)[1] / sample_size )
+    
+    pb <- progress_bar$new(format = "[:bar] :percent | Cover points sample :current / :total",
+                           total = niter+1
+    )
+    
+    for (i in 1:niter){
+      
+      indexes <- ((i-1)*sample_size+1):(i*sample_size)
+      
+      n_cover_per_points <- get.nb.cover.per.input(indexes, coastal_cover, input_points)
+      
+      input_points$nb_coastal_cover_points[
+        as.numeric(names(n_cover_per_points)) ] <- input_points$nb_coastal_cover_points[ as.numeric(names(n_cover_per_points)) ] + n_cover_per_points
+      
+      pb$tick()
+      
+    }
+    
+    indexes <- (niter*sample_size+1):(dim(coastal_cover)[1])
     
     n_cover_per_points <- get.nb.cover.per.input(indexes, coastal_cover, input_points)
     
@@ -157,82 +180,169 @@ for (k in 1:length(cover_files)){
     
     pb$tick()
     
+    rm(coastal_cover) ; invisible(gc())
+    
+    write.table(input_points,
+                file = file.path(output_paths[[1]], coastal_cover_fname))
+    
+  } else {
+    
+    msg <- "  - Reading existing coastal cover - release point table\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+    
+    input_points <- read.table(coastal_cover_fname)
+    
   }
   
-  indexes <- (niter*sample_size+1):(dim(coastal_cover)[1])
+}
+
+#'********************************************************************************
+
+
+msg <- "\n\n3. Get the length of coastline associated with each input point\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+
+
+fname <- file.path(output_paths[[1]], "input_point_with_cover_and_coast_nb.txt")
+
+if(!file.exists(fname)){
   
-  n_cover_per_points <- get.nb.cover.per.input(indexes, coastal_cover, input_points)
+  # add a column to keep the number of coastal points (ie the length of the coast associated with the input point)
+  input_points$nb_coastal_points <- 0
   
-  input_points$nb_coastal_cover_points[
-    as.numeric(names(n_cover_per_points)) ] <- input_points$nb_coastal_cover_points[ as.numeric(names(n_cover_per_points)) ] + n_cover_per_points
+  #' Define the frame of study (same as the one used to generate the input points)
+  IO <- st_sf(data.frame("IO"),
+              geometry = st_sfc(st_polygon(list(
+                matrix(c(25,-35, 25,30, 140, 30, 140,-35, 25,-35),
+                       ncol = 2,
+                       byrow = T)))
+              ),
+              crs = 4326
+  )
+  
+  msg <- "  - Load coastline and sample points on it\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+  
+  #' load coastline
+  load(file.path(RESOURCE_PATH, "coastline10.rda")) # highres coastline, downloaded at : https://github.com/ropensci/rnaturalearthhires/tree/master/data (last accessed 2021-02-25)
+  coastline10 <- st_as_sf(coastline10)
+  
+  coastline10 %>%
+    # sample points on the coastline (every km)
+    st_transform(3857) %>%
+    st_line_sample(density = 10^(-3)) %>%
+    # keep only the ones in the IO (same frame as PHILIN forcing product)
+    st_crop(IO %>% st_transform(3857)) %>%
+    st_transform(4326) %>%
+    st_cast("MULTIPOINT") %>%
+    st_cast("POINT") -> coastal_points
+  
+  # create an sf object from the geometry deduced above
+  coastal_points <- st_sf(data.frame(id = seq(1, length(coastal_points), 1)),
+                          geometry = coastal_points,
+                          crs = 4326)
+  
+  coastal_points %>% st_transform(3857) -> coastal_points
+  
+  coastal_points <- delete.chinese.sea(coastal_points, "sf")
+  coastal_points <- delete.med.and.caspian.sea(coastal_points, "sf")
+  
+  coastal_points %>% st_transform(4326) -> coastal_points
+  
+  msg <- "  - Get input points associated with coastal points\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+  
+  sample_size <- 1000
+  niter <- floor( dim(coastal_points)[1] / sample_size )
+  
+  pb <- progress_bar$new(format = "[:bar] :percent | Coastal points sample :current / :total",
+                         total = niter+1
+  )
+  
+  for (i in 1:niter){
+    
+    indexes <- ((i-1)*sample_size+1):(i*sample_size)
+    
+    n_coast_per_points <- get.nb.cover.per.input(indexes, coastal_points, input_points)
+    
+    input_points$nb_coastal_points[
+      as.numeric(names(n_coast_per_points)) ] <- input_points$nb_coastal_points[ as.numeric(names(n_coast_per_points)) ] + n_coast_per_points
+    
+    pb$tick()
+    
+  }
+  
+  indexes <- (niter*sample_size+1):(dim(coastal_points)[1])
+  
+  n_coast_per_points <- get.nb.cover.per.input(indexes, coastal_points, input_points)
+  
+  input_points$nb_coastal_points[
+    as.numeric(names(n_coast_per_points)) ] <- input_points$nb_coastal_points[ as.numeric(names(n_coast_per_points)) ] + n_coast_per_points
   
   pb$tick()
   
-  rm(coastal_cover) ; invisible(gc())
-  
-  file_name <- ifelse(k != length(cover_files),
-                      paste0("input_point_with_cover_nb_v",k,".txt"),
-                      "input_point_with_cover_nb_vf.txt")
-  
   write.table(input_points,
-              file = file.path(output_paths[[1]], file_name))
+              file = fname)
+  
+} else {
+  
+  msg <- "  - Reading existing table\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+  
+  input_points <- read.table(fname)
   
 }
 
+#'********************************************************************************
 
-msg <- "3. Merge coastal and river information\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+  msg <- "4. Merge coastal, river and coastline length information\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
-link_riv_cov_files <- list.files(output_paths[[1]], pattern = "link_rivers_")
+  link_riv_cov_files <- list.files(output_paths[[1]], pattern = "link_rivers_")
 
-n_cover_per_river <- list()
+  n_cover_per_river <- list()
 
-for (i in 1:length(link_riv_cov_files)){
-  n_cover_per_river[[i]] <- read.table(file.path(output_paths[[1]], link_riv_cov_files[i]), header = T)
-}
+  for (i in 1:length(link_riv_cov_files)){
+    n_cover_per_river[[i]] <- read.table(file.path(output_paths[[1]], link_riv_cov_files[i]), header = T)
+  }
 
-bind_rows(n_cover_per_river) %>%
-  group_by(MAIN_RIV) %>%
-  summarise(n = sum(nb_river_cover_points), .groups = "keep") %>%
-  ungroup() %>%
-  rename("nb_river_cover_points" = "n") -> n_cover_per_river
+  bind_rows(n_cover_per_river) %>%
+    group_by(MAIN_RIV) %>%
+    summarise(n = sum(nb_river_cover_points), .groups = "keep") %>%
+    ungroup() %>%
+    rename("nb_river_cover_points" = "n") -> n_cover_per_river
 
-write.csv(n_cover_per_river,
+  write.csv(n_cover_per_river,
             file.path(output_paths[[1]], "n_cover_per_river.csv"),
             row.names = F)
 
-link_river_input <- read.table(file.path(sim_input_path, "Link_table.txt"), header = T)
+  link_river_input <- read.table(file.path(sim_input_path, "Link_table.txt"), header = T)
 
-if (!all(n_cover_per_river$MAIN_RIV %in% link_river_input$MAIN_RIV)){
-  stop("Error: some rivers are not linked with the input points")
-}
+  if (!all(n_cover_per_river$MAIN_RIV %in% link_river_input$MAIN_RIV)){
+    stop("Error: some rivers are not linked with the input points")
+  }
 
-input_points %>%
-  full_join(link_river_input, by = "id_curr") %>%
-  arrange(id_curr) %>%
-  dplyr::select(-HYBAS_L12) %>%
-  full_join(n_cover_per_river, by = "MAIN_RIV") -> cover_global_summary
+  input_points %>%
+    full_join(link_river_input, by = "id_curr") %>%
+    arrange(id_curr) %>%
+    dplyr::select(-HYBAS_L12) %>%
+    full_join(n_cover_per_river, by = "MAIN_RIV") -> cover_global_summary
 
-cover_global_summary$nb_river_cover_points[which(is.na(cover_global_summary$nb_river_cover_points))] <- 0
+  cover_global_summary$nb_river_cover_points[which(is.na(cover_global_summary$nb_river_cover_points))] <- 0
+  
+  cover_global_summary %>%
+    group_by(id_curr) %>%
+    summarise(nb_river_cover_points = sum(nb_river_cover_points), .groups = "keep") %>%
+    left_join(y = input_points, by = "id_curr") %>%
+    dplyr::mutate(nb_cover_points = nb_river_cover_points + nb_coastal_cover_points) %>%
+    dplyr::select(id_curr, x, y, nb_river_cover_points, nb_coastal_cover_points, nb_cover_points, nb_coastal_points) -> nb_cover_per_input
 
-cover_global_summary %>%
-  group_by(id_curr) %>%
-  summarise(nb_river_cover_points = sum(nb_river_cover_points), .groups = "keep") %>%
-  left_join(y = input_points, by = "id_curr") %>%
-  dplyr::mutate(nb_cover_points = nb_river_cover_points + nb_coastal_cover_points) %>%
-  dplyr::select(id_curr, x, y, nb_river_cover_points, nb_coastal_cover_points, nb_cover_points) -> nb_cover_per_input
+  write.csv(nb_cover_per_input,
+            file = file.path(output_paths[[1]], "number_of_cover_points_per_input_point.csv"),
+            row.names = F)
 
-write.csv(nb_cover_per_input,
-          file = file.path(output_paths[[1]], "number_of_cover_points_per_input_point.csv"),
-          row.names = F)
-
-#' save a log
-sink(Names$log1, append = F)
-cat("Date & time :", format(Sys.time()), "\n")
-cat("\n  Year:", year)
-cat("\n  Forcing product:", forcing)
-cat("\n  Location of input points :", input_location)
-cat("\n  Method for input points :", input_method)
-sink()
+  #' save a log
+  sink(Names$log1, append = F)
+  cat("Date & time :", format(Sys.time()), "\n")
+  cat("\n  Year:", year)
+  cat("\n  Forcing product:", forcing)
+  cat("\n  Location of input points :", input_location)
+  cat("\n  Method for input points :", input_method)
+  sink()
 
 } else {
   

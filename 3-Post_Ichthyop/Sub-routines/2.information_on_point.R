@@ -94,6 +94,9 @@ if (!Exists$weight){
                                       if (round(point$nb_cover_points) != round(point$nb_coastal_cover_points + sum(point$rivers$cover))){
                                         stop("Error: total number of cover points does not correspond to sum of coastal and river associated points")
                                       }
+                                      
+                                      #' get length of coastline associated with the point
+                                      point <- get.coastline.length(nb_cover_per_input, point)
                                         
                                       #' get weights (returns a vector with the weight for all the weighting methods)
                                       weights <- get.weights(point)

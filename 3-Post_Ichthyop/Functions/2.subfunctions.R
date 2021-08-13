@@ -132,27 +132,43 @@ get.number.of.cover.points <- function(link_table, point){
 
 #' @sub-function 6
 #' ***************
+#' get the length of coastline associated with the point
+get.coastline.length <- function(link_table, point){
+  
+  point$coastline_length <- link_table$nb_coastal_points[link_table$id_curr == as.numeric(point$id)]
+  
+  return(point)
+  
+}
+
+
+#' @sub-function 7
+#' ***************
 #' weight point$data according to the method used
 get.weights <- function(point){
   
   # method 1 : don't apply any weight
   w1 <- 1
+  
+  # method 2: apply a weight depending on the associated length of coastline
+  # True homogeneous release on the coast
+  w2 <- point$coastline_length
+  
+  # method 3 : apply a weight depending on the water discharge of the associated rivers
+  w3 <- sum(point$rivers$dis_m3_pyr)
+  
+  # method 4: apply a weight depending on the surface of cover associated with the input point
+  w4 <- point$forest_surface
+  
+  # method 5: apply a weight depending on the area covered by forest in the river basins
+  w5 <- sum(point$rivers$cover * 900 / 10^6)
     
-  # method 2 : apply a weight depending on the water discharge of the associated rivers
-  w2 <- sum(point$rivers$dis_m3_pyr)
+  # method 6: apply a weight depending on the coastal area covered by forest
+  w6 <- point$forest_surface - sum(point$rivers$cover * 900 / 10^6)
   
-  # method 3: apply a weight depending on the surface of cover associated with the input point
-  w3 <- point$forest_surface
+  # method 7: apply a weight depending on the precipitations at the release point
+  w7 <- point$precip
   
-  # method 4: apply a weight depending on the area covered by forest in the river basins
-  w4 <- sum(point$rivers$cover * 900 / 10^6)
-    
-  # method 5: apply a weight depending on the coastal area covered by forest
-  w5 <- point$forest_surface - sum(point$rivers$cover * 900 / 10^6)
-  
-  # method 6: apply a weight depending on the precipitations at the release point
-  w6 <- point$precip
-  
-  return(c(w1,w2,w3,w4,w5,w6))
+  return(c(w1,w2,w3,w4,w5,w6,w7))
 }
 
