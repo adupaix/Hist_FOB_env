@@ -54,19 +54,21 @@ gsize = 2
 #' only particles originating from a river with a maximum value > thr_disch (in m3/s) are kept 
 #' if thr_disch = 0, only rivers with a maximum discharge > 0 m3/s will be kept
 #' if you don't want any filter to be used, set thr_disch = NULL
-#'@!!Fixed a threshold of 100 m3/s was used to map the forest cover around the rivers
+#'@!!Fixed: a threshold of 100 m3/s was used to map the forest cover around the rivers
 thr_disch = 100
 
 # Arguments used for the Ichthyop simulation
 #'****************************************
-### forcing (chr): forcing product used in ICHTHYOP simulation (oscar/globcurrent/nemo)     
+#'## forcing (chr): forcing product used in ICHTHYOP simulation (oscar/globcurrent/nemo)     
 forcing="PHILIN12.L75"
-### input_location (chr): either "river" or "mangrove"
+#'## input_location (chr): either "river" or "mangrove"
+#'@only "river" used in this study
 input_location="river"
-### input_method (chr): either "onMask" put points on the closest point on the      
-#                                     current product                               
-#                      or "kFromCoast" put points at dist km from the coast
-#                      or "allMask" put points on each coastal point of the current product
+#'## input_method (chr): either "onMask" put points on the closest point on the      
+#'                                     current product                               
+#'                      or "kFromCoast" put points at dist km from the coast
+#'                      or "allMask" put points on each coastal point of the current product
+#'                      @only "allMask" used in this study
 input_method = "allMask"
 
 ### dist (num): distance specified if the input_method above is 'kFromCoast'
@@ -110,12 +112,12 @@ agg.time_scale = "month"
 #' if "sd", build maps of standard deviation
 agg.function = "mean"
 
-# specify if the color scale is log transformed (T) or not (F)
+#' specify if the color scale is log transformed (T) or not (F)
 log_color_scale = F
 
-# choose to fix the max of the color scale
-# if = F, the max is not fixed
-# if T, the max is fixed at the maximum value of the array
+#' choose to fix the max of the color scale
+#' if = F, the max is not fixed (the scales of each maps are different)
+#' if T, the max is fixed at the maximum value of all the maps (same scale for all the maps)
 common_scale_max = T
 
 # specify the position of the color legend, one of c("null", "in_panel", "out_panel")
@@ -127,7 +129,7 @@ color_scale_pos = "out_panel"
 #' specify the area of interest for the map
 #' vector containing c(xmin, xmax, ymin, ymax)
 #' c(20,140,-40,40): whole Indian Ocean basin
-#' c(20,80, -30,30): west of the Indian Ocean
+#' c(20,80, -30,30): western Indian Ocean
 #' c(80,110, 0,30): gulf of Bengal
 area_to_map = c(20,140,-40,40)
 
