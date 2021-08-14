@@ -5,7 +5,7 @@
 #'#*******************************************************************************************************************
 #'@description :  Sub-routine to link the input points from an Ichthyop simulation with the forest cover
 #'#*******************************************************************************************************************
-#'@revision
+#'@revision : Error. object cover_df not found
 #'#*******************************************************************************************************************
 #'@comment: very long script, to run once. Will return a table with, for each input point, the number of
 #'associated forest points (one cell represents 900m2 of forest). Takes the rivers into account.
@@ -35,8 +35,11 @@ input_points$nb_coastal_cover_points <- 0
 
 river_cover_fnames <- file.path(output_paths[[1]], paste0("link_rivers_",sub(".shp", "", cover_files),".txt"))
 
+coastal_cover_fnames <- file.path(output_paths[[1]],
+                                  sub(length(cover_files), "f", paste0("input_point_with_cover_nb_v", 1:length(cover_files), ".txt")))
+
 # if any of the file counting the number of cover points per river is missing, we need the buffer around the rivers
-if ( !all(file.exists(river_cover_fnames))){
+if ( !all(file.exists(river_cover_fnames)) & !all(file.exists(coastal_cover_fnames))){
   # build buffer of 1km around the rivers
   msg <- "Generating buffer on rivers\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
@@ -58,9 +61,7 @@ for (k in 1:length(cover_files)){
   
   msg <- "1. Link river - cover\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
-  # river_cover_fname <- file.path(output_paths[[1]], paste0("link_rivers_",sub(".shp", "", cover_files[k]),".txt"))
-  
-  if (!file.exists(river_cover_fnames[k])){
+  if (!file.exists(coastal_cover_fnames[k])){
     
     msg <- "  - Reading cover file\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
     
@@ -132,14 +133,9 @@ for (k in 1:length(cover_files)){
     river_cover_summary <- read.table(river_cover_fnames[k])
   }
   
-  coastal_cover_fname <- file.path(output_paths[[1]],
-                                   ifelse(k != length(cover_files),
-                                          paste0("input_point_with_cover_nb_v",k,".txt"),
-                                          "input_point_with_cover_nb_vf.txt"))
-  
   msg <- "2. Link input - coastal cover\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
-  if (!file.exists(coastal_cover_fname)){
+  if (!file.exists(coastal_cover_fnames[k])){
     
     msg <- "  - Filter: keep only coastal cover points\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
     
@@ -183,13 +179,13 @@ for (k in 1:length(cover_files)){
     rm(coastal_cover) ; invisible(gc())
     
     write.table(input_points,
-                file = coastal_cover_fname)
+                file = coastal_cover_fnames[k])
     
   } else {
     
     msg <- "  - Reading existing coastal cover - release point table\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
     
-    input_points <- read.table(coastal_cover_fname)
+    input_points <- read.table(coastal_cover_fnames[k])
     
   }
   
