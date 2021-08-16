@@ -6,7 +6,7 @@
 #'@description :  For each release point, get the information for weighting (cover surface, precipitations and 
 #'  associated rivers with discharge) and save a matrix with the weight associated with each 
 #'#*******************************************************************************************************************
-#'@revision
+#'@revision lire le fichier de precipitations une seule fois, plutot qu a chaque iteration
 #'#*******************************************************************************************************************
 #'@comment: long script, only needs to run once per simulation
 #'#*******************************************************************************************************************
@@ -83,6 +83,9 @@ if (!Exists$weight){
                                         
                                       # get rivers and associated discharge + cover
                                       point <- get.associated.rivers(link_river_input, n_cover_per_river, embouchures, point)
+                                      
+                                      # get river mouths and associated discharge + cover
+                                      point <- get.associated.rivers(link_river_input, n_cover_per_mouth, embouchures, point, mouth = T)
                                         
                                       # get forest cover
                                       point <- get.number.of.cover.points(nb_cover_per_input, point)

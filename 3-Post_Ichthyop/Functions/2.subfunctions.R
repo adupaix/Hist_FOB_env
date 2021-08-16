@@ -75,44 +75,59 @@ get.precipitations <- function(DATA_PATH,
 #'***************
 #' get the information on the rivers associated with the input point of interest
 get.associated.rivers <- function(link_river_input,
-                                  n_cover_per_river,
+                                  n_cover,
                                   embouchures,
-                                  point){
+                                  point,
+                                  mouth = F){
   
-  point$rivers <- list()
+  if (mouth == F){
+    name <- 'rivers'
+    colname <- 'nb_river_cover_points'
+  } else {
+    name <- 'mouths'
+    colname <- 'nb_mouth_cover_points'
+  }
+  
+  l <- length(point)
+  
+  
+  point[[l+1]] <- list()
   
   # get the river ids associated with the input point
-  point$rivers$ids = (link_river_input %>% filter(id_curr == as.numeric(point$id)))$MAIN_RIV
+  point[[l+1]]$ids = (link_river_input %>% filter(id_curr == as.numeric(point$id)))$MAIN_RIV
   
   # for each of the ids
-  if (length(point$rivers$ids) != 0){
+  if (length(point[[l+1]]$ids) != 0){
     
     # get the forest cover and the discharge
-    point$rivers$cover <- c()
-    point$rivers$dis_m3_pyr <- c()
-    point$rivers$dis_m3_pmn <- c()
-    point$rivers$dis_m3_pmx <- c()
-    for (i in 1:length(point$rivers$ids)){
-      # if the river id is in the n_cover_per_river table, we get the cover value
-      if (point$rivers$ids[i] %in% n_cover_per_river$MAIN_RIV){
-        point$rivers$cover[i] <- n_cover_per_river$nb_river_cover_points[n_cover_per_river$MAIN_RIV == point$rivers$ids[i]]
+    point[[l+1]]$cover <- c()
+    point[[l+1]]$dis_m3_pyr <- c()
+    point[[l+1]]$dis_m3_pmn <- c()
+    point[[l+1]]$dis_m3_pmx <- c()
+    for (i in 1:length(point[[l+1]]$ids)){
+      # if the river id is in the n_cover table, we get the cover value
+      if (point[[l+1]]$ids[i] %in% n_cover$MAIN_RIV){
+        point[[l+1]]$cover[i] <- n_cover[n_cover$MAIN_RIV == point[[l+1]]$ids[i], colname]
       # else it mean that no forest was present in the river basin: put 0 in cover
       } else {
-        point$rivers$cover[i] <- 0
+        point[[l+1]]$cover[i] <- 0
       }
-      point$rivers$dis_m3_pyr[i] <- embouchures$dis_m3_pyr[embouchures$MAIN_RIV == point$rivers$ids[i]]
-      point$rivers$dis_m3_pmn[i] <- embouchures$dis_m3_pmn[embouchures$MAIN_RIV == point$rivers$ids[i]]
-      point$rivers$dis_m3_pmx[i] <- embouchures$dis_m3_pmx[embouchures$MAIN_RIV == point$rivers$ids[i]]
+      point[[l+1]]$dis_m3_pyr[i] <- embouchures$dis_m3_pyr[embouchures$MAIN_RIV == point[[l+1]]$ids[i]]
+      point[[l+1]]$dis_m3_pmn[i] <- embouchures$dis_m3_pmn[embouchures$MAIN_RIV == point[[l+1]]$ids[i]]
+      point[[l+1]]$dis_m3_pmx[i] <- embouchures$dis_m3_pmx[embouchures$MAIN_RIV == point[[l+1]]$ids[i]]
     }
   } else {
-    point$rivers$cover <- 0
-    point$rivers$dis_m3_pyr <- 0
-    point$rivers$dis_m3_pmn <- 0
-    point$rivers$dis_m3_pmx <- 0
+    point[[l+1]]$cover <- 0
+    point[[l+1]]$dis_m3_pyr <- 0
+    point[[l+1]]$dis_m3_pmn <- 0
+    point[[l+1]]$dis_m3_pmx <- 0
   }
+  
+  names(point)[l+1] <- name
   
   return(point)
 }
+
 
 #'@sub-function 5
 #'***************
@@ -147,28 +162,44 @@ get.coastline.length <- function(link_table, point){
 #' weight point$data according to the method used
 get.weights <- function(point){
   
-  # method 1 : don't apply any weight
+  #' method 1 : don't apply any weight
   w1 <- 1
   
-  # method 2: apply a weight depending on the associated length of coastline
-  # True homogeneous release on the coast
+  #' method 2: apply a weight depending on the associated length of coastline
+  #' True homogeneous release on the coast
   w2 <- point$coastline_length
   
-  # method 3 : apply a weight depending on the water discharge of the associated rivers
-  w3 <- sum(point$rivers$dis_m3_pyr)
+  #' method 3: apply a weight depending on the coastal area covered by forest
+  w3 <- point$forest_surface - sum(point$rivers$cover * 900 / 10^6)
   
-  # method 4: apply a weight depending on the surface of cover associated with the input point
-  w4 <- point$forest_surface
+  #' method 4: apply a weight depending on the area covered by forest in the river basins multiplied by the river discharge (at mouth...)
+  #' @modif: prendre en compte le debit a chaque portion de riviere
+  #' @modif: normaliser le debit (sinon w5 ~ w4)
+  w4 <- (sum(point$rivers$cover * point$rivers$dis_m3_pyr) + sum(point$mouths$cover * point$rivers$dis_m3_pyr)) * 900 / 10^6
   
-  # method 5: apply a weight depending on the area covered by forest in the river basins
-  w5 <- sum(point$rivers$cover * 900 / 10^6)
-    
-  # method 6: apply a weight depending on the coastal area covered by forest
-  w6 <- point$forest_surface - sum(point$rivers$cover * 900 / 10^6)
+  #' method 5: apply a weight depending on the surface of cover associated with the input point
+  #'           3 + 4
+  w5 <- w3 + w4
   
-  # method 7: apply a weight depending on the precipitations at the release point
-  w7 <- point$precip
+  #' method 6: apply a weight depending on the coastal cover multiplied by the precipitations at the release point
+  #' @modif?
+  w6 <- w3 * point$precip
   
-  return(c(w1,w2,w3,w4,w5,w6,w7))
+  #' method 7: apply a weight depending on the river cover multiplied by the precipitations at the release point
+  #' @modif: prendre en compte les precipitations a chaque portion de riviere
+  w7 <- w4 * point$precip
+  
+  #' method 8 : apply a weight depending on the total cover associated with the release point multiplied by the precipitations
+  w8 <- w6 + w7
+  
+  #' method 9: apply a weight depending on the total cover associated with the release point
+  #' @not_to_be_used_in_the_study
+  w9 <- point$forest_surface
+  
+  
+  n_methods <- length(ls())
+  
+  
+  return(unlist(mget(paste0("w", 1:n_methods))))
 }
 
