@@ -231,3 +231,29 @@ delete.med.and.caspian.sea <- function(coords, class){
   
   return(coords)
 }
+
+
+
+read.input.points <- function(RESOURCE_PATH, sim_input_path){
+  
+  input_points <- read.table(file.path(sim_input_path, "IDs.txt"))
+  names(input_points) <- c("x","y", "id_curr")
+  input_points_sf <- st_as_sf(input_points,
+                              coords = c("x","y"),
+                              crs = 4326)
+  
+  IO_boundaries <- read_sf(file.path(RESOURCE_PATH, "IO_definition.shp"))
+  
+  contain <- st_contains(IO_boundaries %>%
+                           st_transform(3857) %>%
+                           st_buffer(dist = 10^4),
+                         input_points_sf %>% st_transform(3857))
+  
+  input_of_interest <- unlist(contain)
+  
+  input_points[input_of_interest,] %>%
+    arrange(id_curr) -> input_points_of_interest
+  
+  return(input_points_of_interest)
+  
+}

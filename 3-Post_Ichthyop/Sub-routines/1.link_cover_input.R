@@ -32,7 +32,6 @@ cover_files <- list.files(path = file.path(DATA_PATH,
 
 # read the input points to add a column containing the number of cover cells associated with each point
 input_points <- read.input.points(RESOURCE_PATH, sim_input_path)
-names(input_points) <- c("x","y", "id_curr")
 input_points$nb_coastal_cover_points <- 0
 
 mouth_cover_fnames <- file.path(output_paths[[1]], paste0("link_mouths_",sub(".shp", "", cover_files),".txt"))
