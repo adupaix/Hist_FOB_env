@@ -234,26 +234,32 @@ delete.med.and.caspian.sea <- function(coords, class){
 
 
 
-read.input.points <- function(RESOURCE_PATH, sim_input_path){
+keep.which.is.in.IO <- function(RESOURCE_PATH,
+                                sf_points,
+                                buffer_size,
+                                return_format){
   
-  input_points <- read.table(file.path(sim_input_path, "IDs.txt"))
-  names(input_points) <- c("x","y", "id_curr")
-  input_points_sf <- st_as_sf(input_points,
-                              coords = c("x","y"),
-                              crs = 4326)
+  names_for_df <- c(grep("geometry", names(sf_points), invert = T, value = T),
+                    "x","y")
   
   IO_boundaries <- read_sf(file.path(RESOURCE_PATH, "IO_definition.shp"))
   
   contain <- st_contains(IO_boundaries %>%
                            st_transform(3857) %>%
-                           st_buffer(dist = 10^4),
-                         input_points_sf %>% st_transform(3857))
+                           st_buffer(dist = buffer_size),
+                         sf_points %>% st_transform(3857))
   
-  input_of_interest <- unlist(contain)
+  points_of_interest <- unlist(contain)
   
-  input_points[input_of_interest,] %>%
-    arrange(id_curr) -> input_points_of_interest
+  sf_points[-points_of_interest,] -> sf_points_of_interest
   
-  return(input_points_of_interest)
+  if (return_format == "sf"){
+    return(sf_points_of_interest)
+  } else if (return_format == "df"){
+    df_points_of_interest <- as.data.frame(cbind(sf_points_of_interest %>% as.data.frame() %>% select(-geometry),
+                                                 st_coordinates(sf_points_of_interest)))
+    names(df_points_of_interest) <- names_for_df
+    return(df_points_of_interest)
+  }
   
 }

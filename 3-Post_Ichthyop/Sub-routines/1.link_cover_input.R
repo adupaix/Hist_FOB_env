@@ -7,8 +7,6 @@
 #'#*******************************************************************************************************************
 #'@revision : Changer weight method 2: au lieu du trait de cote, avoir le nombre de pixel (0 ou 1) associes a 
 #'chaque point de lache
-#' + faire que le cover des embouchures est compte a part (comme ca il rentre dans le cover cotier et dans le
-#' cover associe aux rivieres et je ne le compte pas deux fois dans le cover global)
 #'#*******************************************************************************************************************
 #'@comment: very long script, to run once. Will return a table with, for each input point, the number of
 #'associated forest points (one cell represents 900m2 of forest). Takes the rivers into account.
@@ -30,9 +28,20 @@ cover_files <- list.files(path = file.path(DATA_PATH,
                                            paste0("forest_cover_", year)),
                           pattern = "shp")
 
-# read the input points to add a column containing the number of cover cells associated with each point
-input_points <- read.input.points(RESOURCE_PATH, sim_input_path)
+#' read the input points
+#' filter them to keep only the IO ones
+#' add a column containing the number of cover cells associated with each point
+input_points <- read.table(file.path(sim_input_path, "IDs.txt"))
+names(input_points) <- c("x","y", "id_curr")
+input_points_sf <- st_as_sf(input_points,
+                            coords = c("x","y"),
+                            crs = 4326)
+input_points <- keep.which.is.in.IO(RESOURCE_PATH, input_points_sf,
+                                    buffer_size = 10^4,
+                                    return_format = "df") %>%
+  arrange(id_curr)
 input_points$nb_coastal_cover_points <- 0
+
 
 mouth_cover_fnames <- file.path(output_paths[[1]], paste0("link_mouths_",sub(".shp", "", cover_files),".txt"))
 
@@ -233,14 +242,14 @@ if(!file.exists(fname)){
   input_points$nb_coastal_points <- 0
   
   #' Define the frame of study (same as the one used to generate the input points)
-  IO <- st_sf(data.frame("IO"),
-              geometry = st_sfc(st_polygon(list(
-                matrix(c(25,-35, 25,30, 140, 30, 140,-35, 25,-35),
-                       ncol = 2,
-                       byrow = T)))
-              ),
-              crs = 4326
-  )
+  # IO <- st_sf(data.frame("IO"),
+  #             geometry = st_sfc(st_polygon(list(
+  #               matrix(c(25,-35, 25,30, 140, 30, 140,-35, 25,-35),
+  #                      ncol = 2,
+  #                      byrow = T)))
+  #             ),
+  #             crs = 4326
+  # )
   
   msg <- "  - Load coastline and sample points on it\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
@@ -252,8 +261,6 @@ if(!file.exists(fname)){
     # sample points on the coastline (every km)
     st_transform(3857) %>%
     st_line_sample(density = 10^(-3)) %>%
-    # keep only the ones in the IO (same frame as PHILIN forcing product)
-    st_crop(IO %>% st_transform(3857)) %>%
     st_transform(4326) %>%
     st_cast("MULTIPOINT") %>%
     st_cast("POINT") -> coastal_points
@@ -263,10 +270,10 @@ if(!file.exists(fname)){
                           geometry = coastal_points,
                           crs = 4326)
   
-  coastal_points %>% st_transform(3857) -> coastal_points
-  
-  coastal_points <- delete.chinese.sea(coastal_points, "sf")
-  coastal_points <- delete.med.and.caspian.sea(coastal_points, "sf")
+  # keep only the input points which are in the area of interest
+  coastal_points_T <- keep.which.is.in.IO(RESOURCE_PATH, coastal_points,
+                                          buffer_size = 5*10^4,
+                                          return_format = "sf")
   
   coastal_points %>% st_transform(4326) -> coastal_points
   

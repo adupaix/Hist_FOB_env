@@ -57,13 +57,16 @@ ltime_method = 2
 ltime_sd = 30 # in days, used only if ltime_method == 1
 
 #'## @weight_method (num): method used to give weight to release points
-#'   1. homogeneous weight for each release point
-#'   2. weight proportional to mean water discharge of rivers
-#'   3. weight proportional to the surface of forest cover associated with the release point
-#'   4. weight proportional to the surface of forest cover in the river basins associated with the release point
-#'   5. weight proportional to the surface of coastal forest cover associated with the release point
-#'   6. weight proportional to the precipitations at the release point
-weight_method = 1
+#'   1. @w=1 to each release point
+#'   2. weight proportional to the length of @coastline associated with the release point
+#'   3. weight proportional to the surface of @coastal_forest_cover associated with the release point
+#'   4. weight proportional to the surface of @river_forest_cover multiplied by the @discharge at river mouth
+#'   5. weight proportional to the @total surface of forest cover associated with the release point (@w3+w4)
+#'   6. weight proportional to the surface of @coastal_forest_cover multiplied by the @precipitations at the release point (@w3*precip)
+#'   7. weight proportional to the surface of @river_forest_cover multiplied by the @precipitations at the release point (@w4*precip)
+#'   8. weight proportional to the @total surface of forest cover multiplied by the @precipitations at the release point
+#'   9. weight proportional to the @total surface of forest cover (w3 + w4 without discharge)
+weight_method = 2
 
 #'## @gsize (num): size of the grid cells used (2° or a multiple of 2°)
 #' fixed because of the post-processing script performed on the cluster
@@ -111,7 +114,7 @@ n_points_per_dir = 28*8*5
 #'
 #'## @agg.time_scale (chr): time scale used to aggregate the dates (month, quarter or year)
 #' @!! quarter starts in December: for example, first quarter of 2012 is from 12.2011 to 02.2012 included
-agg.time_scale = "month"
+agg.time_scale = "year"
 
 #'## @agg.function (chr): specify which function is used to aggregate the array before building the maps
 #' if "mean', build maps of the mean density of particles for every month/quarter/year
@@ -119,7 +122,7 @@ agg.time_scale = "month"
 agg.function = "mean"
 
 #'## @log_color_scale (log): specify if the color scale is log transformed (T) or not (F)
-log_color_scale = F
+log_color_scale = T
 
 #'## @common_scale_max (log): choose whether to fix the max of the color scale or not
 #' if = F, the max is not fixed (the scales of each maps are different)
