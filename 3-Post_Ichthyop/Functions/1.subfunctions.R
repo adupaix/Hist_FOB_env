@@ -251,7 +251,7 @@ keep.which.is.in.IO <- function(RESOURCE_PATH,
   
   points_of_interest <- unlist(contain)
   
-  sf_points[-points_of_interest,] -> sf_points_of_interest
+  sf_points[points_of_interest,] -> sf_points_of_interest
   
   if (return_format == "sf"){
     return(sf_points_of_interest)
