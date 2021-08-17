@@ -196,8 +196,8 @@ get.weights <- function(point){
   #' @not_to_be_used_in_the_study
   w9 <- point$forest_surface
   
-  
-  n_methods <- length(ls())
+  #' object point is also in the function env (hence the -1)
+  n_methods <- length(ls())-1
   
   
   return(unlist(mget(paste0("w", 1:n_methods))))
