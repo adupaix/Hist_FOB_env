@@ -107,6 +107,11 @@ get.nb.cover.per.input <- function(indexes, coastal_cover, input_points){
   
   dist_mat <- sqrt((x_cover - x_input)^2 + (y_cover - y_input)^2)
   
+  n_closest_points <- unlist(lapply(apply(dist_mat, 1, function(x) which(x == min(x))), function(x) length(x)))
+  if (any(n_closest_points != 1)){
+    stop("Error: some cover points are at the exact same distance from two input points")
+  }
+  
   # get the closest input point for each cover point
   n_cover_per_points <- summary( as.factor( input_points$id_curr[apply(dist_mat, 1, function(x) which(x == min(x)))] ), maxsum = 10^3)
   
@@ -249,7 +254,7 @@ keep.which.is.in.IO <- function(RESOURCE_PATH,
                            st_buffer(dist = buffer_size),
                          sf_points %>% st_transform(3857))
   
-  points_of_interest <- unlist(contain)
+  points_of_interest <- unique(unlist(contain))
   
   sf_points[points_of_interest,] -> sf_points_of_interest
   
