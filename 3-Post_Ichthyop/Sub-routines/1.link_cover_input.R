@@ -390,7 +390,8 @@ if(!file.exists(fname)){
                   nb_mouth_cover_points,
                   nb_coastal_cover_points,
                   nb_cover_points,
-                  nb_coastal_points) -> nb_cover_per_input
+                  nb_coastal_points) %>%
+    filter(!is.na(id_curr)) -> nb_cover_per_input
 
   write.csv(nb_cover_per_input,
             file = Names$coverGlobal,
