@@ -47,94 +47,98 @@ if (!Exists$weight){
     
     #selecting only the points which are in the area of interest
     input_in_IO <- nb_cover_per_input$id_curr[nb_cover_per_input$id_curr > (i-1) * n_points_per_dir & nb_cover_per_input$id_curr <= i * n_points_per_dir]
-    input_in_IO <- formatC(input_in_IO, flag = "0", digits = 4)
-    rds_files <- grep(pattern = paste(input_in_IO, collapse = "|"),
-                      x = rds_files,
-                      value = T)
-    
-    # set cluster for parallel run, and initialize progress bar
-    cl <- makeCluster(nb_cores)
-    registerDoSNOW(cl)
-    pb <- txtProgressBar(max = length(rds_files), style = 3)
-    progress <- function(n) setTxtProgressBar(pb, n)
-    opts <- list(progress = progress)
+    if (length(input_in_IO) != 0){
       
-    #' for each rds file (each rds file contains the density matrices
-    #' associated with a release at 1 release date from 1 release point)
-    weight_per_points[[i]] <- foreach(k = 1:length(rds_files),
-                                    .combine = rbind,
-                                    .packages = srcUsedPackages,
-                                    .options.snow = opts) %dopar% {
-                                      
-                                      #' create a point "object"
-                                      point <- list()
-                                      
-                                      #' get the id from the file name
-                                      point$id <- sub("/.*","",rds_files[k])
-                                      
-                                      #' keep the file name
-                                      fname <- sub(".*/","",rds_files[k])
-                                        
-                                      #'@get_information_on_release_point
-                                      #'***********************************
-                                      
-                                      # get release coordinates
-                                      point <- get.coords.release(sim_input_path,
-                                                                  point)
-                                        
-                                      # get release date
-                                      point$release_date <- as.Date(sub("\\..*", "", sub(".*_", "", fname)))
-                                        
-                                      # get precipitations
-                                      point <- get.precipitations(DATA_PATH, point)
-                                        
-                                      # get rivers and associated discharge + cover
-                                      point <- get.associated.rivers(link_river_input, n_cover_per_river, embouchures, point)
-                                      
-                                      # get river mouths and associated discharge + cover
-                                      point <- get.associated.rivers(link_river_input, n_cover_per_mouth, embouchures, point, mouth = T)
-                                        
-                                      # get forest cover
-                                      point <- get.number.of.cover.points(nb_cover_per_input, point)
-                                        
-                                      if (round(point$nb_cover_points) != round(point$nb_coastal_cover_points + sum(point$rivers$cover) + sum(point$mouths$cover))){
-                                        stop("Error: total number of cover points does not correspond to sum of coastal and river associated points")
-                                      }
-                                      
-                                      #' get length of coastline associated with the point
-                                      point <- get.coastline.length(nb_cover_per_input, point)
-                                        
-                                      #' get weights (returns a vector with the weight for all the weighting methods)
-                                      weights <- get.weights(point)
-                                        
-                                      # fill in weight_per_points
-                                      weight_per_point <- c(sub_dirs[i],
-                                                          point$id,
-                                                          # the date will be changed to character (hence keep the number of days since 1990-01-01, to choose the time origin)
-                                                          as.numeric(difftime(point$release_date, as.Date("1990-01-01"), units = "days")),
-                                                          as.numeric(weights))
-                                          
-                                      # Save the point object
-                                      outfile_name <- paste0(point$id, "_", point$release_date, "_infos.rds")
-                                          
-                                      out_dir <- file.path(output_paths[[2]], sub_dirs[i], point$id)
-                                      dir.create(out_dir, showWarnings = F)
-                                          
-                                      saveRDS(point, file.path(out_dir, outfile_name))
-                                        
-                                      #' return the vector with c(sub_dir, point_id, release_date, all the weights)
-                                      weight_per_point
-                                        
-                                    }
+      input_in_IO <- formatC(input_in_IO, flag = "0", digits = 4)
+      rds_files <- grep(pattern = paste(input_in_IO, collapse = "|"),
+                        x = rds_files,
+                        value = T)
       
-    #' stop parallel and close progress bar
-    close(pb)
-    stopCluster(cl)
-    registerDoSEQ()
+      # set cluster for parallel run, and initialize progress bar
+      cl <- makeCluster(nb_cores)
+      registerDoSNOW(cl)
+      pb <- txtProgressBar(max = length(rds_files), style = 3)
+      progress <- function(n) setTxtProgressBar(pb, n)
+      opts <- list(progress = progress)
       
-    # change format of weight_per_points
-    weight_per_points[[i]] <- as.data.frame(weight_per_points[[i]])
-    names(weight_per_points[[i]]) <- c("sub_dir", "point_id", "release_date", paste0("w", 1:n_weight_methods))
+      #' for each rds file (each rds file contains the density matrices
+      #' associated with a release at 1 release date from 1 release point)
+      weight_per_points[[i]] <- foreach(k = 1:length(rds_files),
+                                        .combine = rbind,
+                                        .packages = srcUsedPackages,
+                                        .options.snow = opts) %dopar% {
+                                          
+                                          #' create a point "object"
+                                          point <- list()
+                                          
+                                          #' get the id from the file name
+                                          point$id <- sub("/.*","",rds_files[k])
+                                          
+                                          #' keep the file name
+                                          fname <- sub(".*/","",rds_files[k])
+                                          
+                                          #'@get_information_on_release_point
+                                          #'***********************************
+                                          
+                                          # get release coordinates
+                                          point <- get.coords.release(sim_input_path,
+                                                                      point)
+                                          
+                                          # get release date
+                                          point$release_date <- as.Date(sub("\\..*", "", sub(".*_", "", fname)))
+                                          
+                                          # get precipitations
+                                          point <- get.precipitations(DATA_PATH, point)
+                                          
+                                          # get rivers and associated discharge + cover
+                                          point <- get.associated.rivers(link_river_input, n_cover_per_river, embouchures, point)
+                                          
+                                          # get river mouths and associated discharge + cover
+                                          point <- get.associated.rivers(link_river_input, n_cover_per_mouth, embouchures, point, mouth = T)
+                                          
+                                          # get forest cover
+                                          point <- get.number.of.cover.points(nb_cover_per_input, point)
+                                          
+                                          if (round(point$nb_cover_points) != round(point$nb_coastal_cover_points + sum(point$rivers$cover) + sum(point$mouths$cover))){
+                                            stop("Error: total number of cover points does not correspond to sum of coastal and river associated points")
+                                          }
+                                          
+                                          #' get length of coastline associated with the point
+                                          point <- get.coastline.length(nb_cover_per_input, point)
+                                          
+                                          #' get weights (returns a vector with the weight for all the weighting methods)
+                                          weights <- get.weights(point)
+                                          
+                                          # fill in weight_per_points
+                                          weight_per_point <- c(sub_dirs[i],
+                                                                point$id,
+                                                                # the date will be changed to character (hence keep the number of days since 1990-01-01, to choose the time origin)
+                                                                as.numeric(difftime(point$release_date, as.Date("1990-01-01"), units = "days")),
+                                                                as.numeric(weights))
+                                          
+                                          # Save the point object
+                                          outfile_name <- paste0(point$id, "_", point$release_date, "_infos.rds")
+                                          
+                                          out_dir <- file.path(output_paths[[2]], sub_dirs[i], point$id)
+                                          dir.create(out_dir, showWarnings = F)
+                                          
+                                          saveRDS(point, file.path(out_dir, outfile_name))
+                                          
+                                          #' return the vector with c(sub_dir, point_id, release_date, all the weights)
+                                          weight_per_point
+                                          
+                                        }
+      
+      #' stop parallel and close progress bar
+      close(pb)
+      stopCluster(cl)
+      registerDoSEQ()
+      
+      # change format of weight_per_points
+      weight_per_points[[i]] <- as.data.frame(weight_per_points[[i]])
+      names(weight_per_points[[i]]) <- c("sub_dir", "point_id", "release_date", paste0("w", 1:n_weight_methods))
+      
+    }
     
   }
     
