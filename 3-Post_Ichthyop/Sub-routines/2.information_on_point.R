@@ -45,6 +45,13 @@ if (!Exists$weight){
     cat(lines.to.cat)
     cat("Sub_directory", i, "/", length(sub_dirs), " - ",sub_dirs[i], "\n")
     
+    #selecting only the points which are in the area of interest
+    input_in_IO <- nb_cover_per_input$id_curr[nb_cover_per_input$id_curr > (i-1) * n_points_per_dir & nb_cover_per_input$id_curr <= i * n_points_per_dir]
+    input_in_IO <- formatC(input_in_IO, flag = "0", digits = 4)
+    rds_files <- grep(pattern = paste(input_in_IO, collapse = "|"),
+                      x = rds_files,
+                      value = T)
+    
     # set cluster for parallel run, and initialize progress bar
     cl <- makeCluster(nb_cores)
     registerDoSNOW(cl)
@@ -90,7 +97,7 @@ if (!Exists$weight){
                                       # get forest cover
                                       point <- get.number.of.cover.points(nb_cover_per_input, point)
                                         
-                                      if (round(point$nb_cover_points) != round(point$nb_coastal_cover_points + sum(point$rivers$cover))){
+                                      if (round(point$nb_cover_points) != round(point$nb_coastal_cover_points + sum(point$rivers$cover) + sum(point$mouths$cover))){
                                         stop("Error: total number of cover points does not correspond to sum of coastal and river associated points")
                                       }
                                       
