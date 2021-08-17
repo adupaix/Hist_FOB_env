@@ -9,3 +9,6 @@ test*
 *output
 *cfgs/
 *.log
+3-Post_Ichthyop/cfg/*
+
+!*/cfg/ex_cfg.R
