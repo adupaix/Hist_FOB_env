@@ -12,9 +12,11 @@
 rm(list = ls())
 invisible(gc())
 
+STUDY_DIR <- "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/"
+
 #' generate basic paths
-WD <- file.path(getwd(),'3-Post_Ichthyop')
-DATA_PATH <- file.path(getwd(),'0-Data')
+WD <- file.path(STUDY_DIR,'3-Post_Ichthyop')
+DATA_PATH <- file.path(STUDY_DIR,'0-Data')
 
 OUTPUT_PATH <- file.path(WD,"Outputs")
 FUNC_PATH <- file.path(WD,"Functions")
