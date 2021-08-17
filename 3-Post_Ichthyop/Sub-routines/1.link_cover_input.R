@@ -198,7 +198,8 @@ for (k in 1:length(cover_files)){
       n_cover_per_points <- get.nb.cover.per.input(indexes, coastal_cover, input_points)
       
       input_points$nb_coastal_cover_points[
-        as.numeric(names(n_cover_per_points)) ] <- input_points$nb_coastal_cover_points[ as.numeric(names(n_cover_per_points)) ] + n_cover_per_points
+        input_points$id_curr == as.numeric(names(n_cover_per_points))] <-
+        input_points$nb_coastal_cover_points[ input_points$id_curr == as.numeric(names(n_cover_per_points)) ] + n_cover_per_points
       
       pb$tick()
       
@@ -209,7 +210,8 @@ for (k in 1:length(cover_files)){
     n_cover_per_points <- get.nb.cover.per.input(indexes, coastal_cover, input_points)
     
     input_points$nb_coastal_cover_points[
-      as.numeric(names(n_cover_per_points)) ] <- input_points$nb_coastal_cover_points[ as.numeric(names(n_cover_per_points)) ] + n_cover_per_points
+      input_points$id_curr == as.numeric(names(n_cover_per_points))] <-
+      input_points$nb_coastal_cover_points[ input_points$id_curr == as.numeric(names(n_cover_per_points)) ] + n_cover_per_points
     
     pb$tick()
     
@@ -293,7 +295,8 @@ if(!file.exists(fname)){
     n_coast_per_points <- get.nb.cover.per.input(indexes, coastal_points, input_points)
     
     input_points$nb_coastal_points[
-      as.numeric(names(n_coast_per_points)) ] <- input_points$nb_coastal_points[ as.numeric(names(n_coast_per_points)) ] + n_coast_per_points
+      input_points$id_curr == as.numeric(names(n_coast_per_points)) ] <- 
+      input_points$nb_coastal_points[ input_points$id_curr == as.numeric(names(n_coast_per_points)) ] + n_coast_per_points
     
     pb$tick()
     
@@ -304,7 +307,8 @@ if(!file.exists(fname)){
   n_coast_per_points <- get.nb.cover.per.input(indexes, coastal_points, input_points)
   
   input_points$nb_coastal_points[
-    as.numeric(names(n_coast_per_points)) ] <- input_points$nb_coastal_points[ as.numeric(names(n_coast_per_points)) ] + n_coast_per_points
+    input_points$id_curr == as.numeric(names(n_coast_per_points)) ] <-
+    input_points$nb_coastal_points[input_points$id_curr == as.numeric(names(n_coast_per_points)) ] + n_coast_per_points
   
   pb$tick()
   
@@ -363,16 +367,22 @@ if(!file.exists(fname)){
   input_points %>%
     full_join(link_river_input, by = "id_curr") %>%
     arrange(id_curr) %>%
+    dplyr::filter(!is.na(x)) %>%
     dplyr::select(-HYBAS_L12) %>%
     full_join(n_cover_per_river, by = "MAIN_RIV") %>%
     full_join(n_cover_per_mouth, by = "MAIN_RIV") -> cover_global_summary
 
   cover_global_summary$nb_river_cover_points[which(is.na(cover_global_summary$nb_river_cover_points))] <- 0
+  cover_global_summary$nb_mouth_cover_points[which(is.na(cover_global_summary$nb_mouth_cover_points))] <- 0
+  
+  cover_global_summary %>%
+    group_by(id_curr) %>%
+    summarise(nb_mouth_cover_points = sum(nb_mouth_cover_points), .groups = "keep") -> mouth_cover_summary
   
   cover_global_summary %>%
     group_by(id_curr) %>%
     summarise(nb_river_cover_points = sum(nb_river_cover_points), .groups = "keep") %>%
-    summarise(nb_mouth_cover_points = sum(nb_mouth_cover_points), .groups = "keep") %>%
+    full_join(mouth_cover_summary, by = "id_curr") %>%
     left_join(y = input_points, by = "id_curr") %>%
     dplyr::mutate(nb_cover_points = nb_mouth_cover_points + nb_river_cover_points + nb_coastal_cover_points) %>%
     dplyr::select(id_curr, x, y,
