@@ -53,15 +53,18 @@ if (RESET[1] == T){
   try(unlink(list.files(output_paths[[1]], full.names = T),
              recursive = T),
       silent = T)
-} else if (RESET[2] == T){
+}
+if (RESET[2] == T){
   try(unlink(list.files(output_paths[[2]], full.names = T),
              recursive = T),
       silent = T)
-} else if (RESET[3] == T){
+}
+if (RESET[3] == T){
   try(unlink(list.files(output_paths[[3]], full.names = T),
              recursive = T),
       silent = T)
-} else if (RESET[4] == T){
+}
+if (RESET[4] == T){
   try(unlink(list.files(output_paths[[4]], full.names = T),
              recursive = T),
       silent = T)
