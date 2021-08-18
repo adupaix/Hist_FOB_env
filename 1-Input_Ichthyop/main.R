@@ -38,6 +38,7 @@ Parallel = c(T, 1/2),
 #'
 #' reset (logical) : if T, calculates the input points position in any case
 #'                   if F, tries to read the input points positions in the output folder
+#'                   in any case, generate the cfg files for Ichthyop again
 reset = F,
 
 #'                                                                           
@@ -96,8 +97,8 @@ sim_output_path <- "/home1/scratch/adupaix/ichthyop-output"
 #~ Arguments to generate the xml files
 transport_duration = 500 #in days
 
-first_release_year = 1989 # release from the first of December preceding of this year
-last_release_year = 1990 # to the 15th of January following this year
+first_release_year = 1989 # release from the first of December of the year preceding this year
+last_release_year = 1990 # to the 15th of January of the year after this year
 release_frequency = 2 # nb of release per month
 record_frequency = 1 #in days (interval between two recorded positions)
 
