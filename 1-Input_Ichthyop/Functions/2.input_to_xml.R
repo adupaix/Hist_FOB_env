@@ -98,11 +98,17 @@ input.to.xml <- function(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
   mths = 1:12
   dys = seq(1, 30-30/release_frequency, length.out = release_frequency)
   
-  initial_time <- as.POSIXct(paste(paste(rep(yrs, each = length(mths)*length(dys)),
-                                         rep(mths, length(yrs), each = length(dys)),
-                                         rep(dys, length(mths)*length(yrs)),
-                                         sep = "-"),
-                                   "00:00"))
+  initial_time <- c(as.Date(paste(rep(first_release_year-1,2),
+                                           rep("12",2),
+                                           c("01","15"),sep = "-")),
+                    as.Date(paste(rep(yrs, each = length(mths)*length(dys)),
+                                           rep(mths, length(yrs), each = length(dys)),
+                                           rep(dys, length(mths)*length(yrs)),
+                                           sep = "-")),
+                    as.Date(paste(rep(last_release_year+1,2),
+                                           rep("01",2),
+                                           c("01","15"),sep = "-"))
+                     )
   
   #~ Read the template file
   tplate <- scan(template, what = "", sep = "\n", quiet = T)

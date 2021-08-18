@@ -96,13 +96,13 @@ sim_output_path <- "/home1/scratch/adupaix/ichthyop-output"
 #~ Arguments to generate the xml files
 transport_duration = 500 #in days
 
-first_release_year = 1989 # release from the first of January of this year
-last_release_year = 1990 # to December of this year
+first_release_year = 1989 # release from the first of December preceding of this year
+last_release_year = 1990 # to the 15th of January following this year
 release_frequency = 2 # nb of release per month
 record_frequency = 1 #in days (interval between two recorded positions)
 
 n_cfg_per_dir = 28*8*5 # number of .xml file per directory
-n_pbs_jobs = 5 #number of .pbs jobs to run in the cluster (to generate the command_list files)
+n_pbs_jobs = 3 #number of .pbs jobs to run in the cluster (to generate the command_list files)
 
 
 
