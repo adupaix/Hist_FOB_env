@@ -115,6 +115,11 @@ input.nlog <- function(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
         # take the centroid of river segments
         st_centroid() -> entry_points
       
+      entry_points <- keep.which.is.in.IO(RESOURCE_PATH,
+                                          entry_points,
+                                          buffer_size = 10^4,
+                                          return_format = "sf")
+      
       toc()
       
       
@@ -262,20 +267,36 @@ input.nlog <- function(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
       cat(" # Deleting points in Chinese Sea\n")
       input_points <- delete.chinese.sea(coastal_prod_points, "sf")
       
-      input_points %>% dplyr::mutate(id_curr = seq(1, dim(input_points)[1])) -> input_points
-      
+      # cat(" # Generating link table\n")
+      # entry_points %>% mutate( id_curr = as.vector( nn2(st_coordinates(input_points),
+      #                                                   st_coordinates(entry_points), k = 1)$nn.idx )) %>%
+      #   st_drop_geometry() %>% select(MAIN_RIV, HYBAS_L12, id_curr) -> link_table
+      # 
+      # 
+      # toc()
+    }
+    
+    ### 3. FILTER POINTS TO KEEP ONLY THE ONES PROPERLY IN THE IO
+    input_points <- keep.which.is.in.IO(RESOURCE_PATH,
+                                        input_points,
+                                        buffer_size = 10^4,
+                                        return_format = "sf")
+    
+    input_points %>% dplyr::mutate(id_curr = seq(1, dim(input_points)[1])) -> input_points
+    
+    
+    if (input_method == "allMask"){
+      # generate the table linking input points and rivers
       cat(" # Generating link table\n")
       entry_points %>% mutate( id_curr = as.vector( nn2(st_coordinates(input_points),
                                                         st_coordinates(entry_points), k = 1)$nn.idx )) %>%
         st_drop_geometry() %>% select(MAIN_RIV, HYBAS_L12, id_curr) -> link_table
       
-      
       toc()
+      
     }
     
-    
-    ### 3. GENERATE THE FILES TO BE SAVED
-    
+    ### 4. GENERATE THE FILES TO BE SAVED
     
     input_coords <- round(st_coordinates(input_points), digits = 6) #get only the coordinates for the Ichthyop Input
     
