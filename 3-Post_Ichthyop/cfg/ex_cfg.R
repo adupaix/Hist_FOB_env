@@ -43,7 +43,7 @@ Parallel = c(T, 1/2)
 #' @RESET @!!! (log): Reset ?
 #' Whether to delete the results obtained for these arguments (T) or not (F):
 #'  each element of RESET concerns the outputs obtained from the corresponding sub-routine (1 to 4)
-RESET = c(T,T,T,T)
+RESET = c(F,F,F,F)
 
 
 #' Arguments on the current study
@@ -124,7 +124,7 @@ agg.time_scale = "year"
 agg.function = "mean"
 
 #'## @log_color_scale (log): specify if the color scale is log transformed (T) or not (F)
-log_color_scale = F
+log_color_scale = T
 
 #'## @common_scale_max (log): choose whether to fix the max of the color scale or not
 #' if = F, the max is not fixed (the scales of each maps are different)
