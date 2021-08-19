@@ -27,20 +27,20 @@ sim_name <- generate.sim_name(forcing,
   
 #' Create output folders
 #'     Names
-output_paths <- list()
-output_paths[[1]] <- file.path(OUTPUT_PATH, sim_name, year, "1.nb_cover")
-output_paths[[2]] <- file.path(OUTPUT_PATH, sim_name, year, "2.info_on_points")
+output_paths <- c()
+output_paths[1] <- file.path(OUTPUT_PATH, sim_name, year, "1.nb_cover")
+output_paths[2] <- file.path(OUTPUT_PATH, sim_name, year, "2.info_on_points")
 output_path_3_more <- file.path(OUTPUT_PATH, sim_name, year, paste0("w",weight_method,
                                                                     "_ltime",ltime_method,"-",ltime,
                                                                     ifelse(ltime_method == 1, paste0("-sd",ltime_sd), ""),
                                                                     ifelse(is.null(thr_disch), "_no-thr-disch", paste0("_thr-disch",thr_disch))))
-output_paths[[3]] <- file.path(output_path_3_more, "3.arrays_by_release_date")
-output_paths[[4]] <- file.path(output_path_3_more, paste0("4.maps_",agg.time_scale))
+output_paths[3] <- file.path(output_path_3_more, "3.arrays_by_release_date")
+output_paths[4] <- file.path(output_path_3_more, paste0("4.maps_",agg.time_scale))
 #'     Create
-dir.create(output_paths[[1]], recursive = T, showWarnings = F)
-dir.create(output_paths[[2]], recursive = T, showWarnings = F)
-dir.create(output_paths[[3]], recursive = T, showWarnings = F)
-dir.create(output_paths[[4]], recursive = T, showWarnings = F)
+dir.create(output_paths[1], recursive = T, showWarnings = F)
+dir.create(output_paths[2], recursive = T, showWarnings = F)
+dir.create(output_paths[3], recursive = T, showWarnings = F)
+dir.create(output_paths[4], recursive = T, showWarnings = F)
 
 
 # create paths used to read data from the simulation and from the 1-Input_Ichthyop folder
@@ -50,22 +50,22 @@ sim_input_path <- file.path(DATA_PATH, "Input_Ichthyop", paste0(input_location, 
 
 # If RESET is T, delete all the output files
 if (RESET[1] == T){
-  try(unlink(list.files(output_paths[[1]], full.names = T),
+  try(unlink(list.files(output_paths[1], full.names = T),
              recursive = T),
       silent = T)
 }
 if (RESET[2] == T){
-  try(unlink(list.files(output_paths[[2]], full.names = T),
+  try(unlink(list.files(output_paths[2], full.names = T),
              recursive = T),
       silent = T)
 }
 if (RESET[3] == T){
-  try(unlink(list.files(output_paths[[3]], full.names = T),
+  try(unlink(list.files(output_paths[3], full.names = T),
              recursive = T),
       silent = T)
 }
 if (RESET[4] == T){
-  try(unlink(list.files(output_paths[[4]], full.names = T),
+  try(unlink(list.files(output_paths[4], full.names = T),
              recursive = T),
       silent = T)
   try(unlink(file.path(output_path_3_more, "4.global_array.rds")),
@@ -100,25 +100,25 @@ n_weight_methods <- dim(weight_informations)[1]
 #' Create output files names
 Names <- list()
 #'       Sub-routine 1
-Names$log1 <- file.path(output_paths[[1]], "log.txt")
-Names$coverRiver <- file.path(output_paths[[1]], "n_cover_per_river.csv")
-Names$coverMouth <- file.path(output_paths[[1]], "n_cover_per_mouth.csv")
-Names$coverGlobal <- file.path(output_paths[[1]], "number_of_cover_points_per_input_point.csv")
+Names$log1 <- file.path(output_paths[1], "log.txt")
+Names$coverRiver <- file.path(output_paths[1], "n_cover_per_river.csv")
+Names$coverMouth <- file.path(output_paths[1], "n_cover_per_mouth.csv")
+Names$coverGlobal <- file.path(output_paths[1], "number_of_cover_points_per_input_point.csv")
 #'       Sub-routine 2
-Names$log2 <- file.path(output_paths[[2]], "log.txt")
-Names$weightInput <- c(file.path(output_paths[[2]], "weight_per_points_summary.csv"),
-                 file.path(output_paths[[2]], paste0("weight_per_points_matrix_w",weight_method,".csv")))
+Names$log2 <- file.path(output_paths[2], "log.txt")
+Names$weightInput <- c(file.path(output_paths[2], "weight_per_points_summary.csv"),
+                 file.path(output_paths[2], paste0("weight_per_points_matrix_w",weight_method,".csv")))
 #'       Sub-routine 3
-Names$log3 <- file.path(output_paths[[3]], "log.txt")
+Names$log3 <- file.path(output_paths[3], "log.txt")
 #'       Sub-routine 4
-Names$log4 <- file.path(output_paths[[4]], "log.txt")
+Names$log4 <- file.path(output_paths[4], "log.txt")
 Names$globArray <- file.path(output_path_3_more, "4.global_array.rds")
-Names$aggArray <- file.path(output_paths[[4]], paste0("aggregated_array_",agg.function,".rds"))
-Names$plotList <- file.path(output_paths[[4]], paste0("plot_list_", agg.function,
+Names$aggArray <- file.path(output_paths[4], paste0("aggregated_array_",agg.function,".rds"))
+Names$plotList <- file.path(output_paths[4], paste0("plot_list_", agg.function,
                                                       ifelse(log_color_scale == T, "_log_","_"),
                                                       paste(area_to_map, collapse = ""),
                                                       ".rds"))
-Names$pngMaps <- file.path(output_paths[[4]], paste0(ifelse(log_color_scale == T, "log_",""),
+Names$pngMaps <- file.path(output_paths[4], paste0(ifelse(log_color_scale == T, "log_",""),
                                                      agg.function,
                                                      "_", paste(area_to_map, collapse = ""),
                                                      "_w",weight_method,

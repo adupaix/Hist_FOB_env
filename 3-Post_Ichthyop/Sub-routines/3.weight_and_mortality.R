@@ -53,7 +53,7 @@ if(!Exists$log3){
     cat("Release date", i, "/", dim(weight_per_points_matrix)[2], " - ",format(release_date.i), "\n")
     
     # name of the output generated in output folder 3
-    fname <- file.path(output_paths[[3]], paste0(format(release_date.i),".rds"))
+    fname <- file.path(output_paths[3], paste0(format(release_date.i),".rds"))
     
     if (file.exists(fname)){
       # if the output was already generated for this release date, prints a message and goes directly to the next iteration
@@ -98,12 +98,12 @@ if(!Exists$log3){
   }
   
   #' @output_for_next_subroutine
-  weighted_arrays <- list.files(output_paths[[3]], pattern = ".rds")
+  weighted_arrays <- list.files(output_paths[3], pattern = ".rds")
   
   #' save a log
   sink(Names$log3, append = F)
   cat("Date & time :", format(Sys.time()), "\n")
-  cat("\n Number of generated .rds files:", length(list.files(output_paths[[3]]))-1)
+  cat("\n Number of generated .rds files:", length(list.files(output_paths[3]))-1)
   cat("\n\n  Weighting method :", paste(weight_informations[weight_method,], collapse = " - "))
   cat("\n\n  Life time method :", ltime_method)
   cat("\n  Mean life time :", ltime)
@@ -120,5 +120,5 @@ if(!Exists$log3){
 }
 
 #' @output_for_next_subroutine
-weighted_arrays <- list.files(output_paths[[3]], pattern = ".rds")
+weighted_arrays <- list.files(output_paths[3], pattern = ".rds")
 

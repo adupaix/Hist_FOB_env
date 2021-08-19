@@ -31,7 +31,7 @@ if (!Exists$weight){
   for (i in 1:length(sub_dirs)){
       
     #' create the output sub directory in the output folder 2
-    dir.create(file.path(output_paths[[2]], sub_dirs[i]), recursive = T, showWarnings = F)
+    dir.create(file.path(output_paths[2], sub_dirs[i]), recursive = T, showWarnings = F)
     
     #' get all the names of the rds files in the sub directory
     rds_files <- list.files(file.path(sim_output_path, sub_dirs[i]), recursive = T, pattern = ".rds")
@@ -119,7 +119,7 @@ if (!Exists$weight){
                                           # Save the point object
                                           outfile_name <- paste0(point$id, "_", point$release_date, "_infos.rds")
                                           
-                                          out_dir <- file.path(output_paths[[2]], sub_dirs[i], point$id)
+                                          out_dir <- file.path(output_paths[2], sub_dirs[i], point$id)
                                           dir.create(out_dir, showWarnings = F)
                                           
                                           saveRDS(point, file.path(out_dir, outfile_name))
@@ -159,11 +159,11 @@ if (!Exists$weight){
       tidyr::spread(release_date, paste0("w", i)) -> weight_per_points_matrix
     
     #' save the matrix with the weight_method number in the name
-    write.csv(weight_per_points_matrix, file = file.path(output_paths[[2]], paste0("weight_per_points_matrix_w",i,".csv")), row.names = F)  
+    write.csv(weight_per_points_matrix, file = file.path(output_paths[2], paste0("weight_per_points_matrix_w",i,".csv")), row.names = F)  
   }
   
   #' save weight_per_points summary
-  write.csv(weight_per_points, file = file.path(output_paths[[2]], "weight_per_points_summary.csv"), row.names = F)
+  write.csv(weight_per_points, file = file.path(output_paths[2], "weight_per_points_summary.csv"), row.names = F)
   
   
   #' save a log
@@ -178,11 +178,11 @@ if (!Exists$weight){
   
 }
 
-# weight_per_points <- read.csv(file = file.path(output_paths[[2]], "weight_per_points_summary.csv"),
+# weight_per_points <- read.csv(file = file.path(output_paths[2], "weight_per_points_summary.csv"),
 #                             colClasses = c("factor","character","Date",rep("factor", n_weight_methods)))
 
 #'@output_for_next_subroutine
-weight_per_points_matrix <- read.csv(file = file.path(output_paths[[2]], paste0("weight_per_points_matrix_w",weight_method,".csv")),
+weight_per_points_matrix <- read.csv(file = file.path(output_paths[2], paste0("weight_per_points_matrix_w",weight_method,".csv")),
                                      colClasses = c("character"))
 
 #' Do not delete

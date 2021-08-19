@@ -25,7 +25,7 @@ if (!Exists$maps){
                           .packages = srcUsedPackages,
                           .combine = function(x,y) abind::abind(x,y, along = 3)) %do% {
                             
-                            array.i <- readRDS(file.path(output_paths[[3]], weighted_arrays[i]))
+                            array.i <- readRDS(file.path(output_paths[3], weighted_arrays[i]))
                           }
     
     

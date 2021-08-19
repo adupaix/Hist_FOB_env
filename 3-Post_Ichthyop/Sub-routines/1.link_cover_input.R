@@ -43,11 +43,11 @@ input_points <- keep.which.is.in.IO(RESOURCE_PATH, input_points_sf,
 input_points$nb_coastal_cover_points <- 0
 
 
-mouth_cover_fnames <- file.path(output_paths[[1]], paste0("link_mouths_",sub(".shp", "", cover_files),".txt"))
+mouth_cover_fnames <- file.path(output_paths[1], paste0("link_mouths_",sub(".shp", "", cover_files),".txt"))
 
-river_cover_fnames <- file.path(output_paths[[1]], paste0("link_rivers_",sub(".shp", "", cover_files),".txt"))
+river_cover_fnames <- file.path(output_paths[1], paste0("link_rivers_",sub(".shp", "", cover_files),".txt"))
 
-coastal_cover_fnames <- file.path(output_paths[[1]],
+coastal_cover_fnames <- file.path(output_paths[1],
                                   sub(length(cover_files), "f", paste0("input_point_with_cover_nb_v", 1:length(cover_files), ".txt")))
 
 # if any of the file counting the number of cover points per river is missing, we need the buffer around the rivers
@@ -236,7 +236,7 @@ for (k in 1:length(cover_files)){
 msg <- "\n\n3. Get the length of coastline associated with each input point\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
 
-fname <- file.path(output_paths[[1]], "input_point_with_cover_and_coast_nb.txt")
+fname <- file.path(output_paths[1], "input_point_with_cover_and_coast_nb.txt")
 
 if(!file.exists(fname)){
   
@@ -327,15 +327,15 @@ if(!file.exists(fname)){
 
   msg <- "4. Merge coastal, river, river mouth and coastline length information\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
-  link_riv_cov_files <- list.files(output_paths[[1]], pattern = "link_rivers_")
-  link_mouth_cov_files <- list.files(output_paths[[1]], pattern = "link_mouths_")
+  link_riv_cov_files <- list.files(output_paths[1], pattern = "link_rivers_")
+  link_mouth_cov_files <- list.files(output_paths[1], pattern = "link_mouths_")
   
   n_cover_per_river <- list()
   n_cover_per_mouth <- list()
 
   for (i in 1:length(link_riv_cov_files)){
-    n_cover_per_river[[i]] <- read.table(file.path(output_paths[[1]], link_riv_cov_files[i]), header = T)
-    n_cover_per_mouth[[i]] <- read.table(file.path(output_paths[[1]], link_mouth_cov_files[i]), header = T)
+    n_cover_per_river[[i]] <- read.table(file.path(output_paths[1], link_riv_cov_files[i]), header = T)
+    n_cover_per_mouth[[i]] <- read.table(file.path(output_paths[1], link_mouth_cov_files[i]), header = T)
   }
 
   bind_rows(n_cover_per_river) %>%
