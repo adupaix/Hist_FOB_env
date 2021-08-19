@@ -8,75 +8,11 @@
 #'@revision
 #'#*******************************************************************************************************************
 
-
-#####################################################################################
-#         READS INPUT TXT FILE and GENERATE ICHTHYOP CONFIG FILES                   #
-#####################################################################################
-# ARGUMENTS:                                                                        #
-# ===========                                                                       #
-# DATA_PATH: (chr) path to the data directory                                       #
-# OUTPUT_PATH: (chr) path to the output directory                                   #
-# RESOURCE_PATH: (chr) path to the directory containing the xml template            #
-#                                                                                   #
-### input_location (chr): either "river" or "mangrove"                              #
-### input_method (chr): either "onMask" put points on the closest point on the      #
-#                                     current product                               #
-#                      or "kFromCoast" put points at dist km from the coast         #
-#                      of "allMask" put points on all the points of the mask close  #
-#                                   to the coast and generate a txt file for each   #
-#                                   river/mangrove with the corresponding mask point#
-#                                                                                   #
-### dist (num) : distance from the coast at which we want the points (in deg)       #
-### curr_prod (chr): which current mask product to use if put the input points on   #
-#              the closest point of the product mask                                #
-#                                                                                   #
-#                                                                                   #
-#                                                                                   #
-#                                                                                   #
-# OUTPUT:                                                                           #
-#####################################################################################
-
-# input.to.xml <- function(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
-#                          
-#                          # arguments to retrieve input locations
-#                          input_location = c("river","mangrove"),
-#                          input_method = c("onMask","kFromCoast", "allMask"),
-#                          dist = 1, # used if input_method == kFromCoast
-#                          curr_prod = c("oscar","nemo"), # used if input_method == onMask
-#                          
-#                          # arguments to generate the cfg files
-#                          sim_input_path,
-#                          sim_output_path,
-#                          
-#                          transport_duration,
-#                          first_release_year,
-#                          last_release_year,
-#                          release_frequency,
-#                          record_frequency,
-#                          n_cfg_per_dir,
-#                          n_pbs_jobs
-# ){
   
-  cat(crayon::bold("\n\n2. Generating xml cfg files from points\n"))
-  
-  # #~ Get the file name
-  # dir_name <- paste0(input_location, "_nlog_input_")
-  # if (input_method == "kFromCoast"){
-  #   dir_name <- paste0(dir_name, dist*100,"k_from_coast")
-  # } else if (input_method == "onMask"){
-  #   dir_name <- paste0(dir_name, curr_prod,"_mask")
-  # } else if (input_method == "allMask"){
-  #   dir_name <- paste0(dir_name, curr_prod, "_allMask")
-  # }
-  # 
-  # dir_path <- file.path(OUTPUT_PATH, dir_name)
-  
-  # # read the input coordinates generated in input.nlog()
-  # input_coords_id <- read.table(file = file.path(dir_path, "IDs.txt"),
-  #             header = F, sep=" ")
+cat(crayon::bold("\n\n2. Generating xml cfg files from points\n"))
   
 #'@1 Generate xml config files
-
+if (!all(Exist$output_2)){
   # get the number of directories to generate
   n_dirs <- floor(dim(input_coords_id)[1]/n_cfg_per_dir)
   
@@ -187,7 +123,10 @@
   
   generate.jobs.pbs(Template$pbs, sim_input_path, cfg_path, cfg_dir, last_release_year,
                     n_pbs_jobs, n_mpi, walltime)
+
+
+} else {
   
-# }
-
-
+  cat("\n### Config files, commands lists and pbs jobs already generated\n")
+  
+}
