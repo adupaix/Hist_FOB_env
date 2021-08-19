@@ -34,10 +34,14 @@ ROUT_PATH <- file.path(WD, "Sub-routines")
 Parallel = c(T, 1/2)
                   
 #'
-#' reset (logical) : if T, calculates the input points position in any case
+#' RESET (logical) :
+#'    First element of the vector:
+#'                   if T, calculates the input points position in any case
 #'                   if F, tries to read the input points positions in the output folder
-#'                   in any case, generate the cfg files for Ichthyop again
-reset = F
+#'    Second element of the vector:
+#'                   if T, delete all the cfg files and rebuild them
+#'                   if F, build cfg files only if they do not exist
+RESET = c(T,T)
 
 #'                                                                           
 #' save (logical) : if T, save a txt file ready for use in ichthyop                  
