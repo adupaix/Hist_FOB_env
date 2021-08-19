@@ -1,3 +1,12 @@
+#'#*******************************************************************************************************************
+#'@author : Amael DUPAIX
+#'@update : 2021-08-19
+#'@email : amael.dupaix@ens-lyon.fr
+#'#*******************************************************************************************************************
+#'@description :  Script initializing the study generating input points for Ichthyop simulations 
+#'#*******************************************************************************************************************
+#'@revision
+#'#*******************************************************************************************************************
 
 cat("\14")
 cat(crayon::bold("###### Generating input points for Ichthyop simulations\n\n"))
@@ -19,6 +28,8 @@ if(!all(unlist(lapply(Template, file.exists)))){
   stop("Error: some templates are missing")
 }
 
+## Create output paths
+# subroutine 1
 # create the name on the dir where files will be saved, depending on method and input location
 dir_name <- paste0(input_location, "_nlog_input_")
 if (input_method == "kFromCoast"){
@@ -29,22 +40,51 @@ if (input_method == "kFromCoast"){
   dir_name <- paste0(dir_name, curr_prod, "_allMask")
 }
 
-dir_path <- file.path(OUTPUT_PATH, dir_name)
-try(dir.create(path = dir_path))
-
-# create the names of the outputs (of subroutine 1), to check if they exist
-files_to_check <- c("IDs.txt", "input_icht.txt", paste0(dir_name,".shp"))
-if (input_method == "allMask"){ files_to_check <- c(files_to_check, "Link_table.txt")}
+output_path1 <- file.path(OUTPUT_PATH, dir_name)
+dir.create(path = output_path1, showWarnings = F)
 
 #Create the directory to save the cfg files (output path of subroutine 2)
 cfg_dir <- paste0("cfgs_",first_release_year,"-",last_release_year)
-cfg_path <- file.path(OUTPUT_PATH, dir_name, cfg_dir)
-dir.create(file.path(dir_path, cfg_dir), showWarnings = F)
+output_path2 <- file.path(output_path1, cfg_dir)
+dir.create(path = output_path2, showWarnings = F)
 
-# delete outputs if reset == T
-if (reset == T){
-  try(unlink(file.path(dir_path, files_to_check)), silent = T)
+
+
+### Output names
+# create the names of the outputs (of subroutine 1), to check if they exist
+Names <- c()
+Names$output_1 <- c("IDs.txt", "input_icht.txt", paste0(dir_name,c(".shp",
+                                                                   ".dbf",
+                                                                   ".prj",
+                                                                   ".shx")))
+if (input_method == "allMask"){ Names$output_1 <- c(Names$output_1, "Link_table.txt")}
+
+#' outputs of subroutine 2
+#' @!! only check the existence of the pbs jobs (not the xml cfg files)
+Names$output_2.1 <- paste0("list_commands",1:n_pbs_jobs,".txt")
+Names$output_2.2 <- paste0("sim_ichthyop-",last_release_year,"-",1:n_pbs_jobs,".pbs")
+
+
+
+# delete outputs if RESET == T
+if (RESET[1] == T){
+  try(unlink(file.path(output_path1, Names$output_1)), silent = T)
 }
+if (RESET[2] == T){
+  try(unlink(list.files(output_path2), recursive = T))
+}
+
+
+
+###Check in outputs exist
+Exist <- c()
+Exist$output_1 <- file.exists(file.path(output_path1, Names$output_1))
+Exist$output_2 <- file.exists(c(file.path(output_path2, Names$output_2.1),
+                                file.path(output_path2, Names$output_2.2)))
+
+
+#' add the year to the sim_output_path (path where the Ichthyop output will be save on the cluster)
+sim_output_path <- file.path(sim_output_path, last_release_year)
 
 #list objects to keep at the end
 toKeep <- c(ls(), "toKeep")
