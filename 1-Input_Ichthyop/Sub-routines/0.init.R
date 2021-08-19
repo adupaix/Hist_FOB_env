@@ -22,7 +22,8 @@ source(file.path(FUNC_PATH,'2.1.write_xml.R'))
 # Get the path to the templates
 Template <- c()
 Template$xml <- file.path(RESOURCE_PATH, paste0("template_cfg_",curr_prod,".xml"))
-Template$pbs <- file.path(RESOURCE_PATH, "template_job.pbs")
+Template$pbs <- file.path(RESOURCE_PATH, "template_ichthyop_job.pbs")
+Template$pbs_post <- file.path(RESOURCE_PATH, "template_post_ichthyop_job.pbs")
 
 if(!all(unlist(lapply(Template, file.exists)))){
   stop("Error: some templates are missing")
@@ -63,6 +64,8 @@ if (input_method == "allMask"){ Names$output_1 <- c(Names$output_1, "Link_table.
 #' @!! only check the existence of the pbs jobs (not the xml cfg files)
 Names$output_2.1 <- paste0("list_commands",1:n_pbs_jobs,".txt")
 Names$output_2.2 <- paste0("sim_ichthyop-",last_release_year,"-",1:n_pbs_jobs,".pbs")
+Names$output_2.3 <- c(paste0("post-simu-ichthyop-",last_release_year,".pbs"),
+                      paste0("commands_post_simu-",last_release_year,".txt"))
 
 
 
@@ -71,7 +74,7 @@ if (RESET[1] == T){
   try(unlink(file.path(output_path1, Names$output_1)), silent = T)
 }
 if (RESET[2] == T){
-  try(unlink(list.files(output_path2), recursive = T))
+  try(unlink(list.files(output_path2, full.names = T), recursive = T))
 }
 
 
@@ -80,7 +83,8 @@ if (RESET[2] == T){
 Exist <- c()
 Exist$output_1 <- file.exists(file.path(output_path1, Names$output_1))
 Exist$output_2 <- file.exists(c(file.path(output_path2, Names$output_2.1),
-                                file.path(output_path2, Names$output_2.2)))
+                                file.path(output_path2, Names$output_2.2),
+                                file.path(output_path2, Names$output_2.3)))
 
 
 #' add the year to the sim_output_path (path where the Ichthyop output will be save on the cluster)

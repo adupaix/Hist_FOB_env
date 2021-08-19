@@ -90,14 +90,14 @@ write.cfg.xml <- function(initial_time,
 
 generate.command.list <- function(sim_input_path, cfg_path, cfg_dir, n_pbs_jobs){
   
-  lignes <- paste0("java -jar ichthyop-private/target/ichthyop-3.3.10.jar ",sim_input_path,"/",cfg_dir,"/", list.files(cfg_path, recursive = T))
+  lignes <- paste0("java -jar ichthyop-private/target/ichthyop-3.3.10.jar ",sim_input_path,"/",cfg_dir,"/", list.files(cfg_path, pattern = "cfg_point", recursive = T))
   l = length(lignes)
   
   for (i in 1:n_pbs_jobs){
     indexes = floor((i-1)*l/n_pbs_jobs + 1) : floor(i*l/n_pbs_jobs)
     
-    file.create(file.path(cfg_path, paste0("list_commands",i,".txt")))
-    cmds <- file(file.path(cfg_path, paste0("list_commands",i,".txt")), open = "w")
+    file.create(file.path(cfg_path, paste0("commands_simu-",i,".txt")))
+    cmds <- file(file.path(cfg_path, paste0("commands_simu-",i,".txt")), open = "w")
     writeLines(lignes[indexes], cmds)
     close(cmds)
   }
@@ -125,11 +125,44 @@ generate.jobs.pbs <- function(template, sim_input_path, cfg_path, cfg_dir, last_
     #write the line lauching the mpi specifying the number of cores and the path to the command list
     pbs_text[grep("MPI_LAUNCH", pbs_text)] <- paste0("time $MPI_LAUNCH -np ", 28*n_mpi[i],
                                                      " ichthyop-mpi/ichthyopmpi ",
-                                                     sim_input_path, "/", cfg_dir, "/list_commands", i, ".txt &> out.log")
+                                                     sim_input_path, "/", cfg_dir, "/commands_simu-", i, ".txt &> out.log")
     
     file.create(file.path(cfg_path, paste0("sim_ichthyop-",last_release_year,"-",i,".pbs")))
     job <- file(file.path(cfg_path, paste0("sim_ichthyop-",last_release_year,"-",i,".pbs")), open = "w")
     writeLines(pbs_text, job)
     close(job)
   }
+}
+
+
+
+
+generate.post.ichthyop <- function(template, cfg_path, last_release_year){
+  
+  # generate commands
+  lignes <- paste0("Rscript ichth_to_rds.R ", list.files(cfg_path, pattern = "cfg_point", recursive = T), " ", last_release_year)
+  lignes <- gsub("cfgs", "points", lignes)
+  lignes <- gsub("cfg_point_", "", lignes)
+  lignes <- gsub("\\.xml", "", lignes)
+  l = length(lignes)
+  
+  file.create(file.path(cfg_path, paste0("commands_post_simu-",last_release_year,".txt")))
+  cmds <- file(file.path(cfg_path, paste0("commands_post_simu-",last_release_year,".txt")), open = "w")
+  writeLines(lignes, cmds)
+  close(cmds)
+  
+  # generate job
+  pbs_text <- scan(template, what = "", sep = "\n", quiet = T)
+  
+  pbs_text[grep("MPI_LAUNCH", pbs_text)] <- paste0("time $MPI_LAUNCH -np 168 ichthyop-mpi/ichthyopmpi ",
+                                                   sim_input_path, "/",
+                                                   cfg_dir, "/commands_post_simu-",
+                                                   last_release_year,
+                                                   ".txt >& out.log")
+  
+  file.create(file.path(cfg_path, paste0("post_sim_ichthyop-",last_release_year,".pbs")))
+  job <- file(file.path(cfg_path, paste0("post_sim_ichthyop-",last_release_year,".pbs")), open = "w")
+  writeLines(pbs_text, job)
+  close(job)
+  
 }

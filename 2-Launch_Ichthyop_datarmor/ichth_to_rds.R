@@ -47,10 +47,12 @@ Args = commandArgs(trailingOnly = T)
 
 sub_path <- as.character(Args[1])
 
+year <- as.character(Args[2])
+
 point_nb <- gsub(".*?/", "", sub_path)
 
 
-dir = "/home1/scratch/adupaix/ichthyop-output"
+dir = file.path("/home1/scratch/adupaix/ichthyop-output",year)
 # dir = "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/0-Data/Output_Ichthyop/PHILIN12.L75_river_allMask/"
 
 point_dir <- file.path(dir, sub_path)

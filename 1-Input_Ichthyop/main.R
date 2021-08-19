@@ -41,7 +41,7 @@ Parallel = c(T, 1/2)
 #'    Second element of the vector:
 #'                   if T, delete all the cfg files and rebuild them
 #'                   if F, build cfg files only if they do not exist
-RESET = c(T,T)
+RESET = c(F,T)
 
 #'                                                                           
 #' save (logical) : if T, save a txt file ready for use in ichthyop                  

@@ -47,7 +47,7 @@ if (!all(Exist$output_2)){
     i_chr <- as.character(i)
     i_chr <- paste0(substr(t, 1, nchar(t)-nchar(i_chr)), i_chr)
     
-    dir_name.i <- file.path(cfg_path, paste0("cfgs_", i_chr))
+    dir_name.i <- file.path(output_path2, paste0("cfgs_", i_chr))
     
     dir.create(dir_name.i)
     
@@ -84,7 +84,7 @@ if (!all(Exist$output_2)){
   i_chr <- as.character(i)
   i_chr <- paste0(substr(t, 1, nchar(t)-nchar(i_chr)), i_chr)
   
-  dir_name.i <- file.path(cfg_path, paste0("cfgs_", i_chr))
+  dir_name.i <- file.path(output_path2, paste0("cfgs_", i_chr))
   
   dir.create(dir_name.i, showWarnings = F)
   
@@ -119,10 +119,12 @@ if (!all(Exist$output_2)){
   
   #'@2 Generate command lists and pbs jobs
   
-  generate.command.list(sim_input_path, cfg_path, cfg_dir, n_pbs_jobs)
+  generate.command.list(sim_input_path, output_path2, cfg_dir, n_pbs_jobs)
   
-  generate.jobs.pbs(Template$pbs, sim_input_path, cfg_path, cfg_dir, last_release_year,
+  generate.jobs.pbs(Template$pbs, sim_input_path, output_path2, cfg_dir, last_release_year,
                     n_pbs_jobs, n_mpi, walltime)
+  
+  generate.post.ichthyop(Template$pbs_post, output_path2, last_release_year)
 
 
 } else {
