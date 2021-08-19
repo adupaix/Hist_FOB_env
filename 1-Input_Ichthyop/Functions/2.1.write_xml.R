@@ -88,7 +88,7 @@ write.cfg.xml <- function(initial_time,
 
 
 
-txt.for.mpi <- function(sim_input_path, cfg_path, cfg_dir, n_pbs_jobs){
+generate.command.list <- function(sim_input_path, cfg_path, cfg_dir, n_pbs_jobs){
   
   lignes <- paste0("java -jar ichthyop-private/target/ichthyop-3.3.10.jar ",sim_input_path,"/",cfg_dir,"/", list.files(cfg_path, recursive = T))
   l = length(lignes)
@@ -107,16 +107,25 @@ txt.for.mpi <- function(sim_input_path, cfg_path, cfg_dir, n_pbs_jobs){
 
 
 
-generate.jobs.pbs <- function(RESOURCE_PATH, sim_input_path, cfg_path, cfg_dir, n_pbs_jobs, last_release_year){
-  
-  template <- file.path(RESOURCE_PATH, "template_job.pbs")
+generate.jobs.pbs <- function(template, sim_input_path, cfg_path, cfg_dir, last_release_year,
+                              n_pbs_jobs, n_mpi, walltime){
   
   tplate <- scan(template, what = "", sep = "\n", quiet = T)
   
   for (i in 1:n_pbs_jobs){
     
     pbs_text <- tplate
-    pbs_text[length(pbs_text)] <- paste0("time $MPI_LAUNCH -np 280 ichthyop-mpi/ichthyopmpi ", sim_input_path, "/", cfg_dir, "/list_commands", i, ".txt &> out.log")
+    
+    # specify the number of mpi asked
+    pbs_text[grep("mpi_10", pbs_text)] <- sub("10", n_mpi[i], pbs_text[grep("mpi_10", pbs_text)])
+    
+    #specify the time asked
+    pbs_text[grep("walltime", pbs_text)] <- sub("20", walltime[i], pbs_text[grep("walltime", pbs_text)])
+    
+    #write the line lauching the mpi specifying the number of cores and the path to the command list
+    pbs_text[grep("MPI_LAUNCH", pbs_text)] <- paste0("time $MPI_LAUNCH -np ", 28*n_mpi[i],
+                                                     " ichthyop-mpi/ichthyopmpi ",
+                                                     sim_input_path, "/", cfg_dir, "/list_commands", i, ".txt &> out.log")
     
     file.create(file.path(cfg_path, paste0("sim_ichthyop-",last_release_year,"-",i,".pbs")))
     job <- file(file.path(cfg_path, paste0("sim_ichthyop-",last_release_year,"-",i,".pbs")), open = "w")

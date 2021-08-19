@@ -1,6 +1,6 @@
 #'#*******************************************************************************************************************
 #'@author : Amael DUPAIX
-#'@update : 2021-04-20
+#'@update : 2021-08-19
 #'@email : 
 #'#*******************************************************************************************************************
 #'@description :  This is the main script to generate input points for Ichthyop simulations
@@ -8,6 +8,7 @@
 #'@revisions
 #'2021-05-25: added second part, to generate .xml files to run Ichthyop on cluster
 #'2021-07-20: modifications of second part
+#'2021-08-19: change main functions to sub-routines
 #'#*******************************************************************************************************************
 
 
@@ -18,7 +19,7 @@ DATA_PATH <- file.path(getwd(), "0-Data/")
 FUNC_PATH <- file.path(WD,"Functions")
 RESOURCE_PATH <- file.path(WD,"Resources")
 OUTPUT_PATH <- file.path(WD, "Outputs")
-SUB_PATH <- file.path(WD, "Sub-routines")
+ROUT_PATH <- file.path(WD, "Sub-routines")
 
 
 #'@arguments:
@@ -83,11 +84,11 @@ curr_prod = "PHILIN12.L75" # one of c("PHILIN12.L75","oscar","nemo","globcurrent
 
 generate_xml = T
 
-xml_template <- file.path(RESOURCE_PATH, "template_cfg.xml")
+# xml_template <- file.path(RESOURCE_PATH, "template_cfg.xml")
 
 # sim_input_path <- "/home/adupaix/Documents/ichthyop-private/input"
 sim_input_path <- "/home1/datawork/adupaix/input-ichthyop"
-# sim_output_path <- "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/3-Launch_Ichthyop_datarmor/ichthyop-output"
+# sim_output_path <- "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/2-Launch_Ichthyop_datarmor/ichthyop-output"
 sim_output_path <- "/home1/scratch/adupaix/ichthyop-output"
 
 
@@ -99,14 +100,17 @@ last_release_year = 1990 # to the 15th of January of the year after this year
 release_frequency = 2 # nb of release per month
 record_frequency = 1 #in days (interval between two recorded positions)
 
-n_cfg_per_dir = 28*8*5 # number of .xml file per directory
+n_cfg_per_dir = 28*10*4 # number of .xml file per directory
+
+#~ Arguments to generate the pbs jobs
 n_pbs_jobs = 3 #number of .pbs jobs to run in the cluster (to generate the command_list files)
+n_mpi = rep(10, n_pbs_jobs) #number of mpi asked in each jobs (between 1 and 20)
+walltime = rep(20, n_pbs_jobs) #time asked for the jobs (in hours)
 
 
-
-#'@import_libraries:
-#'#********************
-
+#' ***************
+#' Get libraries:
+#' ***************
 source(file.path(FUNC_PATH, "install_libraries.R"))
 
 srcUsedPackages <- c("dplyr","sf","rnaturalearthdata","progress","rnaturalearthdata","ggplot2",
@@ -116,47 +120,27 @@ srcUsedPackages <- c("dplyr","sf","rnaturalearthdata","progress","rnaturalearthd
 
 installAndLoad_packages(srcUsedPackages, loadPackages = TRUE)
 
-# loading above arguments to the environment (instead of keeping them in the lists)
-# list2env(arguments, globalenv())
+#' *************************
+#' @0. Initialize analysis:
+#' *************************
+source(file.path(ROUT_PATH,'0.init.R'))
 
 
-#'@Initialize:
-#'#**********
-source(file.path(SUB_PATH, "0.init.R"))
-
-#'@Generate_the_input_locations:
-#'#******************************
-source(file.path(SUB_PATH, "1.nlog_inputs.R"))
-
-# calling the main function
-output <- do.call(input.nlog, args = arguments)
+#'***********************************
+#'@1. Generate the input locations
+#'***********************************
+source(file.path(ROUT_PATH, "1.nlog_inputs.R"))
 
 
-
-#'@Load_function_generating_the_cfg_files:
-#'#****************************************
-
+#'****************************************
+#'@2. Generate the cfg files and pbs jobs
+#'****************************************
 if (input_method == "allMask" & generate_xml == T){
-  
-  source(file.path(FUNC_PATH, "2.input_to_xml.R"))
-  
-  # calling the function
-  input.to.xml(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
-               # arguments to retrieve input locations
-               input_location,
-               input_method,
-               dist,
-               curr_prod,
-               # arguments to generate the cfg files
-               sim_input_path,
-               sim_output_path,
-               
-               transport_duration,
-               first_release_year,
-               last_release_year,
-               release_frequency,
-               record_frequency,
-               n_cfg_per_dir,
-               n_pbs_jobs
-  )
+  source(file.path(ROUT_PATH, "2.input_to_xml.R"))
 }
+
+
+#' ********************
+#' Clean environment:
+#' ********************
+rm(list = ls()[!ls() %in% toKeep]) 

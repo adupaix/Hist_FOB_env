@@ -39,16 +39,11 @@
   # 
   # files_to_check <- c("IDs.txt", "input_icht.txt", paste0(dir_name,".shp"))
   # if (input_method == "allMask"){ files_to_check <- c(files_to_check, "Link_table.txt")}
-  
-if (all(files_to_check %in% list.files(dir_path))){
-    
-  cat("\n### Reading data from existing files\n")
-    
-  input_coords <- read.table(file = file.path(dir_path, "input_icht.txt"),
-                             row.names = F, col.names = F, sep=" ")
-  input_points <- read_sf(file.path(dir_path, paste0(dir_name, ".shp")))
-    
-} else {
+
+cat(crayon::bold("\n\n1. Calculating input points positions\n"))
+
+
+if (!all(files_to_check %in% list.files(dir_path))){
     
   ### 1. GENERATE THE POINTS ON LAND USED TO DETERMINE INPUT LOCATIONS
   ## EITHER RIVER ESTUARIES
@@ -297,4 +292,18 @@ if (all(files_to_check %in% list.files(dir_path))){
   #   return(input_points)
   # }
   
+} else {
+ 
+  cat("\n### Reading data from existing files\n")
+   
 }
+
+
+#'@outputs_for_next_routine
+input_coords_id <- read.table(file = file.path(dir_path, "IDs.txt"),
+                              sep=" ")
+input_points <- read_sf(file.path(dir_path, paste0(dir_name, ".shp")))
+
+
+# update toKeep
+toKeep <- c(toKeep, "input_coords","input_points")
