@@ -34,8 +34,8 @@
   # }
   # 
   # 
-  # dir_path <- file.path(OUTPUT_PATH, dir_name)
-  # try(dir.create(path = dir_path))
+  # output_path1 <- file.path(OUTPUT_PATH, dir_name)
+  # try(dir.create(path = output_path1))
   # 
   # files_to_check <- c("IDs.txt", "input_icht.txt", paste0(dir_name,".shp"))
   # if (input_method == "allMask"){ files_to_check <- c(files_to_check, "Link_table.txt")}
@@ -43,7 +43,7 @@
 cat(crayon::bold("\n\n1. Calculating input points positions\n"))
 
 
-if (!all(files_to_check %in% list.files(dir_path))){
+if (!all(Exist$output_1)){
     
   ### 1. GENERATE THE POINTS ON LAND USED TO DETERMINE INPUT LOCATIONS
   ## EITHER RIVER ESTUARIES
@@ -271,17 +271,17 @@ if (!all(files_to_check %in% list.files(dir_path))){
     
     #save points coordinates for input in Ichthyop
     # quote = F to save coordinates (which are characters) as numeric
-    write.table(input_coords, file = file.path(dir_path, "input_icht.txt"),
+    write.table(input_coords, file = file.path(output_path1, "input_icht.txt"),
                 row.names = F, col.names = F, sep=" ")
     #save points coordinates with river id (or only point id if input_method == allMask)
-    write.table(input_coords_id, file = file.path(dir_path, "IDs.txt"),
+    write.table(input_coords_id, file = file.path(output_path1, "IDs.txt"),
                 row.names = F, col.names = F, sep=" ")
     if(input_method == "allMask"){
-      write.table(link_table, file = file.path(dir_path, "Link_table.txt"),
+      write.table(link_table, file = file.path(output_path1, "Link_table.txt"),
                   row.names = F, sep=" ")
     }
     #save sf object for post treatement after Ichthyop simulations
-    write_sf(input_points, dsn = dir_path,
+    write_sf(input_points, dsn = output_path1,
              layer = dir_name,
              driver = "ESRI Shapefile")
   }
@@ -300,9 +300,9 @@ if (!all(files_to_check %in% list.files(dir_path))){
 
 
 #'@outputs_for_next_routine
-input_coords_id <- read.table(file = file.path(dir_path, "IDs.txt"),
+input_coords_id <- read.table(file = file.path(output_path1, "IDs.txt"),
                               sep=" ")
-input_points <- read_sf(file.path(dir_path, paste0(dir_name, ".shp")))
+input_points <- read_sf(file.path(output_path1, paste0(dir_name, ".shp")))
 
 
 # update toKeep
