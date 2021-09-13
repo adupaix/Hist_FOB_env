@@ -26,14 +26,14 @@ if (!all(Exist$output_2)){
   mths = 1:12
   dys = seq(1, 30-30/release_frequency, length.out = release_frequency)
   
-  initial_time <- c(as.Date(paste(rep(first_release_year-1,2),
+  initial_time <- c(as.Date(paste(rep(first_release_year-1,2), # December of the year before the first year of interest
                                            rep("12",2),
                                            c("01","15"),sep = "-")),
-                    as.Date(paste(rep(yrs, each = length(mths)*length(dys)),
+                    as.Date(paste(rep(yrs, each = length(mths)*length(dys)), # release_frequency times per month in the years of interest
                                            rep(mths, length(yrs), each = length(dys)),
                                            rep(dys, length(mths)*length(yrs)),
                                            sep = "-")),
-                    as.Date(paste(rep(last_release_year+1,2),
+                    as.Date(paste(rep(last_release_year+1,2), # January of the year after the last year of interest
                                            rep("01",2),
                                            c("01","15"),sep = "-"))
                      )
