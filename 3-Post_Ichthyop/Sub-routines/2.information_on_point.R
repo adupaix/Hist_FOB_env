@@ -68,6 +68,9 @@ if (!Exists$weight){
                                         .packages = srcUsedPackages,
                                         .options.snow = opts) %dopar% {
                                           
+                                          ## open the precipitations netcdf file
+                                          precip <- open.nc(con = file.path(DATA_PATH,"precip.mon.mean.nc"))
+                                          
                                           #' create a point "object"
                                           point <- list()
                                           
@@ -88,19 +91,22 @@ if (!Exists$weight){
                                           point$release_date <- as.Date(sub("\\..*", "", sub(".*_", "", fname)))
                                           
                                           # get precipitations
-                                          point <- get.precipitations(DATA_PATH, point)
-                                          
-                                          # get rivers and associated discharge + cover
-                                          point <- get.associated.rivers(link_river_input, n_cover_per_river, embouchures, point)
-                                          
-                                          # get river mouths and associated discharge + cover
-                                          point <- get.associated.rivers(link_river_input, n_cover_per_mouth, embouchures, point, mouth = T)
+                                          point <- get.precipitations(precip, point)
                                           
                                           # get forest cover
                                           point <- get.number.of.cover.points(nb_cover_per_input, point)
                                           
-                                          if (round(point$nb_cover_points) != round(point$nb_coastal_cover_points + sum(point$rivers$cover) + sum(point$mouths$cover))){
-                                            stop("Error: total number of cover points does not correspond to sum of coastal and river associated points")
+                                          # get rivers and associated discharge
+                                          point <- get.associated.rivers.and.precip(link_river_input, n_cover_per_river, embouchures, point, precip)
+                                          
+                                          # get river mouths and associated discharge + cover
+                                          # point <- get.associated.rivers(link_river_input, n_cover_per_mouth, embouchures, point, mouth = T)
+                                          
+                                          if (any(!is.na(point$rivers))){
+                                            if (round(point$nb_cover_points) != round(point$nb_coastal_cover_points +
+                                                                                      sum(unlist(lapply(point$rivers$data, function(x) sum(x$nb_river_cover_points)))))){
+                                              stop("Error: total number of cover points does not correspond to sum of coastal and river associated points")
+                                            }
                                           }
                                           
                                           #' get length of coastline associated with the point
