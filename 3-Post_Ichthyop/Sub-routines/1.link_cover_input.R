@@ -5,11 +5,10 @@
 #'#*******************************************************************************************************************
 #'@description :  Sub-routine to link the input points from an Ichthyop simulation with the forest cover
 #'#*******************************************************************************************************************
-#'@revision : Changer weight method 2: au lieu du trait de cote, avoir le nombre de pixel (0 ou 1) associes a 
-#'chaque point de lache
+#'@revision : 
 #'#*******************************************************************************************************************
-#'@comment: very long script, to run once. Will return a table with, for each input point, the number of
-#'associated forest points (one cell represents 900m2 of forest). Takes the rivers into account.
+#'@comment: very long script, to run once. Will return a table with, for each input point, the associated weights.
+#'Takes the rivers and precipitations into account.
 #'#*******************************************************************************************************************
 
 
@@ -59,17 +58,18 @@ if ( !all(file.exists(river_cover_fnames)) & !all(file.exists(coastal_cover_fnam
   rivers_filtered %>%
     st_transform(3857) %>%
     st_buffer(dist = buffer_size) %>%
-    st_transform(4326) %>%
+    # st_transform(4326) %>%
+    st_transform(4326) -> river_buffer
     # and fusion the polygons by rivers (one geometry per river instead of one per segment)
-    group_by(MAIN_RIV) %>%
-    summarise(.groups = "keep") %>%
-    ungroup() -> river_buffer
+    # group_by(MAIN_RIV) %>%
+    # summarise(.groups = "keep") %>%
+    # ungroup() -> river_buffer
   
   #buffer on river mouths
-  embouchures %>%
-    st_transform(3857) %>%
-    st_buffer(dist = buffer_size) %>%
-    st_transform(4326) -> mouth_buffer
+  # embouchures %>%
+  #   st_transform(3857) %>%
+  #   st_buffer(dist = buffer_size) %>%
+  #   st_transform(4326) -> mouth_buffer
 }
 
 
@@ -102,14 +102,15 @@ for (k in 1:length(cover_files)){
     #' get the points of cover which are inside the buffers
     #' return a list with for each point, the polygons inside which the point is
     is_within_river <- st_intersects(st_geometry(cover_df), st_geometry(river_buffer)) # for rivers
-    is_within_mouth <- st_intersects(st_geometry(cover_df), st_geometry(mouth_buffer)) # for river mouths
+    # is_within_mouth <- st_intersects(st_geometry(cover_df), st_geometry(mouth_buffer)) # for river mouths
     
     # unlist the result, and keep only the first value (there shouldn't be any duplicates, but just in case...)
     unlist_is_within_river <- unlist(lapply(is_within_river, function(x) ifelse(length(x)==0, NA, x[1])))
-    unlist_is_within_mouth <- unlist(lapply(is_within_mouth, function(x) ifelse(length(x)==0, NA, x[1])))
+    # unlist_is_within_mouth <- unlist(lapply(is_within_mouth, function(x) ifelse(length(x)==0, NA, x[1])))
     
     # test if some points are counted twice (if it happens, we need to determine the rule to follow)
-    if((length(unlist_is_within_river) != length(is_within_river)) | (length(unlist_is_within_mouth) != length(is_within_mouth))){
+    # if((length(unlist_is_within_river) != length(is_within_river)) | (length(unlist_is_within_mouth) != length(is_within_mouth))){
+    if((length(unlist_is_within_river) != length(is_within_river))){
       stop("Error: some points are associated with several rivers at the same time")
     }
     
@@ -118,30 +119,36 @@ for (k in 1:length(cover_files)){
     msg <- "  - Filling the cover df with the river ids\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
     
     # create the column which will contain the river id
-    cover_df %>% mutate(is_within_river_buffer = NA,
-                        is_within_mouth_buffer = NA) -> cover_df
+    cover_df %>% mutate(MAIN_RIV = NA,
+                        HYRIV_ID = NA) -> cover_df
+                        # is_within_mouth_buffer = NA) -> cover_df
     
     # fill in the river id
-    cover_df$is_within_river_buffer[which(!is.na(unlist_is_within_river))] <-
+    cover_df$MAIN_RIV[which(!is.na(unlist_is_within_river))] <-
       river_buffer$MAIN_RIV[unlist_is_within_river[which(!is.na(unlist_is_within_river))]]
     
-    cover_df$is_within_mouth_buffer[which(!is.na(unlist_is_within_mouth))] <-
-      mouth_buffer$MAIN_RIV[unlist_is_within_mouth[which(!is.na(unlist_is_within_mouth))]]
+    cover_df$HYRIV_ID[which(!is.na(unlist_is_within_river))] <-
+      river_buffer$HYRIV_ID[unlist_is_within_river[which(!is.na(unlist_is_within_river))]]
+    
+    # cover_df$is_within_mouth_buffer[which(!is.na(unlist_is_within_mouth))] <-
+    #   mouth_buffer$MAIN_RIV[unlist_is_within_mouth[which(!is.na(unlist_is_within_mouth))]]
     
     
     msg <- "  - Saving the tables with the number of associated cover cells\n    for each river and for each river mouth\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-    # get MAIN_RIV ids corresponding to river ids associated with cover points
+    # get HYRIV_ID (river segment ids) corresponding to river ids associated with cover points
     #' @note that one cover cell is composed of nine 30mx30m cells, hence a float (and not an integer) is contained in the nb_river_cover_points column
     #' this float needs to be multiplied by 8100 to get a surface in m2
-    as.data.frame(xtabs(couvert ~ is_within_river_buffer, data = cover_df)) %>%
-      rename("MAIN_RIV" = "is_within_river_buffer") %>%
-      mutate(MAIN_RIV = as.numeric(as.character(MAIN_RIV))) -> river_cover_summary
+    as.data.frame(xtabs(couvert ~ HYRIV_ID, data = cover_df)) %>%
+      # rename("MAIN_RIV" = "is_within_river_buffer") %>%
+      mutate(HYRIV_ID = as.numeric(as.character(HYRIV_ID))) %>%
+      right_join(link_HYRIV_MAINRIV, by = "HYRIV_ID") -> river_cover_summary
     names(river_cover_summary)[2] <- "nb_river_cover_points"
+    river_cover_summary$nb_river_cover_points[which(is.na(river_cover_summary$nb_river_cover_points))] <- 0
     
-    as.data.frame(xtabs(couvert ~ is_within_mouth_buffer, data = cover_df)) %>%
-      rename("MAIN_RIV" = "is_within_mouth_buffer") %>%
-      mutate(MAIN_RIV = as.numeric(as.character(MAIN_RIV))) -> mouth_cover_summary
-    names(mouth_cover_summary)[2] <- "nb_mouth_cover_points"
+    # as.data.frame(xtabs(couvert ~ is_within_mouth_buffer, data = cover_df)) %>%
+    #   rename("MAIN_RIV" = "is_within_mouth_buffer") %>%
+    #   mutate(MAIN_RIV = as.numeric(as.character(MAIN_RIV))) -> mouth_cover_summary
+    # names(mouth_cover_summary)[2] <- "nb_mouth_cover_points"
     
     # rivers_filtered %>%
     #   as.data.frame() %>%
@@ -156,9 +163,9 @@ for (k in 1:length(cover_files)){
                 file = river_cover_fnames[k],
                 row.names = F)
     
-    write.table(mouth_cover_summary,
-                file = mouth_cover_fnames[k],
-                row.names = F)
+    # write.table(mouth_cover_summary,
+    #             file = mouth_cover_fnames[k],
+    #             row.names = F)
     
   } else {
     
@@ -166,7 +173,7 @@ for (k in 1:length(cover_files)){
     
     river_cover_summary <- read.table(river_cover_fnames[k])
     
-    mouth_cover_summary <- read.table(mouth_cover_fnames[k])
+    # mouth_cover_summary <- read.table(mouth_cover_fnames[k])
     
   }
   
@@ -177,7 +184,7 @@ for (k in 1:length(cover_files)){
     msg <- "  - Filter: keep only coastal cover points\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
     
     cover_df %>%
-      dplyr::filter(is.na(is_within_river_buffer) & is.na(is_within_mouth_buffer)) -> coastal_cover
+      dplyr::filter(is.na(MAIN_RIV) & is.na(HYRIV_ID)) -> coastal_cover
     
     rm(cover_df) ; invisible(gc())
     
@@ -273,11 +280,11 @@ if(!file.exists(fname)){
                           crs = 4326)
   
   # keep only the input points which are in the area of interest
-  coastal_points_T <- keep.which.is.in.IO(RESOURCE_PATH, coastal_points,
-                                          buffer_size = 5*10^4,
-                                          return_format = "sf")
+  coastal_points <- keep.which.is.in.IO(RESOURCE_PATH, coastal_points,
+                                        buffer_size = 5*10^4,
+                                        return_format = "sf")
   
-  coastal_points %>% st_transform(4326) -> coastal_points
+  # coastal_points %>% st_transform(4326) -> coastal_points
   
   msg <- "  - Get input points associated with coastal points\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
@@ -328,39 +335,42 @@ if(!file.exists(fname)){
   msg <- "4. Merge coastal, river, river mouth and coastline length information\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
   link_riv_cov_files <- list.files(output_paths[1], pattern = "link_rivers_")
-  link_mouth_cov_files <- list.files(output_paths[1], pattern = "link_mouths_")
+  # link_mouth_cov_files <- list.files(output_paths[1], pattern = "link_mouths_")
   
-  n_cover_per_river <- list()
-  n_cover_per_mouth <- list()
+  river_cover_summary <- list()
+  # n_cover_per_mouth <- list()
 
   for (i in 1:length(link_riv_cov_files)){
-    n_cover_per_river[[i]] <- read.table(file.path(output_paths[1], link_riv_cov_files[i]), header = T)
-    n_cover_per_mouth[[i]] <- read.table(file.path(output_paths[1], link_mouth_cov_files[i]), header = T)
+    river_cover_summary[[i]] <- read.table(file.path(output_paths[1], link_riv_cov_files[i]), header = T)
+    # n_cover_per_mouth[[i]] <- read.table(file.path(output_paths[1], link_mouth_cov_files[i]), header = T)
   }
 
-  bind_rows(n_cover_per_river) %>%
-    group_by(MAIN_RIV) %>%
+  bind_rows(river_cover_summary) %>%
+    group_by(HYRIV_ID) %>%
     summarise(n = sum(nb_river_cover_points), .groups = "keep") %>%
     ungroup() %>%
-    rename("nb_river_cover_points" = "n") -> n_cover_per_river
+    right_join(link_HYRIV_MAINRIV, by = "HYRIV_ID") %>%
+    mutate(n = ifelse(is.na(n), 0, n)) %>%
+    rename("nb_river_cover_points" = "n") %>%
+    dplyr::arrange(MAIN_RIV, HYRIV_ID) -> river_cover_summary
 
-  write.csv(n_cover_per_river,
+  write.csv(river_cover_summary,
             file = Names$coverRiver,
             row.names = F)
   
-  bind_rows(n_cover_per_mouth) %>%
-    group_by(MAIN_RIV) %>%
-    summarise(n = sum(nb_mouth_cover_points), .groups = "keep") %>%
-    ungroup() %>%
-    rename("nb_mouth_cover_points" = "n") -> n_cover_per_mouth
-  
-  write.csv(n_cover_per_mouth,
-            file = Names$coverMouth,
-            row.names = F)
+  # bind_rows(n_cover_per_mouth) %>%
+  #   group_by(MAIN_RIV) %>%
+  #   summarise(n = sum(nb_mouth_cover_points), .groups = "keep") %>%
+  #   ungroup() %>%
+  #   rename("nb_mouth_cover_points" = "n") -> n_cover_per_mouth
+  # 
+  # write.csv(n_cover_per_mouth,
+  #           file = Names$coverMouth,
+  #           row.names = F)
 
   link_river_input <- read.table(file.path(sim_input_path, "Link_table.txt"), header = T)
 
-  if (!all(n_cover_per_river$MAIN_RIV %in% link_river_input$MAIN_RIV)){
+  if (!all(river_cover_summary$MAIN_RIV %in% link_river_input$MAIN_RIV)){
     stop("Error: some rivers are not linked with the input points")
   }
 
@@ -369,25 +379,30 @@ if(!file.exists(fname)){
     arrange(id_curr) %>%
     dplyr::filter(!is.na(x)) %>%
     dplyr::select(-HYBAS_L12) %>%
-    full_join(n_cover_per_river, by = "MAIN_RIV") %>%
-    full_join(n_cover_per_mouth, by = "MAIN_RIV") -> cover_global_summary
+    full_join(river_cover_summary, by = "MAIN_RIV") -> cover_global_summary
+    # full_join(river_cover_summary, by = "MAIN_RIV") %>%
+    # full_join(n_cover_per_mouth, by = "MAIN_RIV") -> cover_global_summary
 
   cover_global_summary$nb_river_cover_points[which(is.na(cover_global_summary$nb_river_cover_points))] <- 0
-  cover_global_summary$nb_mouth_cover_points[which(is.na(cover_global_summary$nb_mouth_cover_points))] <- 0
+  # cover_global_summary$nb_mouth_cover_points[which(is.na(cover_global_summary$nb_mouth_cover_points))] <- 0
+  
+  cover_global_summary %>%
+    dplyr::filter(MAIN_RIV == HYRIV_ID) %>% #keep only the river mouths
+    group_by(id_curr) %>%
+    summarise(nb_mouth_cover_points = sum(nb_river_cover_points), .groups = "keep") -> mouth_cover_summary
   
   cover_global_summary %>%
     group_by(id_curr) %>%
-    summarise(nb_mouth_cover_points = sum(nb_mouth_cover_points), .groups = "keep") -> mouth_cover_summary
-  
-  cover_global_summary %>%
-    group_by(id_curr) %>%
-    summarise(nb_river_cover_points = sum(nb_river_cover_points), .groups = "keep") %>%
-    full_join(mouth_cover_summary, by = "id_curr") %>%
+    summarise(nb_river_cover_points = sum(nb_river_cover_points),
+              .groups = "keep") %>%
+    # left_join(y = mouth_cover_summary, by = "id_curr") %>%
     left_join(y = input_points, by = "id_curr") %>%
-    dplyr::mutate(nb_cover_points = nb_mouth_cover_points + nb_river_cover_points + nb_coastal_cover_points) %>%
+    dplyr::mutate(nb_cover_points = nb_river_cover_points + nb_coastal_cover_points) %>%
+    # dplyr::mutate(nb_cover_points = nb_mouth_cover_points + nb_river_cover_points + nb_coastal_cover_points) %>%
     dplyr::select(id_curr, x, y,
                   nb_river_cover_points,
-                  nb_mouth_cover_points,
+                  # MAIN_RIV, HYRIV_ID,
+                  # nb_mouth_cover_points,
                   nb_coastal_cover_points,
                   nb_cover_points,
                   nb_coastal_points) %>%
@@ -415,7 +430,7 @@ if(!file.exists(fname)){
 #'@output_for_next_subroutine
 nb_cover_per_input <- read.csv(file = Names$coverGlobal)
 n_cover_per_river <- read.csv(file = Names$coverRiver)
-n_cover_per_mouth <- read.csv(file = Names$coverMouth)
+n_cover_per_mouth <- read.csv(file = Names$coverRiver) %>% dplyr::filter(MAIN_RIV == HYRIV_ID)
 
 
 #' Do not delete
