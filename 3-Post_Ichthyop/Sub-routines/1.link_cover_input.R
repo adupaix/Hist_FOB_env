@@ -301,9 +301,11 @@ if(!file.exists(fname)){
     
     n_coast_per_points <- get.nb.cover.per.input(indexes, coastal_points, input_points)
     
-    input_points$nb_coastal_points[
-      input_points$id_curr == as.numeric(names(n_coast_per_points)) ] <- 
-      input_points$nb_coastal_points[ input_points$id_curr == as.numeric(names(n_coast_per_points)) ] + n_coast_per_points
+    for (k in 1:length(n_coast_per_points)){
+      input_points$nb_coastal_points[
+        input_points$id_curr == as.numeric(names(n_coast_per_points)[k])] <- 
+        input_points$nb_coastal_points[ input_points$id_curr == as.numeric(names(n_coast_per_points)[k]) ] + n_coast_per_points[k]
+    }
     
     pb$tick()
     
@@ -313,9 +315,11 @@ if(!file.exists(fname)){
   
   n_coast_per_points <- get.nb.cover.per.input(indexes, coastal_points, input_points)
   
-  input_points$nb_coastal_points[
-    input_points$id_curr == as.numeric(names(n_coast_per_points)) ] <-
-    input_points$nb_coastal_points[input_points$id_curr == as.numeric(names(n_coast_per_points)) ] + n_coast_per_points
+  for (k in 1:length(n_coast_per_points)){
+    input_points$nb_coastal_points[
+      input_points$id_curr == as.numeric(names(n_coast_per_points)[k])] <- 
+      input_points$nb_coastal_points[ input_points$id_curr == as.numeric(names(n_coast_per_points)[k]) ] + n_coast_per_points[k]
+  }
   
   pb$tick()
   
@@ -332,7 +336,7 @@ if(!file.exists(fname)){
 
 #'********************************************************************************
 
-  msg <- "4. Merge coastal, river, river mouth and coastline length information\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+  msg <- "\n4. Merge coastal, river, river mouth and coastline length information\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
   link_riv_cov_files <- list.files(output_paths[1], pattern = "link_rivers_")
   # link_mouth_cov_files <- list.files(output_paths[1], pattern = "link_mouths_")
