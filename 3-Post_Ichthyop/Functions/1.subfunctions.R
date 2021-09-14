@@ -244,11 +244,14 @@ keep.which.is.in.IO <- function(RESOURCE_PATH,
                                 buffer_size,
                                 return_format){
   
+  # get column names
   names_for_df <- c(grep("geometry", names(sf_points), invert = T, value = T),
                     "x","y")
   
+  # read IO boundaries from resources
   IO_boundaries <- read_sf(file.path(RESOURCE_PATH, "IO_definition.shp"))
   
+  # get the points which are contained in the IO polygon
   contain <- st_contains(IO_boundaries %>%
                            st_transform(3857) %>%
                            st_buffer(dist = buffer_size),
@@ -256,8 +259,10 @@ keep.which.is.in.IO <- function(RESOURCE_PATH,
   
   points_of_interest <- unique(unlist(contain))
   
+  # keep only the contained points
   sf_points[points_of_interest,] -> sf_points_of_interest
   
+  # return the result
   if (return_format == "sf"){
     return(sf_points_of_interest)
   } else if (return_format == "df"){
