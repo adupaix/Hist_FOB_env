@@ -180,10 +180,14 @@ if (!Exists$cover | !Exists$weight){
                   dis_m3_pmx # debit maximal
     ) -> embouchures
   
+  #filter to keep only rivers whose mouth is in the study area
+  embouchures <- keep.which.is.in.IO(RESOURCE_PATH, embouchures,
+                                     buffer_size = 10^4,
+                                     return_format = "sf")
+  
   # keep only variables of interest
   rivers_IO %>%
     dplyr::filter(MAIN_RIV %in% embouchures$HYRIV_ID) %>%
-    # dplyr::filter(NEXT_DOWN != 0) %>% #do not keep the river mouths (considered separately)
     dplyr::filter(dis_m3_pmx >= thr_disch) %>%
     dplyr::select(HYRIV_ID, #id de la portion de riviere
                   NEXT_DOWN,#id de la portion en aval
