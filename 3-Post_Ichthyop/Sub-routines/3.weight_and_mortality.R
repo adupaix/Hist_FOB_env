@@ -97,13 +97,10 @@ if(!Exists$log3){
     
   }
   
-  #' @output_for_next_subroutine
-  weighted_arrays <- list.files(output_paths[3], pattern = ".rds")
-  
   #' save a log
   sink(Names$log3, append = F)
   cat("Date & time :", format(Sys.time()), "\n")
-  cat("\n Number of generated .rds files:", length(list.files(output_paths[3]))-1)
+  cat("\n Number of generated .rds files:", length(list.files(output_paths[3], pattern = ".rds")))
   cat("\n\n  Weighting method :", paste(weight_informations[weight_method,], collapse = " - "))
   cat("\n\n  Life time method :", ltime_method)
   cat("\n  Mean life time :", ltime)
