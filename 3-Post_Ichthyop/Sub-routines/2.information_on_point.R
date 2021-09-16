@@ -4,9 +4,10 @@
 #'@email : amael.dupaix@ens-lyon.fr
 #'#*******************************************************************************************************************
 #'@description :  For each release point, get the information for weighting (cover surface, precipitations and 
-#'  associated rivers with discharge) and save a matrix with the weight associated with each 
+#'  associated rivers with discharge)
+#'  and save a matrix with the weights associated with each point 
 #'#*******************************************************************************************************************
-#'@revision lire le fichier de precipitations une seule fois, plutot qu a chaque iteration
+#'@revision
 #'#*******************************************************************************************************************
 #'@comment: long script, only needs to run once per simulation
 #'#*******************************************************************************************************************

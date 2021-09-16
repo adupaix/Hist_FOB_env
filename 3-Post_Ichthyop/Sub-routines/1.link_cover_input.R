@@ -7,8 +7,8 @@
 #'#*******************************************************************************************************************
 #'@revision : 
 #'#*******************************************************************************************************************
-#'@comment: very long script, to run once. Will return a table with, for each input point, the associated weights.
-#'Takes the rivers and precipitations into account.
+#'@comment: very long script, to run once. Will return a table with, for each input point, the number of
+#' associated cover points. Takes the rivers and precipitations into account.
 #'#*******************************************************************************************************************
 
 
