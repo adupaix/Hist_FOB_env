@@ -8,38 +8,6 @@
 #'@revision
 #'#*******************************************************************************************************************
 
-# input.nlog <- function(DATA_PATH, OUTPUT_PATH, RESOURCE_PATH,
-#                        reset = F,
-#                        save = T,
-#                        return_format = "sf",
-#                        input_location = c("river","mangrove"),
-#                        input_method = c("onMask","kFromCoast", "allMask"),
-#                        dist = 1, # used if input_method == kFromCoast
-#                        curr_prod = c("oscar","nemo"), # used if input_method == onMask
-#                        Parallel = c(T, 1/2) # wether to run in Parallel, used if input_method == kFromCoast
-# ){
-  
-  # cat("\14")
-  # cat(crayon::bold("###### Generating input points for Ichthyop simulations\n"))
-  
-  
-  # # create the name on the dir where files will be saved, depending on method and input location
-  # dir_name <- paste0(input_location, "_nlog_input_")
-  # if (input_method == "kFromCoast"){
-  #   dir_name <- paste0(dir_name, dist*100,"k_from_coast")
-  # } else if (input_method == "onMask"){
-  #   dir_name <- paste0(dir_name, curr_prod,"_mask")
-  # } else if (input_method == "allMask"){
-  #   dir_name <- paste0(dir_name, curr_prod, "_allMask")
-  # }
-  # 
-  # 
-  # output_path1 <- file.path(OUTPUT_PATH, dir_name)
-  # try(dir.create(path = output_path1))
-  # 
-  # files_to_check <- c("IDs.txt", "input_icht.txt", paste0(dir_name,".shp"))
-  # if (input_method == "allMask"){ files_to_check <- c(files_to_check, "Link_table.txt")}
-
 cat(crayon::bold("\n\n1. Calculating input points positions\n"))
 
 
@@ -108,14 +76,14 @@ if (!all(Exist$output_1)){
     cat("\n### Determining closest coastal points\n")
     tic(msg = "    Closest coastal points determined:")
     
-    # echantillonne la ligne de cote tous les km
-    # besoin de changer la projection pour st_line_sample() fonctionne
+    # echantillonne la ligne de cote tous les quelques km
+    # besoin de changer la projection pour que st_line_sample() fonctionne
     # besoin de la ligne precise, parce que sinon certaines arrivees par les iles
     # disparaissent du jeu de donnees(a cause du buffer dans la fct closest.point)
     
     load(file.path(RESOURCE_PATH, "coastline10.rda")) # highres coastline, downloaded at : https://github.com/ropensci/rnaturalearthhires/tree/master/data (last accessed 2021-02-25)
     coastline10 <- st_as_sf(coastline10)
-    coastline_points <- st_line_sample(st_transform(coastline10, 3857), density = set_units(3, km)) %>% # je ne sais pas pourquoi, en mettant 3km, les points sont espacés d'environ 1km...
+    coastline_points <- st_line_sample(st_transform(coastline10, 3857), density = set_units(3, km)) %>%
       st_transform(crs = 4326) %>% # repasse a la projection initiale
       st_cast("POINT") %>% # passe en "POINT" (plutot que MULTIPOINT)
       st_as_sf() # change la classe en sf
@@ -206,10 +174,10 @@ if (!all(Exist$output_1)){
     IO <- read_sf(file.path(DATA_PATH, "OI.shp"))
     load(file.path(RESOURCE_PATH, "coastline10.rda")) # highres coastline, downloaded at : https://github.com/ropensci/rnaturalearthhires/tree/master/data (last accessed 2021-02-25)
     coastline10 <- st_as_sf(coastline10)
-    coastline_points <- st_line_sample(st_transform(coastline10, 3857), density = set_units(3, km)) %>% # je ne sais pas pourquoi, en mettant 3km, les points sont espacés d'environ 1km...
+    coastline_points <- st_line_sample(st_transform(coastline10, 3857), density = set_units(3, km)) %>% # je ne sais pas pourquoi, en mettant 3km, les points sont espacés d'environ 1km... question de sinuosite.....
       st_cast("POINT") %>% # passe en "POINT" (plutot que MULTIPOINT)
-      st_crop(IO %>% st_transform(3857)) %>% #garde seulement les points de l'OI
-      st_transform(crs = 4326) %>% # repasse a la projection initiale
+      # st_crop(IO %>% st_transform(3857)) %>% #garde seulement les points de l'OI
+      # st_transform(crs = 4326) %>% # repasse a la projection initiale
       st_as_sf() # change la classe en sf
     
     cat(" # Keeping only coastal points of the product mask\n")
