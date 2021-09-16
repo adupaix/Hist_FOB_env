@@ -1,3 +1,17 @@
+#'#*******************************************************************************************************************
+#'@author : Amael DUPAIX
+#'@update : 2021-09-16
+#'@email : amael.dupaix@ens-lyon.fr
+#'#*******************************************************************************************************************
+#'@description :  Sub-functions of the initialization sub-routine and
+#' of the 1st sub-routine which gets, for each input point, the number of associated coastal points
+#' and cover points (coastal and in river buffer)
+#'#*******************************************************************************************************************
+#'@revision
+#'#*******************************************************************************************************************
+#'
+#'
+
 
 #######################################################################################
 #                SUBFUNCTION WHICH GENERATES THE SIMULATION NAME FROM                 #
@@ -46,31 +60,6 @@ generate.sim_name <- function(forcing,
   return(sim_name)
   
 }
-
-#######################################################################################
-#                     CREATE AN EMPTY RASTER IN THE INDIAN OCEAN                      #
-#######################################################################################
-# ARGUMENTS:                                                                          #
-# gsize (num): size of the grid cells, in degree (either 1, 2, or 5)                  #
-#######################################################################################
-
-
-create.raster <- function(gsize){
-  
-  r <- raster(
-    res = gsize,
-    xmn = 20,
-    xmx = 140,
-    ymn = -40,
-    ymx = 40
-  )
-  
-  r[] <- 0
-  names(r) <- "occ"
-  
-  return(r)
-}
-
 
 
 #######################################################################################
@@ -122,122 +111,11 @@ get.nb.cover.per.input <- function(indexes, coastal_cover, input_points){
   
 }
 
-
-#################################################################################
-#                    DELETE THE POINTS IN THE CHINESE SEA                       #
-#################################################################################
-# ARGUMENTS :                                                                   #
-# coords (data.frame) : coordinate of the points, in rows c("long","lat")       #
-# class (chr) : class of the "coords". Either "df" if it's a data.frame with    #
-#                                     points coordinates                        #
-#                                    Or "sf" if the argument is an sf object    #
-#               The output has the same class as "coords"                       #
-#                                                                               #
-# OUTPUT : data.frame with the coordinates without the points in the chinese sea#
-#################################################################################
-
-delete.chinese.sea <- function(coords, class){
-  
-  
-  ##Polygon of the Chinese Sea
-  N = matrix(data=NA,nrow=7,ncol=2)
-  N[1,] = c(140,-3);
-  N[2,] = c(115,-5);
-  N[3,] = c(110,-5);
-  N[4,] = c(102,5);
-  N[5,] = c(102,40);
-  N[6,] = c(140,40);
-  N[7,] = N[1,];
-  
-  N <- data.frame(N)
-  names(N) <- c("longitude","latitude")
-  tmp = Polygon(N)
-  ttt = Polygons(list(tmp),ID=1)
-  polys = SpatialPolygons(list(ttt))
-  crs = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
-  proj4string(polys) = crs
-  
-  if (class == "df"){
-    
-    names(coords) <- c("x","y")
-    
-    ##SpatialPoints with the coordinates
-    SPoints = SpatialPoints(coords,proj4string = crs)
-    
-    ## SpatialPoints left
-    rm_points <- gDifference(SPoints,polys)
-    
-    coords <- data.frame(rm_points@coords)
-    rownames(coords) <- c()
-  } else if (class == "sf"){
-    polys <- st_as_sf(polys) %>% st_transform(st_crs(coords))
-    
-    coords <- st_difference(coords, polys)
-  }
-  
-  return(coords)
-}
-
-
-#################################################################################
-#                    DELETE THE POINTS IN THE MEDITERRANEAN                     #
-#                        AND CASPIAN SEAS                                       #
-#################################################################################
-# ARGUMENTS :                                                                   #
-# coords (data.frame) : coordinate of the points, in rows c("long","lat")       #
-# class (chr) : class of the "coords". Either "df" if it's a data.frame with    #
-#                                     points coordinates                        #
-#                                    Or "sf" if the argument is an sf object    #
-#               The output has the same class as "coords"                       #
-#                                                                               #
-# OUTPUT : data.frame with the coordinates without the points in the chinese sea#
-#################################################################################
-
-delete.med.and.caspian.sea <- function(coords, class){
-  
-  
-  ##Polygon of the NW part of the study area
-  N = matrix(data=NA,nrow=9,ncol=2)
-  N[1,] = c(20,20);
-  N[2,] = c(30,20);
-  N[3,] = c(30,30.5);
-  N[4,] = c(40,30.5);
-  N[5,] = c(50,35);
-  N[6,] = c(60,35);
-  N[7,] = c(60,40);
-  N[8,] = c(20,40);
-  N[9,] = N[1,];
-  
-  N <- data.frame(N)
-  names(N) <- c("longitude","latitude")
-  tmp = Polygon(N)
-  ttt = Polygons(list(tmp),ID=1)
-  polys = SpatialPolygons(list(ttt))
-  crs = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
-  proj4string(polys) = crs
-  
-  if (class == "df"){
-    
-    names(coords) <- c("x","y")
-    
-    ##SpatialPoints with the coordinates
-    SPoints = SpatialPoints(coords,proj4string = crs)
-    
-    ## SpatialPoints left
-    rm_points <- gDifference(SPoints,polys)
-    
-    coords <- data.frame(rm_points@coords)
-    rownames(coords) <- c()
-  } else if (class == "sf"){
-    polys <- st_as_sf(polys) %>% st_transform(st_crs(coords))
-    
-    coords <- st_difference(coords, polys)
-  }
-  
-  return(coords)
-}
-
-
+#'@sub-function 3
+#'***************
+#' filter sf_points, to keep only the points in the study area (saved in the Resources folder)
+#'     buffer_size: buffer used to also keep the points that are slightly inland (@! in m)
+#'     return_format: either 'sf' or 'df'
 
 keep.which.is.in.IO <- function(RESOURCE_PATH,
                                 sf_points,
@@ -272,4 +150,54 @@ keep.which.is.in.IO <- function(RESOURCE_PATH,
     return(df_points_of_interest)
   }
   
+}
+
+
+#'@sub-function 4
+#'***************
+#' get the bbox of the forcing product used for the Ichthyop simulation
+#'     forcing (chr): one of nemo, nemo15m, oscar, globcurrent, PHILIN12.L75
+
+get.forcing.bbox <- function(RESOURCE_PATH, forcing){
+  
+  if (forcing %in% c("nemo","nemo15m","PHILIN12.L75")){
+    if (forcing == "nemo15m"){forcing <- 'nemo'}
+    mask <- open.nc(file.path(RESOURCE_PATH, "masks_current_products", paste0(forcing,".nc")))
+    
+    lon_name <- "longitude"
+    lat_name <- "latitude"
+    if(forcing == "PHILIN12.L75"){lon_name <- "nav_lon"; lat_name <- "nav_lat"}
+    
+    bbox <- c(xmin = min(var.get.nc(mask, lon_name)),
+              ymin = min(var.get.nc(mask, lat_name)),
+              xmax = max(var.get.nc(mask, lon_name)),
+              ymax = max(var.get.nc(mask, lat_name)))
+    
+  } else if (forcing %in% c("oscar", "globcurrent")){
+    mask <- read_sf(file.path(RESOURCE_PATH, "masks_current_products", paste0(forcing,".shp")))
+    
+    bbox <- as.numeric(st_bbox(mask))
+    names(bbox) <- c("xmin","ymin","xmax","ymax")
+  }
+  
+  return(bbox)
+}
+
+#'@sub-function 5
+#'***************
+#' rewriting of sf::st_crop, which works only for sf objects with POINT geometry
+#'   bbox (num): object of class bbox or vector with, in that order, (xmin,ymin,xmax,ymax)
+
+faster.st_crop.points <- function(points_sf, bbox){
+  
+  points_sf <- points_sf[
+    (data.frame(st_coordinates(points_sf)) %>%
+       mutate(is_to_keep = mapply(all,
+                                  ifelse(X>=bbox[1],T,F),
+                                  ifelse(Y>=bbox[2],T,F),
+                                  ifelse(X<=bbox[3],T,F),
+                                  ifelse(Y<=bbox[4],T,F))))$is_to_keep,
+    ]
+  
+  return(points_sf)
 }
