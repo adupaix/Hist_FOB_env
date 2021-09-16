@@ -84,7 +84,7 @@ thr_disch = 100
 
 #' Arguments used previously for the Ichthyop simulation
 #'*******************************************************
-#'## @forcing (chr): forcing product used in ICHTHYOP simulation (oscar/globcurrent/nemo)     
+#'## @forcing (chr): forcing product used in ICHTHYOP simulation (oscar/globcurrent/nemo/PHILIN12.L75)     
 forcing="PHILIN12.L75"
 #'## @input_location (chr): either "river" or "mangrove"
 #'@only "river" used in this study
