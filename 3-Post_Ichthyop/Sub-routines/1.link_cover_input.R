@@ -35,7 +35,7 @@ names(input_points) <- c("x","y", "id_curr")
 input_points_sf <- st_as_sf(input_points,
                             coords = c("x","y"),
                             crs = 4326)
-input_points <- keep.which.is.in.IO(RESOURCE_PATH, input_points_sf,
+input_points <- keep.which.is.in.IO(RESOURCE_PATH, input_points_sf, # not really necessary ? The filter is already applied in 1-Input_Ichthyop
                                     buffer_size = 10^4,
                                     return_format = "df") %>%
   arrange(id_curr)
@@ -98,7 +98,22 @@ for (k in 1:length(cover_files)){
       stop("Error: wrong forest cover file format (levels different from 1:9)")
     }
     
+    msg <- "  - Filtering cover points with the current product mask if needed\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+    
+    cover_bbox <- st_bbox(cover_df)
+    # read the bbox of the forcing product from the mask saved in the Resources folder
+    forcing_bbox <- get.forcing.bbox(RESOURCE_PATH, forcing)
+    #' crop the cover points df only if any of the points are outside the forcing product 
+    #' if it's not the case, it would also work but it's useless and we'd loose time...
+    cover_is_to_crop <- any(c(cover_bbox[1:2]<forcing_bbox[1:2],
+                              cover_bbox[3:4]>forcing_bbox[3:4]))
+    
+    if (cover_is_to_crop){
+      cover_df <- faster.st_crop.points(cover_df, forcing_bbox)
+    }
+    
     msg <- "  - Getting the cover points inside the river buffer and the mouth buffer\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+    
     #' get the points of cover which are inside the buffers
     #' return a list with for each point, the polygons inside which the point is
     is_within_river <- st_intersects(st_geometry(cover_df), st_geometry(river_buffer)) # for rivers
@@ -261,6 +276,8 @@ if(!file.exists(fname)){
   # )
   
   msg <- "  - Load coastline and sample points on it\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+  
+  #'@modif: voir avec Quentin pour recuperer les points qu'il a utilises
   
   #' load coastline
   load(file.path(RESOURCE_PATH, "coastline10.rda")) # highres coastline, downloaded at : https://github.com/ropensci/rnaturalearthhires/tree/master/data (last accessed 2021-02-25)
