@@ -37,4 +37,4 @@ filtered %>% dplyr::select(HYRIV_ID, #id de la portion de riviere
 ) -> filtered
 
 # Ecriture du shapefile avec quelques variables seulement:
-st_write(obj = filtered, paste0("4-Generate_river_shp/Outputs/", filter_dis,"m3s/rivers_IO_dismx_",filter_dis,"m3s_selected_vars.shp"))
+st_write(obj = filtered, paste0("0-Generate_river_shp/Outputs/", filter_dis,"m3s/rivers_IO_dismx_",filter_dis,"m3s_selected_vars.shp"))
