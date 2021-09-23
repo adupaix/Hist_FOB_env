@@ -280,7 +280,7 @@ if(!file.exists(fname)){
   #'@modif: voir avec Quentin pour recuperer les points qu'il a utilises
   
   #' load coastline
-  load(file.path(RESOURCE_PATH, "coastline10.rda")) # highres coastline, downloaded at : https://github.com/ropensci/rnaturalearthhires/tree/master/data (last accessed 2021-02-25)
+  load(file.path(RESOURCE_PATH, "coastline10.rda")) # highres coastline, downloaded at : https://github.com/ropensci/rnaturalearthhires/tree/master/data (last accessed 2021-09-21)
   coastline10 <- st_as_sf(coastline10)
   
   coastline10 %>%
