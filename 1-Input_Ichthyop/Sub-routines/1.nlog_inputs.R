@@ -177,7 +177,7 @@ if (!all(Exist$output_1)){
     coastline_points <- st_line_sample(st_transform(coastline10, 3857), density = set_units(3, km)) %>% # je ne sais pas pourquoi, en mettant 3km, les points sont espacés d'environ 1km... question de sinuosite.....
       st_cast("POINT") %>% # passe en "POINT" (plutot que MULTIPOINT)
       # st_crop(IO %>% st_transform(3857)) %>% #garde seulement les points de l'OI
-      # st_transform(crs = 4326) %>% # repasse a la projection initiale
+      st_transform(crs = 4326) %>% # repasse a la projection initiale
       st_as_sf() # change la classe en sf
     
     cat(" # Keeping only coastal points of the product mask\n")
