@@ -19,7 +19,7 @@ source(file.path(FUNC_PATH,'1.2.subfunctions.general.R'))
 source(file.path(FUNC_PATH,'1.3.subfunctions.post.R'))
 source(file.path(FUNC_PATH,'2.1.write_xml.R'))
 
-# Get the path to the templates
+# Get the paths to the templates
 Template <- c()
 Template$xml <- file.path(RESOURCE_PATH, paste0("template_cfg_",curr_prod,".xml"))
 Template$pbs <- file.path(RESOURCE_PATH, "template_ichthyop_job.pbs")
@@ -88,7 +88,9 @@ Exist$output_2 <- file.exists(c(file.path(output_path2, Names$output_2.1),
 
 
 #' add the year to the sim_output_path (path where the Ichthyop output will be save on the cluster)
-sim_output_path <- file.path(sim_output_path, last_release_year)
+sim_output_path <- file.path(sim_output_path, curr_prod, last_release_year)
+#' add the forcing product name to the sim_input_path
+sim_input_path <- file.path(sim_input_path, curr_prod)
 
 #list objects to keep at the end
 toKeep <- c(ls(), "toKeep")
