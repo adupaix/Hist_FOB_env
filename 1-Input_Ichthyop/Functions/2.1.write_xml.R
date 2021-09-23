@@ -90,7 +90,7 @@ write.cfg.xml <- function(initial_time,
 
 generate.command.list <- function(sim_input_path, cfg_path, cfg_dir, n_pbs_jobs){
   
-  lignes <- paste0("java -jar ichthyop-private/target/ichthyop-3.3.10.jar ",sim_input_path,"/",cfg_dir,"/", list.files(cfg_path, pattern = "cfg_point", recursive = T))
+  lignes <- paste0("java -jar ichthyop-private/target/ichthyop-3.3.11.jar ",sim_input_path,"/",cfg_dir,"/", list.files(cfg_path, pattern = "cfg_point", recursive = T))
   l = length(lignes)
   
   for (i in 1:n_pbs_jobs){
