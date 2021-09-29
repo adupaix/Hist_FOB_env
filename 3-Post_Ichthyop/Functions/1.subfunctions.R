@@ -69,14 +69,20 @@ generate.sim_name <- function(forcing,
 # indexes (vector): number of the sub-sampled cover points used                       #
 # coastal_cover (sf): cover points, after the ones associated with rivers were removed#
 # input_points (sf): points used as input in Ichthyop                                 #
+# count_cover (log): if T, take the "couvert column into account and return the nb of #
+#                          30x30m cells of forest                                     #
+#                    if F, return the number of points in the coastal cover (forest + #
+#                          non forest)                                                #
 #######################################################################################
 
-get.nb.cover.per.input <- function(indexes, coastal_cover, input_points){
+get.nb.cover.per.input <- function(indexes, coastal_cover, input_points,
+                                   count_cover = T){
   
   sub_coastal_cover <- data.frame(cbind(coastal_cover$id[indexes],
+                                        coastal_cover$couvert[indexes],
                                         st_coordinates(coastal_cover[indexes,])))
-  names(sub_coastal_cover) <- c("id_cover", "x", "y")
-  
+  names(sub_coastal_cover) <- c("id_cover", "couvert", "x", "y")
+
   x_input <- t(matrix(input_points$x,
                       nrow = length(input_points$x),
                       ncol = length(sub_coastal_cover$x)))
@@ -102,7 +108,27 @@ get.nb.cover.per.input <- function(indexes, coastal_cover, input_points){
   }
   
   # get the closest input point for each cover point
-  n_cover_per_points <- summary( as.factor( input_points$id_curr[apply(dist_mat, 1, function(x) which(x == min(x)))] ), maxsum = 10^3)
+  if (count_cover == F){
+    n_cover_per_points <- summary( as.factor( input_points$id_curr[apply(dist_mat, 1, function(x) which(x == min(x)))] ), maxsum = 10^3)
+    
+    if (sum(n_cover_per_points) != dim(sub_coastal_cover)[1]){
+      stop("Error: the number of associated points is not the same than the number of points to initialy associate")
+    }
+    
+    # multiply by 9 because each point correspond to 9 30x30m cells
+    n_cover_per_points <- n_cover_per_points*9
+    
+  } else if (count_cover == T){
+    associated_input_point <- data.frame(cbind(point_to_which_add = input_points$id_curr[apply(dist_mat, 1, function(x) which(x == min(x)))],
+                                           n_points_to_add = sub_coastal_cover$couvert))
+    n_cover_per_points <- ddply(associated_input_point, "point_to_which_add", summarise, n = sum(n_points_to_add))$n
+    names(n_cover_per_points) <- ddply(associated_input_point, "point_to_which_add", summarise, n = sum(n_points_to_add))$point_to_which_add
+    
+    if (sum(n_cover_per_points) != sum(sub_coastal_cover$couvert)){
+      stop("Error: the number of associated COVER points is not the same than the number of points to initialy associate")
+    }
+  }
+  
   
   objects.list <- c("sub_coastal_cover","x_input","x_cover","y_input","y_cover","dist_mat")
   rm(list = objects.list) ; invisible(gc())
