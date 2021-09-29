@@ -278,70 +278,165 @@ if(!file.exists(fname)){
   msg <- "  - Load coastline and sample points on it\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
   #'@modif: voir avec Quentin pour recuperer les points qu'il a utilises
+  #'
+  #' get the cover files names from 2000 (the cover files from 2000 also contain the zeros,
+  #' which allows to count the number of points and hence count the number of coastline points)
+  coast_files <- list.files(path = file.path(DATA_PATH,
+                                             "coast_cover_with_zeros"),
+                            pattern = "shp$")
   
-  #' load coastline
-  load(file.path(RESOURCE_PATH, "coastline10.rda")) # highres coastline, downloaded at : https://github.com/ropensci/rnaturalearthhires/tree/master/data (last accessed 2021-09-21)
-  coastline10 <- st_as_sf(coastline10)
-  
-  coastline10 %>%
-    # sample points on the coastline (every km)
-    st_transform(3857) %>%
-    st_line_sample(density = 10^(-3)) %>%
-    st_transform(4326) %>%
-    st_cast("MULTIPOINT") %>%
-    st_cast("POINT") -> coastal_points
-  
-  # create an sf object from the geometry deduced above
-  coastal_points <- st_sf(data.frame(id = seq(1, length(coastal_points), 1)),
-                          geometry = coastal_points,
-                          crs = 4326)
-  
-  # keep only the input points which are in the area of interest
-  coastal_points <- keep.which.is.in.IO(RESOURCE_PATH, coastal_points,
-                                        buffer_size = 5*10^4,
-                                        return_format = "sf")
-  
-  # coastal_points %>% st_transform(4326) -> coastal_points
-  
-  msg <- "  - Get input points associated with coastal points\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-  
-  sample_size <- 1000
-  niter <- floor( dim(coastal_points)[1] / sample_size )
-  
-  pb <- progress_bar$new(format = "[:bar] :percent | Coastal points sample :current / :total",
-                         total = niter+1
-  )
-  
-  for (i in 1:niter){
+  for (k in 1:length(coast_files)){
     
-    indexes <- ((i-1)*sample_size+1):(i*sample_size)
+    # read the coast file
+    read_sf(file.path(DATA_PATH,
+                      "coast_cover_with_zeros",
+                      coast_files[k])) -> coast_df 
+    # #select only the point and the id
+    # dplyr::select(id, geometry) %>%
+    # # transform it to lat/long coordinates
+    # st_transform(4326) -> coast_df
     
-    n_coast_per_points <- get.nb.cover.per.input(indexes, coastal_points, input_points)
-    
-    for (k in 1:length(n_coast_per_points)){
-      input_points$nb_coastal_points[
-        input_points$id_curr == as.numeric(names(n_coast_per_points)[k])] <- 
-        input_points$nb_coastal_points[ input_points$id_curr == as.numeric(names(n_coast_per_points)[k]) ] + n_coast_per_points[k]
+    # test if the forest coast shp is in the right format
+    if(!identical(as.numeric(0:9), as.numeric(levels(as.factor(coast_df$couvert))))){
+      stop("Error: wrong coast file format (levels different from 0:9)")
+    } else if(dim(coast_df)[1] != max(coast_df$id)){
+      stop("Error: missing points in coast file format")
     }
+    
+    msg <- "  - Filtering coastal points with the current product mask if needed\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+    
+    coast_bbox <- st_bbox(coast_df)
+    # read the bbox of the forcing product from the mask saved in the Resources folder
+    forcing_bbox <- get.forcing.bbox(RESOURCE_PATH, forcing)
+    #' crop the coast points df only if any of the points are outside the forcing product 
+    #' if it's not the case, it would also work but it's useless and we'd loose time...
+    coast_is_to_crop <- any(c(coast_bbox[1:2]<forcing_bbox[1:2],
+                              coast_bbox[3:4]>forcing_bbox[3:4]))
+    
+    if (coast_is_to_crop){
+      coast_df <- faster.st_crop.points(coast_df, forcing_bbox)
+    }
+    
+    msg <- "  - Get input points associated with coastal cells\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+    
+    sample_size <- 2000
+    
+    niter <- floor( dim(coast_df)[1] / sample_size )
+    
+    pb <- progress_bar$new(format = "[:bar] :percent | Cover points sample :current / :total",
+                           total = niter+1
+    )
+    
+    for (i in 1:niter){
+      
+      indexes <- ((i-1)*sample_size+1):(i*sample_size)
+      
+      n_cover_per_points <- get.nb.cover.per.input(indexes, coast_df, input_points, count_cover = F)
+      
+      #'@test
+      # indexes1 <- ((i-1)*500+1):(i*500)
+      # indexes2 <- ((i-1)*1000+1):(i*1000)
+      # indexes3 <- ((i-1)*1500+1):(i*1500)
+      # indexes4 <- ((i-1)*1750+1):(i*1750)
+      # indexes5 <- ((i-1)*2000+1):(i*2000)
+      # microbenchmark(s500 = {n_cover_per_points <- get.nb.cover.per.input(indexes1, coast_df, input_points, count_cover = F)},
+      #                s1000 = {n_cover_per_points <- get.nb.cover.per.input(indexes2, coast_df, input_points, count_cover = F)},
+      #                s1500 = {n_cover_per_points <- get.nb.cover.per.input(indexes3, coast_df, input_points, count_cover = F)},
+      #                s1750 = {n_cover_per_points <- get.nb.cover.per.input(indexes4, coast_df, input_points, count_cover = F)},
+      #                s2000 = {n_cover_per_points <- get.nb.cover.per.input(indexes5, coast_df, input_points, count_cover = F)})
+      # 
+      input_points$nb_coastal_points[
+        input_points$id_curr == as.numeric(names(n_cover_per_points))] <-
+        input_points$nb_coastal_points[ input_points$id_curr == as.numeric(names(n_cover_per_points)) ] + n_cover_per_points
+      
+      pb$tick()
+      
+    }
+    
+    indexes <- (niter*sample_size+1):(dim(coast_df)[1])
+    
+    n_cover_per_points <- get.nb.cover.per.input(indexes, coast_df, input_points, count_cover = F)
+    
+    input_points$nb_coastal_points[
+      input_points$id_curr == as.numeric(names(n_cover_per_points))] <-
+      input_points$nb_coastal_points[ input_points$id_curr == as.numeric(names(n_cover_per_points)) ] + n_cover_per_points
     
     pb$tick()
     
+    rm(coast_df) ; invisible(gc())
+    
+    write.table(input_points,
+                file = fname)
+    
   }
   
-  indexes <- (niter*sample_size+1):(dim(coastal_points)[1])
   
-  n_coast_per_points <- get.nb.cover.per.input(indexes, coastal_points, input_points)
   
-  for (k in 1:length(n_coast_per_points)){
-    input_points$nb_coastal_points[
-      input_points$id_curr == as.numeric(names(n_coast_per_points)[k])] <- 
-      input_points$nb_coastal_points[ input_points$id_curr == as.numeric(names(n_coast_per_points)[k]) ] + n_coast_per_points[k]
-  }
   
-  pb$tick()
   
-  write.table(input_points,
-              file = fname)
+  #' load coastline
+  # load(file.path(RESOURCE_PATH, "coastline10.rda")) # highres coastline, downloaded at : https://github.com/ropensci/rnaturalearthhires/tree/master/data (last accessed 2021-09-21)
+  # coastline10 <- st_as_sf(coastline10)
+  # 
+  # coastline10 %>%
+  #   # sample points on the coastline (every km)
+  #   st_transform(3857) %>%
+  #   st_line_sample(density = 10^(-3)) %>%
+  #   st_transform(4326) %>%
+  #   st_cast("MULTIPOINT") %>%
+  #   st_cast("POINT") -> coastal_points
+  # 
+  # # create an sf object from the geometry deduced above
+  # coastal_points <- st_sf(data.frame(id = seq(1, length(coastal_points), 1)),
+  #                         geometry = coastal_points,
+  #                         crs = 4326)
+  # 
+  # # keep only the input points which are in the area of interest
+  # coastal_points <- keep.which.is.in.IO(RESOURCE_PATH, coastal_points,
+  #                                       buffer_size = 5*10^4,
+  #                                       return_format = "sf")
+  # 
+  # # coastal_points %>% st_transform(4326) -> coastal_points
+  # 
+  # msg <- "  - Get input points associated with coastal points\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+  # 
+  # sample_size <- 1000
+  # niter <- floor( dim(coastal_points)[1] / sample_size )
+  # 
+  # pb <- progress_bar$new(format = "[:bar] :percent | Coastal points sample :current / :total",
+  #                        total = niter+1
+  # )
+  # 
+  # for (i in 1:niter){
+  #   
+  #   indexes <- ((i-1)*sample_size+1):(i*sample_size)
+  #   
+  #   n_coast_per_points <- get.nb.cover.per.input(indexes, coastal_points, input_points)
+  #   
+  #   for (k in 1:length(n_coast_per_points)){
+  #     input_points$nb_coastal_points[
+  #       input_points$id_curr == as.numeric(names(n_coast_per_points)[k])] <- 
+  #       input_points$nb_coastal_points[ input_points$id_curr == as.numeric(names(n_coast_per_points)[k]) ] + n_coast_per_points[k]
+  #   }
+  #   
+  #   pb$tick()
+  #   
+  # }
+  # 
+  # indexes <- (niter*sample_size+1):(dim(coastal_points)[1])
+  # 
+  # n_coast_per_points <- get.nb.cover.per.input(indexes, coastal_points, input_points)
+  # 
+  # for (k in 1:length(n_coast_per_points)){
+  #   input_points$nb_coastal_points[
+  #     input_points$id_curr == as.numeric(names(n_coast_per_points)[k])] <- 
+  #     input_points$nb_coastal_points[ input_points$id_curr == as.numeric(names(n_coast_per_points)[k]) ] + n_coast_per_points[k]
+  # }
+  # 
+  # pb$tick()
+  # 
+  # write.table(input_points,
+  #             file = fname)
   
 } else {
   
