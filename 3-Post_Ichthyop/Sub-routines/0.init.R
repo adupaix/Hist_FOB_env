@@ -61,15 +61,13 @@ if (RESET[2]){
       silent = T)
 }
 
-if (RESET[3] & RESET[4]){
-  try(unlink(list.files(output_path_3_more, full.names = T),
-             recursive = T),
-      silent = T)
-} else if (RESET[3] == T){
+if (RESET[3] == T){
   try(unlink(list.files(output_paths[3], full.names = T),
              recursive = T),
       silent = T)
-} else if (RESET[4] == T){
+}
+
+if (RESET[4] == T){
   try(unlink(list.files(output_paths[4], full.names = T),
              recursive = T),
       silent = T)
