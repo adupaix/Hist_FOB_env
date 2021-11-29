@@ -93,23 +93,29 @@ for (k in 1:length(cover_files)){
     # # transform it to lat/long coordinates
     # st_transform(4326) -> cover_df
     
+    is_coastal_cover <- k %in% grep(pattern = "cote|coast", cover_files)
+    
     # test if the forest cover shp is in the right format
-    if(!identical(as.numeric(1:9), as.numeric(levels(as.factor(cover_df$couvert))))){
+    if(!identical(as.numeric(1:9), as.numeric(levels(as.factor(cover_df$couvert)))) & year != 2000){
       stop("Error: wrong forest cover file format (levels different from 1:9)")
+    } else if(!identical(as.numeric(0:9), as.numeric(levels(as.factor(cover_df$couvert))))){
+      stop("Error: wrong forest cover file format (levels different from 0:9)")
     }
     
-    msg <- "  - Filtering cover points with the current product mask if needed\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-    
-    cover_bbox <- st_bbox(cover_df)
-    # read the bbox of the forcing product from the mask saved in the Resources folder
-    forcing_bbox <- get.forcing.bbox(RESOURCE_PATH, forcing)
-    #' crop the cover points df only if any of the points are outside the forcing product 
-    #' if it's not the case, it would also work but it's useless and we'd loose time...
-    cover_is_to_crop <- any(c(cover_bbox[1:2]<forcing_bbox[1:2],
-                              cover_bbox[3:4]>forcing_bbox[3:4]))
-    
-    if (cover_is_to_crop){
-      cover_df <- faster.st_crop.points(cover_df, forcing_bbox)
+    if (is_coastal_cover){
+      msg <- "  - Filtering coastal cover points with the current product mask if needed\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+      
+      cover_bbox <- st_bbox(cover_df)
+      # read the bbox of the forcing product from the mask saved in the Resources folder
+      forcing_bbox <- get.forcing.bbox(RESOURCE_PATH, forcing)
+      #' crop the cover points df only if any of the points are outside the forcing product 
+      #' if it's not the case, it would also work but it's useless and we'd loose time...
+      cover_is_to_crop <- any(c(cover_bbox[1:2]<forcing_bbox[1:2],
+                                cover_bbox[3:4]>forcing_bbox[3:4]))
+      
+      if (cover_is_to_crop){
+        cover_df <- faster.st_crop.points(cover_df, forcing_bbox)
+      }
     }
     
     msg <- "  - Getting the cover points inside the river buffer and the mouth buffer\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
