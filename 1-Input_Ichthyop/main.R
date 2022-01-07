@@ -81,7 +81,7 @@ curr_prod = "PHILIN12.L75" # one of c("PHILIN12.L75","oscar","nemo","globcurrent
 #'## transport_duration (num): number of days that the particles are to be transported (in days)
 #'## first/last_release_date (chr): start and end dates of the Ichthyop simulations
 #'## release_period (num): period between two particles release (in days)
-#'## record_frequency (num): frequency at which the particles positions are to be save (in days)
+#'## record_period (num): period between two savings of the particles positions (in days)
 #'
 #'## n_cfg_per_dir (num): number of cfg files to save per directory
 #'## n_pbs_jobs (num): number of pbs jobs to run on the cluster
@@ -110,7 +110,7 @@ last_release_year = 1990 #' The last release will be on January of the following
                          #'             then the last release date (L) will be 2001-01-03
                          #'             L = 1998-08-19 + 7 * n, with n being the smallest number such that L is in 2001
 release_period = 7 # in days, (interval between two release)
-record_frequency = 1 #in days (interval between two recorded positions)
+record_period = 1 #in days (interval between two recorded positions)
 
 n_cfg_per_dir = 28*10*4 # number of .xml file per directory
 

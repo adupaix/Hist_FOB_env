@@ -6,7 +6,7 @@ write.cfg.xml <- function(initial_time,
                           tplate,
                           sim_input_path,
                           sim_output_path,
-                          record_frequency,
+                          record_period,
                           dir_name.i,
                           i_chr,
                           
@@ -43,7 +43,7 @@ write.cfg.xml <- function(initial_time,
                 file.path(sim_output_path, paste0("points_", i_chr), nb),
                 long,
                 lat,
-                (record_frequency*24*3600)/2400)
+                (record_period*24*3600)/2400)
   
   # for each parameter
   for (k in 1:length(param_list)){

@@ -60,7 +60,7 @@ if (!all(Exist$output_2)){
                     tplate,
                     sim_input_path,
                     sim_output_path,
-                    record_frequency,
+                    record_period,
                     dir_name.i,
                     i_chr,
                     
@@ -97,7 +97,7 @@ if (!all(Exist$output_2)){
                   tplate,
                   sim_input_path,
                   sim_output_path,
-                  record_frequency,
+                  record_period,
                   dir_name.i,
                   i_chr,
                   
