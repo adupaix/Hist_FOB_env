@@ -80,7 +80,7 @@ curr_prod = "PHILIN12.L75" # one of c("PHILIN12.L75","oscar","nemo","globcurrent
 #'
 #'## transport_duration (num): number of days that the particles are to be transported (in days)
 #'## first/last_release_date (chr): start and end dates of the Ichthyop simulations
-#'## release_frequency (num): frequency at which the particles are released (in days)
+#'## release_period (num): period between two particles release (in days)
 #'## record_frequency (num): frequency at which the particles positions are to be save (in days)
 #'
 #'## n_cfg_per_dir (num): number of cfg files to save per directory
@@ -99,9 +99,17 @@ sim_output_path <- "/home1/scratch/adupaix/ichthyop-output"
 #~ Arguments to generate the xml files
 transport_duration = 500 #in days
 
-first_release_year = 1989 # release from the first of December of the year preceding this year
-last_release_year = 1990 # to the 15th of January of the year after this year
-release_frequency = 2 # nb of release per month
+first_release_year = 1989 #' release from transport_duration days before first_release_year-01-01.
+                          #' For example, transport_duration = 500
+                          #'          and first_release_year = 2000
+                          #' the first release will be on the 1998-08-19
+last_release_year = 1990 #' The last release will be on January of the following year, depending on the release_period
+                         #' For example, if the first release was on 1998-08-19
+                         #'             and the release_period = 7 days
+                         #'             and last_release_year = 2000
+                         #'             then the last release date (L) will be 2001-01-03
+                         #'             L = 1998-08-19 + 7 * n, with n being the smallest number such that L is in 2001
+release_period = 7 # in days, (interval between two release)
 record_frequency = 1 #in days (interval between two recorded positions)
 
 n_cfg_per_dir = 28*10*4 # number of .xml file per directory
