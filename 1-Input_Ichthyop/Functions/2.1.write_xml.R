@@ -129,7 +129,8 @@ generate.jobs.pbs <- function(template, sim_input_path, cfg_path, cfg_dir, last_
     #write the line lauching the mpi specifying the number of cores and the path to the command list
     pbs_text[grep("MPI_LAUNCH", pbs_text)] <- paste0("time $MPI_LAUNCH -np ", 28*n_mpi[i],
                                                      " ichthyop-mpi/ichthyopmpi ",
-                                                     sim_input_path, "/", cfg_dir, "/commands_simu-", i, ".txt &> out.log")
+                                                     sim_input_path, "/", cfg_dir, "/commands_simu-", i, ".txt &> out-",
+                                                     i ,".log")
     
     file.create(file.path(cfg_path, paste0("sim_ichthyop-",last_release_year,"-",i,".pbs")))
     job <- file(file.path(cfg_path, paste0("sim_ichthyop-",last_release_year,"-",i,".pbs")), open = "w")
