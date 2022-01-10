@@ -88,7 +88,7 @@ Exist$output_2 <- file.exists(c(file.path(output_path2, Names$output_2.1),
 
 
 #' add the year to the sim_output_path (path where the Ichthyop output will be save on the cluster)
-sim_output_path <- file.path(sim_output_path, curr_prod, last_release_year)
+# sim_output_path <- file.path(sim_output_path, curr_prod, last_release_year)
 #' add the forcing product name to the sim_input_path
 sim_input_path <- file.path(sim_input_path, curr_prod)
 

@@ -42,20 +42,20 @@ create.raster <- function(gsize){
 #'@read_args
 #'**********
 #'This script must be launched from the terminal as follow:
-#' Rscript ichth_to_rds.R [path to sub-dir containing the outputs from 1 ichthyop simulation]
+#' Rscript ichth_to_rds.R [path to sub-dir containing the outputs from 1 ichthyop simulation] [sim_output_path]
 Args = commandArgs(trailingOnly = T)
 
 sub_path <- as.character(Args[1])
 
-year <- as.character(Args[2])
+# year <- as.character(Args[2])
+
+sim_output_path <- as.character(Args[2])
 
 point_nb <- gsub(".*?/", "", sub_path)
 
-
-dir = file.path("/home1/scratch/adupaix/ichthyop-output",year)
 # dir = "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/0-Data/Output_Ichthyop/PHILIN12.L75_river_allMask/"
 
-point_dir <- file.path(dir, sub_path)
+point_dir <- file.path(sim_output_path, sub_path)
 
 origin_time = "year 1900 month 01 day 01 at 00:00"
 

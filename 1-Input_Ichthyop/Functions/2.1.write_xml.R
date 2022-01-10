@@ -142,10 +142,10 @@ generate.jobs.pbs <- function(template, sim_input_path, cfg_path, cfg_dir, last_
 
 
 
-generate.post.ichthyop <- function(template, cfg_path, last_release_year){
+generate.post.ichthyop <- function(template, cfg_path, last_release_year, sim_output_path){
   
   # generate commands
-  lignes <- paste0("Rscript ichth_to_rds.R ", list.files(cfg_path, pattern = "cfg_point", recursive = T), " ", last_release_year)
+  lignes <- paste0("Rscript ichth_to_rds.R ", list.files(cfg_path, pattern = "cfg_point", recursive = T), " ", sim_output_path)
   lignes <- gsub("cfgs", "points", lignes)
   lignes <- gsub("cfg_point_", "", lignes)
   lignes <- gsub("\\.xml", "", lignes)
