@@ -88,13 +88,17 @@ write.cfg.xml <- function(initial_time,
 
 
 
-generate.command.list <- function(sim_input_path, cfg_path, cfg_dir, n_pbs_jobs){
+generate.command.list <- function(sim_input_path, cfg_path, cfg_dir, n_pbs_jobs, n_mpi){
   
   lignes <- paste0("java -jar ichthyop-private/target/ichthyop-3.3.11.jar ",sim_input_path,"/",cfg_dir,"/", list.files(cfg_path, pattern = "cfg_point", recursive = T))
   l = length(lignes)
   
+  n_per_job <- c(1,
+                 cumsum(round(l * n_mpi / sum(n_mpi))))
+  n_per_job[length(n_per_job)] <- l
+  
   for (i in 1:n_pbs_jobs){
-    indexes = floor((i-1)*l/n_pbs_jobs + 1) : floor(i*l/n_pbs_jobs)
+    indexes = n_per_job[i]:(n_per_job[i+1]-1)
     
     file.create(file.path(cfg_path, paste0("commands_simu-",i,".txt")))
     cmds <- file(file.path(cfg_path, paste0("commands_simu-",i,".txt")), open = "w")

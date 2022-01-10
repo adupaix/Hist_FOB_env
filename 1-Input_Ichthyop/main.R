@@ -69,7 +69,7 @@ input_method = "allMask" # one of c("onMask","kFromCoast", "allMask")
 #'             the closest point of the product mask                                
 #'
 dist = 1 # used if input_method == kFromCoast (distance from coast in degrees)
-curr_prod = "PHILIN12.L75" # one of c("PHILIN12.L75","oscar","nemo","globcurrent","nemo15m") # used if input_method == onMask ou allMask
+curr_prod = "nemo" # one of c("PHILIN12.L75","oscar","nemo","globcurrent","nemo15m") # used if input_method == onMask ou allMask
 
 #'
 #' Arguments to generate Ichthyop cfg files (only if input_method == allMask)
@@ -115,9 +115,14 @@ record_period = 1 #in days (interval between two recorded positions)
 n_cfg_per_dir = 28*10*4 # number of .xml file per directory
 
 #~ Arguments to generate the pbs jobs
-n_pbs_jobs = 3 #number of .pbs jobs to run in the cluster (to generate the command_list files)
-n_mpi = rep(10, n_pbs_jobs) #number of mpi asked in each jobs (between 1 and 20)
-walltime = rep(20, n_pbs_jobs) #time asked for the jobs (in hours)
+n_pbs_jobs = 19 #number of .pbs jobs to run in the cluster (to generate the command_list files)
+n_mpi = c(rep(8,2),
+          rep(7,2),
+          rep(6,3),
+          rep(5,3),
+          rep(4,4),
+          rep(3,5)) #number of mpi asked in each jobs (between 1 and 20)
+walltime = rep(30, n_pbs_jobs) #time asked for the jobs (in hours)
 
 
 #' ***************
