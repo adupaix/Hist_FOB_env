@@ -2,6 +2,20 @@
 
 # sous fontion de input.2.xml
 
+#' @1
+#' Generate a cfg file for the Ichthyop simulation from one point
+#' @arguments:
+#'  initial_time (POSIXct): vector of all the times of release
+#'  tplate (chr): path to the template file which will be used to generate the cfg files
+#'  sim_input_path (chr): path to the location of the current products which will be used in the Ichthyop simulation
+#'  sim_output_path (chr): path to where the results of the Ichthyop simulation will be saved
+#'  record_period (num): time between the saving of 2 positions of particles in the Ichthyop simulation
+#'  dir_name.i (chr): sub-folder where the cfg file is to be saved
+#'  i_chr (chr): number of the sub-folder where the cfg file will be saved
+#'  
+#'  long (num): longitude of the release point
+#'  lat (num): latitude of the release point
+#'  nb (chr): number of the point formatted as follow: "000xx" (5 digits)
 write.cfg.xml <- function(initial_time,
                           tplate,
                           sim_input_path,
@@ -87,7 +101,14 @@ write.cfg.xml <- function(initial_time,
 }
 
 
-
+#' @2
+#' Generate the txt files which contain the commands launched by the mpi in the pbs job
+#' @arguments:
+#'   sim_input_path (chr): path to the directory where the cfg files and the current product are stored on the cluster
+#'   cfg_path (chr): path where the jobs will be saved
+#'   cfg_dir (chr): name of the directory which will contain the cfg files (format: cfgs_year1-year2)
+#'   n_pbs_jobs (num): number of pbs jobs to generate
+#'   n_mpi (num): vector which, for each generated job, contains the number of mpi asked
 generate.command.list <- function(sim_input_path, cfg_path, cfg_dir, n_pbs_jobs, n_mpi){
   
   lignes <- paste0("java -jar ichthyop-private/target/ichthyop-3.3.11.jar ",sim_input_path,"/",cfg_dir,"/", list.files(cfg_path, pattern = "cfg_point", recursive = T))
@@ -109,8 +130,17 @@ generate.command.list <- function(sim_input_path, cfg_path, cfg_dir, n_pbs_jobs,
 }
 
 
-
-
+#' @3
+#' Generate the jobs to run the Ichthyop simulations
+#' @arguments:
+#'   template (chr): path to the .pbs jobs template
+#'   sim_input_path (chr): path to the directory where the cfg files and the current product are stored on the cluster
+#'   cfg_path (chr): path where the jobs will be saved
+#'   cfg_dir (chr): name of the directory which will contain the cfg files (format: cfgs_year1-year2)
+#'   last_release_year (num): last year of the simulation
+#'   n_pbs_jobs (num): number of pbs jobs to generate
+#'   n_mpi (num): vector which, for each generated job, contains the number of mpi asked
+#'   walltime (num): vector which, for each generated job, contains the walltime asked (in hours)
 generate.jobs.pbs <- function(template, sim_input_path, cfg_path, cfg_dir, last_release_year,
                               n_pbs_jobs, n_mpi, walltime){
   
@@ -140,8 +170,11 @@ generate.jobs.pbs <- function(template, sim_input_path, cfg_path, cfg_dir, last_
 }
 
 
-
-
+#' @4
+#' Generate:
+#'    the pbs job which will be run after the Ichthyop simulations
+#'        to pre-process the Ichthyop outputs using the ichth_to_rds.R script
+#'    the txt file which contains the commands to launch ichth_to_rds.R (called by the pbs job)
 generate.post.ichthyop <- function(template, cfg_path, last_release_year, sim_output_path){
   
   # generate commands
@@ -170,4 +203,17 @@ generate.post.ichthyop <- function(template, cfg_path, last_release_year, sim_ou
   writeLines(pbs_text, job)
   close(job)
   
+}
+
+#' @5
+#' Generate a file which can be executed as follow '. launch_jobs.sh' and will
+#' launch all the jobs
+generate.sh.launch.jobs <- function(cfg_path, last_release_year, n_pbs_jobs){
+  
+  sh_text <- paste0("qsub -u sim_ichthyop-", last_release_year, "-", 1:n_pbs_jobs, ".pbs")
+  
+  file.create(file.path(cfg_path, "launch_jobs.sh"))
+  launch <- file(file.path(cfg_path, "launch_jobs.sh"), open = "w")
+  writeLines(sh_text, launch)
+  close(launch)
 }

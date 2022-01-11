@@ -103,7 +103,7 @@ first_release_year = 2000 #' release from transport_duration days before first_r
                           #' For example, transport_duration = 500
                           #'          and first_release_year = 2000
                           #' the first release will be on the 1998-08-19
-last_release_year = 2001 #' The last release will be on January of the following year, depending on the release_period
+last_release_year = 2019 #' The last release will be on January of the following year, depending on the release_period
                          #' For example, if the first release was on 1998-08-19
                          #'             and the release_period = 7 days
                          #'             and last_release_year = 2000
