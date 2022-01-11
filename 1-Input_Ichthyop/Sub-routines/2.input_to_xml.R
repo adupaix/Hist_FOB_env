@@ -26,7 +26,7 @@ if (!all(Exist$output_2)){
   end <- seq(as.Date(paste0(last_release_year+1, "-01-01")),
             as.Date(paste0(last_release_year+1, "-01-01"))+as.difftime(release_period, units = "days"),
             as.difftime(1, units = "days")) # get all the release_period first days of the year following the last_release_year
-  end <- end[which(as.numeric(end-start) %% release_period == 0)] # select the one that is n times release_period after start
+  end <- end[min(which(as.numeric(end-start) %% release_period == 0))] # select the one that is n times release_period after start
   
   initial_time <- seq(start, end,
                       as.difftime(release_period, units = "days"))
@@ -119,6 +119,8 @@ if (!all(Exist$output_2)){
                     n_pbs_jobs, n_mpi, walltime)
   
   generate.post.ichthyop(Template$pbs_post, output_path2, last_release_year, sim_output_path)
+  
+  generate.sh.launch.jobs(output_path2, last_release_year, n_pbs_jobs)
 
 
 } else {
