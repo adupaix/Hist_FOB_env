@@ -4,7 +4,7 @@
 # example of using 1node, i.e. 1*28 mpi procs 
 # cd to the directory you submitted your job
 cd $PBS_O_WORKDIR
-rm -rfv *.pbs.o*
+#rm -rfv *.pbs.o*
 
 # copy the code to scratch
 cp -pr $HOME/ichthyop-private $SCRATCH
@@ -14,7 +14,7 @@ cp -pr $HOME/ichthyop-mpi $SCRATCH
 
 # move to scratch
 cd $SCRATCH
-rm -rfv *.log
+#rm -rfv *.log
 
 # import mpi module
 source /usr/share/Modules/3.2.10/init/bash
