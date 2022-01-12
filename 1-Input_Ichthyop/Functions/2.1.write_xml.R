@@ -133,7 +133,7 @@ generate.command.list <- function(sim_input_path, cfg_path, cfg_dir, n_pbs_jobs,
 #' @3
 #' Generate the jobs to run the Ichthyop simulations
 #' @arguments:
-#'   template (chr): path to the .pbs jobs template
+#'   template (chr): list of the paths to the .pbs jobs templates ($pbs_cp and $pbs)
 #'   sim_input_path (chr): path to the directory where the cfg files and the current product are stored on the cluster
 #'   cfg_path (chr): path where the jobs will be saved
 #'   cfg_dir (chr): name of the directory which will contain the cfg files (format: cfgs_year1-year2)
@@ -144,7 +144,15 @@ generate.command.list <- function(sim_input_path, cfg_path, cfg_dir, n_pbs_jobs,
 generate.jobs.pbs <- function(template, sim_input_path, cfg_path, cfg_dir, last_release_year,
                               n_pbs_jobs, n_mpi, walltime){
   
-  tplate <- scan(template, what = "", sep = "\n", quiet = T)
+  # generate the job which copies ichthyop and the mpi to scratch
+  pbs_text <- scan(template$pbs_cp, what = "", sep = "\n", quiet = T)
+  file.create(file.path(cfg_path, paste0("sim_ichthyop-",last_release_year,"-0.pbs")))
+  job <- file(file.path(cfg_path, paste0("sim_ichthyop-",last_release_year,"-0.pbs")), open = "w")
+  writeLines(pbs_text, job)
+  close(job)
+  
+  # generate the other jobs
+  tplate <- scan(template$pbs, what = "", sep = "\n", quiet = T)
   
   for (i in 1:n_pbs_jobs){
     
@@ -210,7 +218,9 @@ generate.post.ichthyop <- function(template, cfg_path, last_release_year, sim_ou
 #' launch all the jobs
 generate.sh.launch.jobs <- function(cfg_path, last_release_year, n_pbs_jobs){
   
-  sh_text <- paste0("qsub -u sim_ichthyop-", last_release_year, "-", 1:n_pbs_jobs, ".pbs")
+  sh_text <- c(paste0("qsub -u sim_ichthyop-",last_release_year,"-0.pbs"),
+               "sleep 6m",
+               paste0("qsub -u sim_ichthyop-", last_release_year, "-", 1:n_pbs_jobs, ".pbs"))
   
   file.create(file.path(cfg_path, "launch_jobs.sh"))
   launch <- file(file.path(cfg_path, "launch_jobs.sh"), open = "w")

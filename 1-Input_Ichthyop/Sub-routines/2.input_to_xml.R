@@ -115,7 +115,7 @@ if (!all(Exist$output_2)){
   
   generate.command.list(sim_input_path, output_path2, cfg_dir, n_pbs_jobs, n_mpi)
   
-  generate.jobs.pbs(Template$pbs, sim_input_path, output_path2, cfg_dir, last_release_year,
+  generate.jobs.pbs(Template, sim_input_path, output_path2, cfg_dir, last_release_year,
                     n_pbs_jobs, n_mpi, walltime)
   
   generate.post.ichthyop(Template$pbs_post, output_path2, last_release_year, sim_output_path)

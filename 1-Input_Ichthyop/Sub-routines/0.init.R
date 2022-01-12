@@ -23,6 +23,7 @@ source(file.path(FUNC_PATH,'2.1.write_xml.R'))
 Template <- c()
 Template$xml <- file.path(RESOURCE_PATH, paste0("template_cfg_",curr_prod,".xml"))
 Template$pbs <- file.path(RESOURCE_PATH, "template_ichthyop_job.pbs")
+Template$pbs_cp <- file.path(RESOURCE_PATH, "template_ichthyop_job_cp.pbs")
 Template$pbs_post <- file.path(RESOURCE_PATH, "template_post_ichthyop_job.pbs")
 
 if(!all(unlist(lapply(Template, file.exists)))){
