@@ -85,6 +85,7 @@ curr_prod = "nemo" # one of c("PHILIN12.L75","oscar","nemo","globcurrent","nemo1
 #'
 #'## n_cfg_per_dir (num): number of cfg files to save per directory
 #'## n_pbs_jobs (num): number of pbs jobs to run on the cluster
+#'## ichthyop_version (chr): version of ichthyop to use in the cluster (X.Y.Z format)
 
 generate_xml = T
 
@@ -99,7 +100,7 @@ sim_output_path <- "/home/datawork-marbec-pmod/outputs/ICHTHYOP/adupaix"
 #~ Arguments to generate the xml files
 transport_duration = 500 #in days
 
-first_release_year = 2000 #' release from transport_duration days before first_release_year-01-01.
+first_release_year = 2000 #' release from transport_duration days before first_release_year-01-01
                           #' For example, transport_duration = 500
                           #'          and first_release_year = 2000
                           #' the first release will be on the 1998-08-19
@@ -114,7 +115,7 @@ record_period = 1 #in days (interval between two recorded positions)
 
 n_cfg_per_dir = 28*10*4 # number of .xml file per directory
 
-#~ Arguments to generate the pbs jobs
+#~ Arguments to generate the pbs jobs and the java command lines
 n_pbs_jobs = 19 #number of .pbs jobs to run in the cluster (to generate the command_list files)
 n_mpi = c(rep(8,2),
           rep(7,2),
@@ -123,6 +124,7 @@ n_mpi = c(rep(8,2),
           rep(4,4),
           rep(3,5)) #number of mpi asked in each jobs (between 1 and 20)
 walltime = rep(30, n_pbs_jobs) #time asked for the jobs (in hours)
+ichthyop_version = "3.3.11" # X.Y.Z format
 
 
 #' ***************

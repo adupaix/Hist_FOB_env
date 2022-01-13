@@ -113,7 +113,7 @@ if (!all(Exist$output_2)){
   
   #'@2 Generate command lists and pbs jobs
   
-  generate.command.list(sim_input_path, output_path2, cfg_dir, n_pbs_jobs, n_mpi)
+  generate.command.list(sim_input_path, output_path2, cfg_dir, n_pbs_jobs, n_mpi, ichthyop_version)
   
   generate.jobs.pbs(Template, sim_input_path, output_path2, cfg_dir, last_release_year,
                     n_pbs_jobs, n_mpi, walltime)

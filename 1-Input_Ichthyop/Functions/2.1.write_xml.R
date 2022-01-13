@@ -112,9 +112,9 @@ write.cfg.xml <- function(initial_time,
 #'   cfg_dir (chr): name of the directory which will contain the cfg files (format: cfgs_year1-year2)
 #'   n_pbs_jobs (num): number of pbs jobs to generate
 #'   n_mpi (num): vector which, for each generated job, contains the number of mpi asked
-generate.command.list <- function(sim_input_path, cfg_path, cfg_dir, n_pbs_jobs, n_mpi){
+generate.command.list <- function(sim_input_path, cfg_path, cfg_dir, n_pbs_jobs, n_mpi, ichthyop_version){
   
-  lignes <- paste0("java -jar ichthyop-private/target/ichthyop-3.3.11.jar ",sim_input_path,"/",cfg_dir,"/", list.files(cfg_path, pattern = "cfg_point", recursive = T))
+  lignes <- paste0("java -jar ichthyop-private/target/ichthyop-", ichthyop_version, ".jar ",sim_input_path,"/",cfg_dir,"/", list.files(cfg_path, pattern = "cfg_point", recursive = T))
   l = length(lignes)
   
   n_per_job <- c(1,
