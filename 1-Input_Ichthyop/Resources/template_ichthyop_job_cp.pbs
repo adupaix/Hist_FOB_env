@@ -7,10 +7,13 @@ cd $PBS_O_WORKDIR
 rm -rfv *.pbs.o*
 
 # copy the code to scratch
-cp -pr $HOME/ichthyop-private $SCRATCH
+cp -rf $HOME/ichthyop-private $SCRATCH
 
 # copy the mpi to scratch
-cp -pr $HOME/ichthyop-mpi $SCRATCH
+cp -rf $HOME/ichthyop-mpi $SCRATCH
+
+# copy the forcing product to scratch
+cp -rf $DATAWORK/input-ichthyop/[forcing-product]/*[year]*.nc [sim-input-path]
 
 # move to scratch
 cd $SCRATCH

@@ -114,7 +114,22 @@ write.cfg.xml <- function(initial_time,
 #'   n_mpi (num): vector which, for each generated job, contains the number of mpi asked
 generate.command.list <- function(sim_input_path, cfg_path, cfg_dir, n_pbs_jobs, n_mpi, ichthyop_version){
   
-  lignes <- paste0("java -jar ichthyop-private/target/ichthyop-", ichthyop_version, ".jar ",sim_input_path,"/",cfg_dir,"/", list.files(cfg_path, pattern = "cfg_point", recursive = T))
+  files <- list.files(cfg_path, pattern = "cfg_point", recursive = T)
+  
+  # save a log every 200 config files
+  log <- rep("/dev/null", length(files))
+  log[seq(1, length(log), 200)] <- paste0("sim", seq(1, length(log), 200), ".log")
+  
+  lignes <- paste0("java -jar ichthyop-private/target/ichthyop-",
+                   ichthyop_version,
+                   ".jar ",
+                   sim_input_path,
+                   "/",
+                   cfg_dir,
+                   "/",
+                   files,
+                   " >& ",
+                   log)
   l = length(lignes)
   
   n_per_job <- c(1,
@@ -144,11 +159,33 @@ generate.command.list <- function(sim_input_path, cfg_path, cfg_dir, n_pbs_jobs,
 #'   n_pbs_jobs (num): number of pbs jobs to generate
 #'   n_mpi (num): vector which, for each generated job, contains the number of mpi asked
 #'   walltime (num): vector which, for each generated job, contains the walltime asked (in hours)
+#'   curr_prod (chr): name of the forcing product which will be used in the Ichthyop simulation
+#'   initial_time (POSIXct): vector of all the times of release
 generate.jobs.pbs <- function(template, sim_input_path, cfg_path, cfg_dir, last_release_year,
-                              n_pbs_jobs, n_mpi, walltime){
+                              n_pbs_jobs, n_mpi, walltime, curr_prod, initial_time,
+                              transport_duration){
   
   # generate the job which copies ichthyop and the mpi to scratch
   pbs_text <- scan(template$pbs_cp, what = "", sep = "\n", quiet = T)
+  
+     # Copy the forcing product
+  # put the name of the forcing product in the line to copy
+  pbs_text <- sub("[forcing-product]", curr_prod, pbs_text, fixed = T)
+  #change the path where the forcing product is copied to
+  pbs_text <- sub("[sim_input_path]", sim_input_path, pbs_text, fixed = T)
+  # put the year 
+  years <- seq(min(year(initial_time)),
+               max(year(initial_time + as.difftime(transport_duration, units = "days"))))
+  j <- grep("[year]", pbs_text, fixed=T)
+  for (i in 1:length(years)){
+    txt <- sub("[year]", years[i], pbs_text[j], fixed=T)
+    pbs_text <- c(pbs_text[1:(j+i-1)],
+                  txt,
+                  pbs_text[(j+i):length(pbs_text)])
+  }
+  pbs_text <- pbs_text[-grep("[year]", pbs_text, fixed=T)]
+  
+  # save the file
   file.create(file.path(cfg_path, paste0("sim_ichthyop-",last_release_year,"-0.pbs")))
   job <- file(file.path(cfg_path, paste0("sim_ichthyop-",last_release_year,"-0.pbs")), open = "w")
   writeLines(pbs_text, job)
