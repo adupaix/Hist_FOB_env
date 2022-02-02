@@ -163,7 +163,8 @@ generate.command.list <- function(sim_input_path, cfg_path, cfg_dir, n_pbs_jobs,
 #'   initial_time (POSIXct): vector of all the times of release
 generate.jobs.pbs <- function(template, sim_input_path, cfg_path, cfg_dir, last_release_year,
                               n_pbs_jobs, n_mpi, walltime, curr_prod, initial_time,
-                              transport_duration){
+                              transport_duration,
+                              path_where_the_forcing_product_is_stored){
   
   # generate the job which copies ichthyop and the mpi to scratch
   pbs_text <- scan(template$pbs_cp, what = "", sep = "\n", quiet = T)
@@ -171,7 +172,11 @@ generate.jobs.pbs <- function(template, sim_input_path, cfg_path, cfg_dir, last_
      # Copy the forcing product
   # put the name of the forcing product in the line to copy
   pbs_text <- sub("[forcing-product]", curr_prod, pbs_text, fixed = T)
-  #change the path where the forcing product is copied to
+  #change the path where the forcing product is copied FROM
+  pbs_text <- sub("[path_where_the_forcing_product_is_stored]",
+                  path_where_the_forcing_product_is_stored,
+                  pbs_text, fixed = T)
+  #change the path where the forcing product is copied TO
   pbs_text <- sub("[sim_input_path]", sim_input_path, pbs_text, fixed = T)
   # put the year 
   years <- seq(min(year(initial_time)),

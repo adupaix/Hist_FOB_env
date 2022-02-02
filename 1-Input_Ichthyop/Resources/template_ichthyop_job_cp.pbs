@@ -13,7 +13,7 @@ cp -rf $HOME/ichthyop-private $SCRATCH
 cp -rf $HOME/ichthyop-mpi $SCRATCH
 
 # copy the forcing product to scratch
-cp -rf $DATAWORK/input-ichthyop/[forcing-product]/*[year]*.nc [sim-input-path]
+cp -rf [path_where_the_forcing_product_is_stored]/[forcing-product]/*[year]*.nc [sim_input_path]
 
 # move to scratch
 cd $SCRATCH
