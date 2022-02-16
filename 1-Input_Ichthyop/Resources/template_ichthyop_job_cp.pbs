@@ -22,6 +22,9 @@ cp -rf [path_where_the_forcing_product_is_stored]/[forcing-product]/*[year]*.nc 
 # copy the forcing product mask to scratch
 cp -rf [path_where_the_forcing_product_is_stored]/[forcing-product]/*mask*.nc [sim_input_path]
 
+#copy the cfg files to scratch
+cp -rf [path_where_the_forcing_product_is_stored]/[forcing-product]/cfgs_[first_release_year]-[last_release_year] [sim_input_path]
+
 # move to scratch
-cd $SCRATCH
-rm -rfv *.log
+#cd $SCRATCH
+#rm -rfv *.log
