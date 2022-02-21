@@ -101,17 +101,17 @@ generate_xml = T
 sim_input_path <- "/home1/scratch/adupaix/input-ichthyop"
 path_where_the_forcing_product_is_stored <- "/home1/datawork/adupaix/input-ichthyop"
 # sim_output_path <- "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/2-Launch_Ichthyop_datarmor/ichthyop-output"
-sim_output_path <- "/home/datawork-marbec-pmod/outputs/ICHTHYOP/adupaix"
+sim_output_path <- "/home1/scratch/adupaix/output-ichthyop"
 
 
 #~ Arguments to generate the xml files
 transport_duration = 500 #in days
 
-first_release_year = 2000 #' release from transport_duration days before first_release_year-01-01
+first_release_year = 2018 #' release from transport_duration days before first_release_year-01-01
                           #' For example, transport_duration = 500
                           #'          and first_release_year = 2000
                           #' the first release will be on the 1998-08-19
-last_release_year = 2000 #' The last release will be on January of the following year, depending on the release_period
+last_release_year = 2018 #' The last release will be on January of the following year, depending on the release_period
                          #' For example, if the first release was on 1998-08-19
                          #'             and the release_period = 7 days
                          #'             and last_release_year = 2000
@@ -130,7 +130,7 @@ n_mpi = c(rep(8,2),
           rep(5,3),
           rep(4,4),
           rep(3,5)) #number of mpi asked in each jobs (between 1 and 20)
-walltime = rep(30, n_pbs_jobs) #time asked for the jobs (in hours)
+walltime = rep(20, n_pbs_jobs) #time asked for the jobs (in hours)
 ichthyop_version = "3.3.11" # X.Y.Z format
 
 

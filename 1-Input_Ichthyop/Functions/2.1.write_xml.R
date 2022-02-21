@@ -161,12 +161,13 @@ generate.command.list <- function(sim_input_path, cfg_path, cfg_dir, n_pbs_jobs,
 #'   walltime (num): vector which, for each generated job, contains the walltime asked (in hours)
 #'   curr_prod (chr): name of the forcing product which will be used in the Ichthyop simulation
 #'   initial_time (POSIXct): vector of all the times of release
-generate.jobs.pbs <- function(template, sim_input_path, cfg_path, cfg_dir, last_release_year,
+generate.jobs.pbs <- function(template, sim_input_path, cfg_path, cfg_dir,
                               n_pbs_jobs, n_mpi, walltime, curr_prod, initial_time,
                               transport_duration,
-                              path_where_the_forcing_product_is_stored){
+                              path_where_the_forcing_product_is_stored,
+                              first_release_year, last_release_year){
   
-  # generate the job which copies ichthyop and the mpi to scratch
+  # 1. generate the job which copies ichthyop and the mpi to scratch
   pbs_text <- scan(template$pbs_cp, what = "", sep = "\n", quiet = T)
   
      # Copy the forcing product
@@ -178,6 +179,10 @@ generate.jobs.pbs <- function(template, sim_input_path, cfg_path, cfg_dir, last_
                   pbs_text, fixed = T)
   #change the path where the forcing product is copied TO
   pbs_text <- sub("[sim_input_path]", sim_input_path, pbs_text, fixed = T)
+  # put the years in the line copying the config files
+  pbs_text <- sub("[first_release_year]", first_release_year, pbs_text, fixed = T)
+  pbs_text <- sub("[last_release_year]", last_release_year, pbs_text, fixed = T)
+  
   # put the year 
   years <- seq(min(year(initial_time)),
                max(year(initial_time + as.difftime(transport_duration, units = "days"))))
@@ -196,7 +201,7 @@ generate.jobs.pbs <- function(template, sim_input_path, cfg_path, cfg_dir, last_
   writeLines(pbs_text, job)
   close(job)
   
-  # generate the other jobs
+  # 2. generate the other jobs
   tplate <- scan(template$pbs, what = "", sep = "\n", quiet = T)
   
   for (i in 1:n_pbs_jobs){

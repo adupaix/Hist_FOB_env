@@ -115,9 +115,10 @@ if (!all(Exist$output_2)){
   
   generate.command.list(sim_input_path, output_path2, cfg_dir, n_pbs_jobs, n_mpi, ichthyop_version)
   
-  generate.jobs.pbs(Template, sim_input_path, output_path2, cfg_dir, last_release_year,
+  generate.jobs.pbs(Template, sim_input_path, output_path2, cfg_dir,
                     n_pbs_jobs, n_mpi, walltime, curr_prod, initial_time, transport_duration,
-                    path_where_the_forcing_product_is_stored)
+                    path_where_the_forcing_product_is_stored,
+                    first_release_year, last_release_year)
   
   generate.post.ichthyop(Template$pbs_post, output_path2, last_release_year, sim_output_path)
   
