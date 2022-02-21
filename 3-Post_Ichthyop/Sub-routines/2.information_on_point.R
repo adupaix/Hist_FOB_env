@@ -98,14 +98,14 @@ if (!Exists$weight){
                                           point <- get.number.of.cover.points(nb_cover_per_input, point)
                                           
                                           # get rivers and associated discharge
-                                          point <- get.associated.rivers.and.precip(link_river_input, n_cover_per_river, embouchures, point, precip)
+                                          point <- get.associated.rivers.and.precip(link_river_input, cover_surface_per_river, embouchures, point, precip)
                                           
                                           # get river mouths and associated discharge + cover
                                           # point <- get.associated.rivers(link_river_input, n_cover_per_mouth, embouchures, point, mouth = T)
                                           
                                           if (any(!is.na(point$rivers))){
                                             if (round(point$nb_cover_points) != round(point$nb_coastal_cover_points +
-                                                                                      sum(unlist(lapply(point$rivers$data, function(x) sum(x$nb_river_cover_points)))))){
+                                                                                      sum(unlist(lapply(point$rivers$data, function(x) sum(x$river_cover_surface_m2)))))){
                                               stop("Error: total number of cover points does not correspond to sum of coastal and river associated points")
                                             }
                                           }
