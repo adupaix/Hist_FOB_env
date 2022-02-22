@@ -309,7 +309,7 @@ if(!file.exists(fname)){
     
     niter <- floor( dim(coast_df)[1] / sample_size )
     
-    pb <- progress_bar$new(format = "[:bar] :percent | Cover points sample :current / :total",
+    pb <- progress_bar$new(format = "[:bar] :percent | Coastal points sample :current / :total",
                            total = niter+1
     )
     
@@ -331,9 +331,9 @@ if(!file.exists(fname)){
       #                s1750 = {cover_surface_per_points <- get.nb.cover.per.input(indexes4, coast_df, input_points, count_cover = F)},
       #                s2000 = {cover_surface_per_points <- get.nb.cover.per.input(indexes5, coast_df, input_points, count_cover = F)})
       # 
-      input_points$nb_coastal_points[
+      input_points$coastal_surface_m2[
         input_points$id_curr == as.numeric(names(cover_surface_per_points))] <-
-        input_points$nb_coastal_points[ input_points$id_curr == as.numeric(names(cover_surface_per_points)) ] + cover_surface_per_points
+        input_points$coastal_surface_m2[ input_points$id_curr == as.numeric(names(cover_surface_per_points)) ] + cover_surface_per_points
       
       pb$tick()
       
@@ -343,9 +343,9 @@ if(!file.exists(fname)){
     
     cover_surface_per_points <- get.nb.cover.per.input(indexes, coast_df, input_points, count_cover = F)
     
-    input_points$nb_coastal_points[
+    input_points$coastal_surface_m2[
       input_points$id_curr == as.numeric(names(cover_surface_per_points))] <-
-      input_points$nb_coastal_points[ input_points$id_curr == as.numeric(names(cover_surface_per_points)) ] + cover_surface_per_points
+      input_points$coastal_surface_m2[ input_points$id_curr == as.numeric(names(cover_surface_per_points)) ] + cover_surface_per_points
     
     pb$tick()
     
