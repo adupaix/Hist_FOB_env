@@ -130,7 +130,7 @@ for (k in 1:length(cover_files)){
       stop("Error: some points are associated with several rivers at the same time")
     }
     
-    rm(is_within_river, is_within_mouth) ; invisible(gc())
+    rm(is_within_river) ; invisible(gc())
     
     msg <- "  - Filling the cover df with the river ids\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
     
@@ -508,9 +508,9 @@ if(!file.exists(fname)){
                   nb_coastal_cover_points,
                   nb_cover_points,
                   nb_coastal_points) %>%
-    filter(!is.na(id_curr)) -> nb_cover_per_input
+    filter(!is.na(id_curr)) -> cover_surface_per_input
 
-  write.csv(nb_cover_per_input,
+  write.csv(cover_surface_per_input,
             file = Names$coverGlobal,
             row.names = F)
 
@@ -530,10 +530,10 @@ if(!file.exists(fname)){
 }
 
 #'@output_for_next_subroutine
-nb_cover_per_input <- read.csv(file = Names$coverGlobal)
+cover_surface_per_input <- read.csv(file = Names$coverGlobal)
 cover_surface_per_river <- read.csv(file = Names$coverRiver)
 cover_surface_per_mouth <- read.csv(file = Names$coverRiver) %>% dplyr::filter(MAIN_RIV == HYRIV_ID)
 
 
 #' Do not delete
-toKeep <- c(toKeep, "nb_cover_per_input", "n_cover_per_river", "n_cover_per_mouth")
+toKeep <- c(toKeep, "cover_surface_per_input", "n_cover_per_river", "n_cover_per_mouth")

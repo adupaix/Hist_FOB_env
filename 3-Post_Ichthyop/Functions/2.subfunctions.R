@@ -143,7 +143,7 @@ get.associated.rivers.and.precip <- function(link_river_input,
 #'@sub-function 5
 #'***************
 #' get the number of forest cover points associated with the input point
-#' forest_surface is in km2
+#' forest_surface is in m2
 get.number.of.cover.points <- function(link_table, point){
   
   point$nb_coastal_cover_points <- link_table$nb_coastal_cover_points[link_table$id_curr == as.numeric(point$id)]
