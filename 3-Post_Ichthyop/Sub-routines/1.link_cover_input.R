@@ -193,7 +193,7 @@ for (k in 1:length(cover_files)){
     
     msg <- "  - Get input points associated with cover cells\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
     
-    sample_size <- 1000
+    sample_size <- 2000
     
     niter <- floor( dim(coastal_cover)[1] / sample_size )
     
