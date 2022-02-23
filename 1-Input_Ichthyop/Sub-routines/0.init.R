@@ -23,6 +23,7 @@ source(file.path(FUNC_PATH,'2.1.write_xml.R'))
 Template <- c()
 Template$xml <- file.path(RESOURCE_PATH, paste0("template_cfg_",curr_prod,".xml"))
 Template$pbs <- file.path(RESOURCE_PATH, "template_ichthyop_job.pbs")
+Template$pbs_cp <- file.path(RESOURCE_PATH, "template_ichthyop_job_cp.pbs")
 Template$pbs_post <- file.path(RESOURCE_PATH, "template_post_ichthyop_job.pbs")
 
 if(!all(unlist(lapply(Template, file.exists)))){
@@ -62,11 +63,11 @@ if (input_method == "allMask"){ Names$output_1 <- c(Names$output_1, "Link_table.
 
 #' outputs of subroutine 2
 #' @!! only check the existence of the pbs jobs (not the xml cfg files)
-Names$output_2.1 <- paste0("list_commands",1:n_pbs_jobs,".txt")
+Names$output_2.1 <- paste0("commands_simu-",1:n_pbs_jobs,".txt")
 Names$output_2.2 <- paste0("sim_ichthyop-",last_release_year,"-",1:n_pbs_jobs,".pbs")
-Names$output_2.3 <- c(paste0("post-simu-ichthyop-",last_release_year,".pbs"),
+Names$output_2.3 <- c(paste0("post_sim_ichthyop-",last_release_year,".pbs"),
                       paste0("commands_post_simu-",last_release_year,".txt"))
-
+Names$output_2.4 <- "launch_jobs.sh"
 
 
 # delete outputs if RESET == T
@@ -84,11 +85,12 @@ Exist <- c()
 Exist$output_1 <- file.exists(file.path(output_path1, Names$output_1))
 Exist$output_2 <- file.exists(c(file.path(output_path2, Names$output_2.1),
                                 file.path(output_path2, Names$output_2.2),
-                                file.path(output_path2, Names$output_2.3)))
+                                file.path(output_path2, Names$output_2.3),
+                                file.path(output_path2, Names$output_2.4)))
 
 
 #' add the year to the sim_output_path (path where the Ichthyop output will be save on the cluster)
-sim_output_path <- file.path(sim_output_path, curr_prod, last_release_year)
+# sim_output_path <- file.path(sim_output_path, curr_prod, last_release_year)
 #' add the forcing product name to the sim_input_path
 sim_input_path <- file.path(sim_input_path, curr_prod)
 

@@ -69,9 +69,9 @@ generate.sim_name <- function(forcing,
 # indexes (vector): number of the sub-sampled cover points used                       #
 # coastal_cover (sf): cover points, after the ones associated with rivers were removed#
 # input_points (sf): points used as input in Ichthyop                                 #
-# count_cover (log): if T, take the "couvert column into account and return the nb of #
-#                          30x30m cells of forest                                     #
-#                    if F, return the number of points in the coastal cover (forest + #
+# count_cover (log): if T, take the "couvert" column into account and return the      #
+#                          surface of forest                                          #
+#                    if F, return the total surface in the coastal cover (forest +    #
 #                          non forest)                                                #
 #######################################################################################
 
@@ -115,16 +115,16 @@ get.nb.cover.per.input <- function(indexes, coastal_cover, input_points,
       stop("Error: the number of associated points is not the same than the number of points to initialy associate")
     }
     
-    # multiply by 9 because each point correspond to 9 30x30m cells
-    n_cover_per_points <- n_cover_per_points*9
+    # multiply by 8100 because each point correspond to 90x90m cells, hence cells of 8100m2
+    n_cover_per_points <- n_cover_per_points*8100
     
   } else if (count_cover == T){
     associated_input_point <- data.frame(cbind(point_to_which_add = input_points$id_curr[apply(dist_mat, 1, function(x) which(x == min(x)))],
-                                           n_points_to_add = sub_coastal_cover$couvert))
-    n_cover_per_points <- ddply(associated_input_point, "point_to_which_add", summarise, n = sum(n_points_to_add))$n
-    names(n_cover_per_points) <- ddply(associated_input_point, "point_to_which_add", summarise, n = sum(n_points_to_add))$point_to_which_add
+                                           surface_to_add_m2 = (sub_coastal_cover$couvert/100)*8100)) # /100 : from percentage to fraction; *8100: from number of cells to m2
+    n_cover_per_points <- ddply(associated_input_point, "point_to_which_add", summarise, n = sum(surface_to_add_m2))$n
+    names(n_cover_per_points) <- ddply(associated_input_point, "point_to_which_add", summarise, n = sum(surface_to_add_m2))$point_to_which_add
     
-    if (sum(n_cover_per_points) != sum(sub_coastal_cover$couvert)){
+    if (sum(n_cover_per_points) != sum(8100*sub_coastal_cover$couvert/100)){
       stop("Error: the number of associated COVER points is not the same than the number of points to initialy associate")
     }
   }

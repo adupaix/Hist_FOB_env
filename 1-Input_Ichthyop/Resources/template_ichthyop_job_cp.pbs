@@ -1,0 +1,30 @@
+#!/bin/bash
+#PBS -l mem=1g
+#PBS -l walltime=00:10:00
+# example of using 1node, i.e. 1*28 mpi procs 
+# cd to the directory you submitted your job
+cd $PBS_O_WORKDIR
+rm -rfv *.pbs.o*
+
+# copy the code to scratch
+cp -rf $HOME/ichthyop-private $SCRATCH
+
+# copy the mpi to scratch
+cp -rf $HOME/ichthyop-mpi $SCRATCH
+
+
+# create the sim_input_path folder
+mkdir -p [sim_input_path]
+
+# copy the forcing product to scratch
+cp -rf [path_where_the_forcing_product_is_stored]/[forcing-product]/*[year]*.nc [sim_input_path]
+
+# copy the forcing product mask to scratch
+cp -rf [path_where_the_forcing_product_is_stored]/[forcing-product]/*mask*.nc [sim_input_path]
+
+#copy the cfg files to scratch
+cp -rf [path_where_the_forcing_product_is_stored]/[forcing-product]/cfgs_[first_release_year]-[last_release_year] [sim_input_path]
+
+# move to scratch
+#cd $SCRATCH
+#rm -rfv *.log

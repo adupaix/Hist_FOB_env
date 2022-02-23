@@ -47,7 +47,7 @@ if (!Exists$weight){
     cat("Sub_directory", i, "/", length(sub_dirs), " - ",sub_dirs[i], "\n")
     
     #selecting only the points which are in the area of interest
-    input_in_IO <- nb_cover_per_input$id_curr[nb_cover_per_input$id_curr > (i-1) * n_points_per_dir & nb_cover_per_input$id_curr <= i * n_points_per_dir]
+    input_in_IO <- cover_surface_per_input$id_curr[cover_surface_per_input$id_curr > (i-1) * n_points_per_dir & cover_surface_per_input$id_curr <= i * n_points_per_dir]
     if (length(input_in_IO) != 0){
       
       input_in_IO <- formatC(input_in_IO, flag = "0", digits = 4)
@@ -95,26 +95,27 @@ if (!Exists$weight){
                                           point <- get.precipitations(precip, point)
                                           
                                           # get forest cover
-                                          point <- get.number.of.cover.points(nb_cover_per_input, point)
+                                          point <- get.cover.surface(cover_surface_per_input, point)
                                           
                                           # get rivers and associated discharge
-                                          point <- get.associated.rivers.and.precip(link_river_input, n_cover_per_river, embouchures, point, precip)
+                                          point <- get.associated.rivers.and.precip(link_river_input, cover_surface_per_river, embouchures, point, precip)
                                           
                                           # get river mouths and associated discharge + cover
                                           # point <- get.associated.rivers(link_river_input, n_cover_per_mouth, embouchures, point, mouth = T)
                                           
                                           if (any(!is.na(point$rivers))){
                                             if (round(point$nb_cover_points) != round(point$nb_coastal_cover_points +
-                                                                                      sum(unlist(lapply(point$rivers$data, function(x) sum(x$nb_river_cover_points)))))){
+                                                                                      sum(unlist(lapply(point$rivers$data, function(x) sum(x$river_cover_surface_m2)))))){
                                               stop("Error: total number of cover points does not correspond to sum of coastal and river associated points")
                                             }
                                           }
                                           
                                           #' get length of coastline associated with the point
-                                          point <- get.coastline.length(nb_cover_per_input, point)
+                                          point <- get.coastline.length(cover_surface_per_input, point)
                                           
                                           #' get weights (returns a vector with the weight for all the weighting methods)
                                           weights <- get.weights(point)
+                                          point$weights <- weights
                                           
                                           # fill in weight_per_points
                                           weight_per_point <- c(sub_dirs[i],

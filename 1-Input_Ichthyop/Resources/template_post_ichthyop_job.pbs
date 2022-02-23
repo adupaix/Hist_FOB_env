@@ -25,4 +25,4 @@ cp $HOME/ichth_to_rds.R ichth_to_rds.R
 conda activate r-ichthyop
 
 # run the simulation
-time $MPI_LAUNCH -np 168 ichthyop-mpi/ichthyopmpi $HOME/jobs/ichthyop/commands_post_simu.txt >& out.log
+time $MPI_LAUNCH -np 280 ichthyop-mpi/ichthyopmpi $HOME/jobs/ichthyop/commands_post_simu.txt >& out.log

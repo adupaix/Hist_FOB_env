@@ -69,7 +69,7 @@ input_method = "allMask" # one of c("onMask","kFromCoast", "allMask")
 #'             the closest point of the product mask                                
 #'
 dist = 1 # used if input_method == kFromCoast (distance from coast in degrees)
-curr_prod = "PHILIN12.L75" # one of c("PHILIN12.L75","oscar","nemo","globcurrent","nemo15m") # used if input_method == onMask ou allMask
+curr_prod = "nemo" # one of c("PHILIN12.L75","oscar","nemo","globcurrent","nemo15m") # used if input_method == onMask ou allMask
 
 #'
 #' Arguments to generate Ichthyop cfg files (only if input_method == allMask)
@@ -80,36 +80,58 @@ curr_prod = "PHILIN12.L75" # one of c("PHILIN12.L75","oscar","nemo","globcurrent
 #'
 #'## transport_duration (num): number of days that the particles are to be transported (in days)
 #'## first/last_release_date (chr): start and end dates of the Ichthyop simulations
-#'## release_frequency (num): frequency at which the particles are released (in days)
-#'## record_frequency (num): frequency at which the particles positions are to be save (in days)
+#'## release_period (num): period between two particles release (in days)
+#'## record_period (num): period between two savings of the particles positions (in days)
 #'
 #'## n_cfg_per_dir (num): number of cfg files to save per directory
 #'## n_pbs_jobs (num): number of pbs jobs to run on the cluster
+#'## ichthyop_version (chr): version of ichthyop to use in the cluster (X.Y.Z format)
 
 generate_xml = T
 
 # xml_template <- file.path(RESOURCE_PATH, "template_cfg.xml")
 
 # sim_input_path <- "/home/adupaix/Documents/ichthyop-private/input"
-sim_input_path <- "/home1/datawork/adupaix/input-ichthyop"
+#' @warning: 2022-02-02 - modification of the generate.jobs.pbs() function in Functions/2.1.write_xml.R
+#'                                 and of the Resource/template_ichthyop_job_cp.pbs
+#'                        Now the first job will copy the forcing products to the sim_input_path
+#'                        @but the files need to be stored in "path_where_the_forcing_product_is_stored/curr_prod/"
+#'                             their name must contain the year, and they should not be stored in the same folder as other product named with the samed format (*year*.nc)
+#' @warning: path should end by the folder name and not by a slash ("/"), or it could be a problem in the .pbs job
+sim_input_path <- "/home1/scratch/adupaix/input-ichthyop"
+path_where_the_forcing_product_is_stored <- "/home1/datawork/adupaix/input-ichthyop"
 # sim_output_path <- "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/2-Launch_Ichthyop_datarmor/ichthyop-output"
-sim_output_path <- "/home1/scratch/adupaix/ichthyop-output"
+sim_output_path <- "/home1/scratch/adupaix/output-ichthyop"
 
 
 #~ Arguments to generate the xml files
 transport_duration = 500 #in days
 
-first_release_year = 1989 # release from the first of December of the year preceding this year
-last_release_year = 1990 # to the 15th of January of the year after this year
-release_frequency = 2 # nb of release per month
-record_frequency = 1 #in days (interval between two recorded positions)
+first_release_year = 2018 #' release from transport_duration days before first_release_year-01-01
+                          #' For example, transport_duration = 500
+                          #'          and first_release_year = 2000
+                          #' the first release will be on the 1998-08-19
+last_release_year = 2018 #' The last release will be on January of the following year, depending on the release_period
+                         #' For example, if the first release was on 1998-08-19
+                         #'             and the release_period = 7 days
+                         #'             and last_release_year = 2000
+                         #'             then the last release date (L) will be 2001-01-03
+                         #'             L = 1998-08-19 + 7 * n, with n being the smallest number such that L is in 2001
+release_period = 7 # in days, (interval between two release)
+record_period = 1 #in days (interval between two recorded positions)
 
 n_cfg_per_dir = 28*10*4 # number of .xml file per directory
 
-#~ Arguments to generate the pbs jobs
-n_pbs_jobs = 3 #number of .pbs jobs to run in the cluster (to generate the command_list files)
-n_mpi = rep(10, n_pbs_jobs) #number of mpi asked in each jobs (between 1 and 20)
+#~ Arguments to generate the pbs jobs and the java command lines
+n_pbs_jobs = 19 #number of .pbs jobs to run in the cluster (to generate the command_list files)
+n_mpi = c(rep(8,2),
+          rep(7,2),
+          rep(6,3),
+          rep(5,3),
+          rep(4,4),
+          rep(3,5)) #number of mpi asked in each jobs (between 1 and 20)
 walltime = rep(20, n_pbs_jobs) #time asked for the jobs (in hours)
+ichthyop_version = "3.3.11" # X.Y.Z format
 
 
 #' ***************

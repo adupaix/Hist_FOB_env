@@ -103,6 +103,121 @@
         <default />
         <description>Name of some extra variables you wish to track during the simulation. It must exactly match the name of the corresponding variable in the hydrodynamic dataset. By default, the application records time, longitude, latitude, depth and mortality. For instance, if you wish to track temperature and salinity at particle location, you should type here the names of temperature and salinity variables as they are declared in the hydrodynamic dataset. E.g: "TEMP" "SALT". Some actions will also automatically tracks some additional variables: for instance Linear growth process will track particle length and particle biological stage ((as long as it is enabled, for sure). It will always be explicitly reminded in the description of each action.</description>
       </parameter>
+      <parameter>
+        <key>output.trajectory.enabled</key>
+        <long_name>True if trajectory maps should be saved</long_name>
+        <value>false</value>
+        <format>bool</format>
+        <default>true</default>
+        <description>True if trajectory maps should be output</description>
+     </parameter>
+     <parameter>
+       <key>output.density.enabled</key>
+       <long_name>True if density maps should be saved</long_name>
+       <value>true</value>
+       <format>bool</format>
+       <default>false</default>
+       <description>True if density maps should be output</description>
+     </parameter>
+     <parameter>
+       <key>output.density.latmin</key>
+       <long_name>Minimum latitudes</long_name>
+       <value>-40</value>
+       <format>float</format>
+       <default>-21.4</default>
+       <description>Minimum latitudes</description>
+     </parameter>
+     <parameter>
+       <key>output.density.latmax</key>
+       <long_name>maximum latitudes</long_name>
+       <value>40</value>
+       <format>float</format>
+       <default>-13.4</default>
+       <description>maximum latitudes</description>
+     </parameter>
+     <parameter>
+       <key>output.density.dlat</key>
+       <long_name>delta latitudes</long_name>
+       <value>1</value>
+       <format>float</format>
+       <default>0.4</default>
+       <description>delta latitudes</description>
+     </parameter>
+     <parameter>
+       <key>output.density.lonmin</key>
+       <long_name>Minimum longitudes</long_name>
+       <value>20</value>
+       <format>float</format>
+       <default>-43.0</default>
+       <description>Minimum longitudes</description>
+     </parameter>
+     <parameter>
+       <key>output.density.lonmax</key>
+       <long_name>maximum longitudes</long_name>
+       <value>140</value>
+       <format>float</format>
+       <default>-37.4</default>
+       <description>maximum longitudes</description>
+     </parameter>
+     <parameter>
+        <key>output.density.dlon</key>
+        <long_name>maximum longitudes</long_name>
+        <value>1</value>
+        <format>float</format>
+        <default>0.2</default>
+        <description>delta longitudes</description>
+    </parameter>
+     <parameter>
+        <key>netcdf_output_format</key>
+        <long_name>NetCDF output format</long_name>
+        <value>netcdf4</value>
+        <default>netcdf3</default>
+        <format>combo</format>
+        <accepted>ncstream</accepted>
+        <accepted>netcdf3</accepted>
+        <accepted>netcdf3_64bit_data</accepted>
+        <accepted>netcdf3_64bit_offset</accepted>
+        <accepted>netcdf4</accepted>
+        <accepted>netcdf4_classic</accepted>
+        <description>NetCDF output format</description>
+      </parameter>
+      <parameter>
+        <key>netcdf_output_compression</key>
+        <long_name>NetCDF Compression</long_name>
+        <value>9</value>
+        <default>0</default>
+        <format>combo</format>
+        <accepted>0</accepted>
+        <accepted>1</accepted>
+        <accepted>2</accepted>
+        <accepted>3</accepted>
+        <accepted>4</accepted>
+        <accepted>5</accepted>
+        <accepted>6</accepted>
+        <accepted>7</accepted>
+        <accepted>8</accepted>
+        <accepted>9</accepted>
+        <description>NetCDF deflate level</description>
+      </parameter>
+      <parameter>
+        <key>netcdf_output_compression_stragegy</key>
+        <long_name>NetCDF Compression strategy</long_name>
+        <value>grib</value>
+        <default>standard</default>
+        <format>combo</format>
+        <accepted>none</accepted>
+        <accepted>standard</accepted>
+        <accepted>grib</accepted>
+        <description>NetCDF compression strategy</description>
+      </parameter>
+      <parameter>
+        <key>netcdf_output_shuffle</key>
+        <long_name>NetCDF compression shuffle activated</long_name>
+        <value>true</value>
+        <default>false</default>
+        <format>boolean</format>
+        <description>NetCDF compression shuffle activated</description>
+      </parameter>
     </parameters>
   </block>
   <block type="dataset">
@@ -121,7 +236,7 @@
       <parameter>
         <key>skip_sorting</key>
         <long_name>Skip NetCDF file sorting</long_name>
-        <value>false</value>
+        <value>true</value>
         <default>false</default>
         <format>boolean</format>
         <description>Ichthyop chronologically sorts the list of NetCDF input files by comparing the first value of the time variable of each file. Depending on the number of files, the speed for accessing and reading the files, the sorting might take very long time at simulation setup. If the files are already chronologically sorted thanks to their names, you should skip the sorting to increase performance.</description>

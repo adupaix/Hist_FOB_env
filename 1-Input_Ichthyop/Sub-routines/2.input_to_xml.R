@@ -21,22 +21,16 @@ if (!all(Exist$output_2)){
                        max = n_iter,
                        style = 3)
   
-  # generate the initial times from the start/end dates and the frequency
-  yrs = seq(first_release_year, last_release_year)
-  mths = 1:12
-  dys = seq(1, 30-30/release_frequency, length.out = release_frequency)
+  # generate the initial times from the start/end dates, the release_period and the transport_duration
+  start <- as.Date(paste0(first_release_year, "-01-01")) - as.difftime(transport_duration, units = "days") # start transport_duration before 01-01-first_release_year
+  end <- seq(as.Date(paste0(last_release_year+1, "-01-01")),
+            as.Date(paste0(last_release_year+1, "-01-01"))+as.difftime(release_period, units = "days"),
+            as.difftime(1, units = "days")) # get all the release_period first days of the year following the last_release_year
+  end <- end[min(which(as.numeric(end-start) %% release_period == 0))] # select the one that is n times release_period after start
   
-  initial_time <- c(as.Date(paste(rep(first_release_year-1,2), # December of the year before the first year of interest
-                                           rep("12",2),
-                                           c("01","15"),sep = "-")),
-                    as.Date(paste(rep(yrs, each = length(mths)*length(dys)), # release_frequency times per month in the years of interest
-                                           rep(mths, length(yrs), each = length(dys)),
-                                           rep(dys, length(mths)*length(yrs)),
-                                           sep = "-")),
-                    as.Date(paste(rep(last_release_year+1,2), # January of the year after the last year of interest
-                                           rep("01",2),
-                                           c("01","15"),sep = "-"))
-                     )
+  initial_time <- seq(start, end,
+                      as.difftime(release_period, units = "days"))
+  
   
   #~ Read the xml template file
   tplate <- scan(Template$xml, what = "", sep = "\n", quiet = T)
@@ -66,7 +60,7 @@ if (!all(Exist$output_2)){
                     tplate,
                     sim_input_path,
                     sim_output_path,
-                    record_frequency,
+                    record_period,
                     dir_name.i,
                     i_chr,
                     
@@ -103,7 +97,7 @@ if (!all(Exist$output_2)){
                   tplate,
                   sim_input_path,
                   sim_output_path,
-                  record_frequency,
+                  record_period,
                   dir_name.i,
                   i_chr,
                   
@@ -119,12 +113,16 @@ if (!all(Exist$output_2)){
   
   #'@2 Generate command lists and pbs jobs
   
-  generate.command.list(sim_input_path, output_path2, cfg_dir, n_pbs_jobs)
+  generate.command.list(sim_input_path, output_path2, cfg_dir, n_pbs_jobs, n_mpi, ichthyop_version)
   
-  generate.jobs.pbs(Template$pbs, sim_input_path, output_path2, cfg_dir, last_release_year,
-                    n_pbs_jobs, n_mpi, walltime)
+  generate.jobs.pbs(Template, sim_input_path, output_path2, cfg_dir,
+                    n_pbs_jobs, n_mpi, walltime, curr_prod, initial_time, transport_duration,
+                    path_where_the_forcing_product_is_stored,
+                    first_release_year, last_release_year)
   
-  generate.post.ichthyop(Template$pbs_post, output_path2, last_release_year)
+  generate.post.ichthyop(Template$pbs_post, output_path2, last_release_year, sim_output_path)
+  
+  generate.sh.launch.jobs(output_path2, last_release_year, n_pbs_jobs)
 
 
 } else {
