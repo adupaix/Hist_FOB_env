@@ -95,7 +95,7 @@ if (!Exists$weight){
                                           point <- get.precipitations(precip, point)
                                           
                                           # get forest cover
-                                          point <- get.number.of.cover.points(cover_surface_per_input, point)
+                                          point <- get.cover.surface(cover_surface_per_input, point)
                                           
                                           # get rivers and associated discharge
                                           point <- get.associated.rivers.and.precip(link_river_input, cover_surface_per_river, embouchures, point, precip)
@@ -115,6 +115,7 @@ if (!Exists$weight){
                                           
                                           #' get weights (returns a vector with the weight for all the weighting methods)
                                           weights <- get.weights(point)
+                                          point$weights <- weights
                                           
                                           # fill in weight_per_points
                                           weight_per_point <- c(sub_dirs[i],

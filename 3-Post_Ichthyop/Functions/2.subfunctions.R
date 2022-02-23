@@ -123,8 +123,7 @@ get.associated.rivers.and.precip <- function(link_river_input,
       
       
       # get the number of cover points associated with each river segment
-      data %>% left_join(n_cover_per_river, by = c("HYRIV_ID","MAIN_RIV")) %>%
-        mutate(cover_surface = nb_river_cover_points * 900 / 10^6) -> data
+      data %>% left_join(n_cover, by = c("HYRIV_ID","MAIN_RIV")) -> data
       
       point$rivers$data[[i]] <- data
       
@@ -144,15 +143,11 @@ get.associated.rivers.and.precip <- function(link_river_input,
 #'***************
 #' get the number of forest cover points associated with the input point
 #' forest_surface is in m2
-get.number.of.cover.points <- function(link_table, point){
+get.cover.surface <- function(link_table, point){
   
-  point$nb_coastal_cover_points <- link_table$nb_coastal_cover_points[link_table$id_curr == as.numeric(point$id)]
+  point$coastal_cover_surface_m2 <- link_table$coastal_cover_surface_m2[link_table$id_curr == as.numeric(point$id)]
   
-  point$coastal_cover_surface <- point$nb_coastal_cover_points * 900/10^6
-  
-  point$nb_cover_points <- link_table$nb_cover_points[link_table$id_curr == as.numeric(point$id)]
-  
-  point$forest_surface <- point$nb_cover_points * 900 / 10^6
+  point$total_cover_surface_m2 <- link_table$total_cover_surface_m2[link_table$id_curr == as.numeric(point$id)]
   
   return(point)
 }
@@ -163,7 +158,7 @@ get.number.of.cover.points <- function(link_table, point){
 #' get the length of coastline associated with the point
 get.coastline.length <- function(link_table, point){
   
-  point$coastline_length <- link_table$nb_coastal_points[link_table$id_curr == as.numeric(point$id)]
+  point$coastal_surface_m2 <- link_table$coastal_surface_m2[link_table$id_curr == as.numeric(point$id)]
   
   return(point)
   
@@ -178,55 +173,55 @@ get.weights <- function(point){
   #' method 1 : don't apply any weight
   w1 <- 1
   
-  #' method 2: apply a weight depending on the associated length of coastline
+  #' method 2: apply a weight depending on the associated surface of coastline buffer (in m2)
   #' True homogeneous release on the coast
-  w2 <- point$coastline_length
+  w2 <- point$coastal_surface_m2
   
-  #' method 3: apply a weight depending on the coastal area covered by forest
+  #' method 3: apply a weight depending on the coastal area covered by forest (in m2)
   #' take the total forest surface and substract the forest surface associated with
   #' river segments (others than the river mouth)
-  w3 <- point$forest_surface
+  w3 <- point$total_cover_surface_m2
   if (!is.na(point$rivers)){
-    w3 <- w3 - sum(unlist(lapply(point$rivers$data, function(x) x$cover_surface[x$HYRIV_ID != x$MAIN_RIV])))
+    w3 <- w3 - sum(unlist(lapply(point$rivers$data, function(x) x$river_cover_surface_m2[x$HYRIV_ID != x$MAIN_RIV])))
   }
   
   
   #' method 4: apply a weight depending on the area covered by forest in the river basins multiplied by the river discharge (at each river segment)
   #' @modif: normaliser le debit (sinon w5 ~ w4) OU prendre en compte les unites ?
   if (!is.na(point$rivers)){
-    w4 <- sum(unlist(lapply(lapply(point$rivers$data, function(x) x$dis_m3_pyr * x$cover_surface), sum)))
+    w4 <- sum(unlist(lapply(lapply(point$rivers$data, function(x) x$dis_m3_pyr * x$river_cover_surface_m2), sum)))
   } else {
     w4 <- 0
   }
   
   #' method 5: apply a weight depending on the total surface of cover associated with the input point
-  w5 <- point$coastal_cover_surface + w4
+  w5 <- point$coastal_cover_surface_m2 + w4
   
   #' method 6: apply a weight depending on the coastal cover multiplied by the precipitations at the release point (and at the river mouths)
   #' @modif?
-  w6 <- point$coastal_cover_surface * point$precip
+  w6 <- point$coastal_cover_surface_m2 * point$precip
   if (!is.na(point$rivers)){
     w6 <- w6 + 
       sum(unlist(lapply(point$rivers$data, function(x){
         x2 <- x %>% filter(HYRIV_ID == x$MAIN_RIV)
-        return(x2$cover_surface * x2$precip)
+        return(x2$river_cover_surface_m2 * x2$precip)
       })))
   }
   
   
   #' method 7: apply a weight depending on the river cover multiplied by the precipitations at each river segments
   if (!is.na(point$rivers)){
-    w7 <- sum(unlist(lapply(lapply(point$rivers$data, function(x) x$dis_m3_pyr * x$cover_surface * x$precip), sum)))
+    w7 <- sum(unlist(lapply(lapply(point$rivers$data, function(x) x$dis_m3_pyr * x$river_cover_surface_m2 * x$precip), sum)))
   } else {
     w7 <- 0
   }
   
   #' method 8 : apply a weight depending on the total cover associated with the release point multiplied by the precipitations
-  w8 <- point$coastal_cover_surface * point$precip + w7
+  w8 <- point$coastal_cover_surface_m2 * point$precip + w7
   
   #' method 9: apply a weight depending on the total cover associated with the release point
   #' @not_to_be_used_in_the_study
-  w9 <- point$forest_surface
+  w9 <- point$total_cover_surface_m2
   
   #' object point is also in the function env (hence the -1)
   n_methods <- length(ls())-1

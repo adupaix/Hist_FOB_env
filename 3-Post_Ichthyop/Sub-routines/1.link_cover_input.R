@@ -499,15 +499,15 @@ if(!file.exists(fname)){
               .groups = "keep") %>%
     # left_join(y = mouth_cover_summary, by = "id_curr") %>%
     left_join(y = input_points, by = "id_curr") %>%
-    dplyr::mutate(nb_cover_points = river_cover_surface_m2 + nb_coastal_cover_points) %>%
+    dplyr::mutate(total_cover_surface_m2 = river_cover_surface_m2 + coastal_cover_surface_m2) %>%
     # dplyr::mutate(nb_cover_points = nb_mouth_cover_points + river_cover_surface_m2 + nb_coastal_cover_points) %>%
     dplyr::select(id_curr, x, y,
                   river_cover_surface_m2,
                   # MAIN_RIV, HYRIV_ID,
                   # nb_mouth_cover_points,
-                  nb_coastal_cover_points,
-                  nb_cover_points,
-                  nb_coastal_points) %>%
+                  coastal_cover_surface_m2,
+                  total_cover_surface_m2,
+                  coastal_surface_m2) %>%
     filter(!is.na(id_curr)) -> cover_surface_per_input
 
   write.csv(cover_surface_per_input,
