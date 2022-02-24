@@ -134,7 +134,7 @@ generate.command.list <- function(sim_input_path, cfg_path, cfg_dir, n_pbs_jobs,
   
   n_per_job <- c(1,
                  cumsum(round(l * n_mpi / sum(n_mpi))))
-  n_per_job[length(n_per_job)] <- l
+  n_per_job[length(n_per_job)] <- l+1
   
   for (i in 1:n_pbs_jobs){
     indexes = n_per_job[i]:(n_per_job[i+1]-1)
