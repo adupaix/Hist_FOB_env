@@ -250,8 +250,8 @@ fname <- file.path(output_paths[1], "input_point_with_cover_and_coast_nb.txt")
 
 if(!file.exists(fname)){
   
-  # add a column to keep the number of coastal points (ie the length of the coast associated with the input point)
-  input_points$nb_coastal_points <- 0
+  # add a column to save the surface of coastal buffer
+  input_points$coastal_surface_m2 <- 0
   
   #' Define the frame of study (same as the one used to generate the input points)
   # IO <- st_sf(data.frame("IO"),
