@@ -48,14 +48,19 @@ write.cfg.xml <- function(initial_time,
   
   value <- list(paste0(formatC(transport_duration, width = 4, flag = "0"),
                        " day\\(s\\) 00 hour\\(s\\) 00 minute\\(s\\)"),
-                #' sample is used to shuffle the release dates. Because a lot of simulations will run at the same time, if the release dates
-                #' are ordered, all simulations will read the same forcing product more or less at the same time. Shuffling the release dates
-                #' should allow to gain time
-                sample(paste0("year ",year(initial_time),
-                              " month ",formatC(month(initial_time), width = 2, flag = "0"),
-                              " day ",formatC(day(initial_time), width = 2, flag = "0"),
-                              " at ",formatC(hour(initial_time), width = 2, flag = "0"),
-                              ":",formatC(minute(initial_time), width = 2, flag = "0"))),
+                #' #' sample is used to shuffle the release dates. Because a lot of simulations will run at the same time, if the release dates
+                #' #' are ordered, all simulations will read the same forcing product more or less at the same time. Shuffling the release dates
+                #' #' should allow to gain time
+                #' sample(paste0("year ",year(initial_time),
+                #'               " month ",formatC(month(initial_time), width = 2, flag = "0"),
+                #'               " day ",formatC(day(initial_time), width = 2, flag = "0"),
+                #'               " at ",formatC(hour(initial_time), width = 2, flag = "0"),
+                #'               ":",formatC(minute(initial_time), width = 2, flag = "0"))),
+                paste0("year ",year(initial_time),
+                       " month ",formatC(month(initial_time), width = 2, flag = "0"),
+                       " day ",formatC(day(initial_time), width = 2, flag = "0"),
+                       " at ",formatC(hour(initial_time), width = 2, flag = "0"),
+                       ":",formatC(minute(initial_time), width = 2, flag = "0")),
                 sim_input_path,
                 file.path(sim_output_path, paste0("points_", i_chr), nb),
                 long,

@@ -30,7 +30,8 @@ if (!all(Exist$output_2)){
   
   initial_time <- seq(start, end,
                       as.difftime(release_period, units = "days"))
-  
+  write(as.character(initial_time),
+        file.path(output_path2, "release_dates.txt"))
   
   #~ Read the xml template file
   tplate <- scan(Template$xml, what = "", sep = "\n", quiet = T)
