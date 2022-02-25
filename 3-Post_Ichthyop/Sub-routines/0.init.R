@@ -47,6 +47,9 @@ dir.create(output_paths[4], recursive = T, showWarnings = F)
 sim_output_path <- file.path(DATA_PATH, "Output_Ichthyop", sim_name, year)
 sim_input_path <- file.path(DATA_PATH, "Input_Ichthyop", paste0(input_location, "_nlog_input_", forcing, "_", input_method))
 
+#get the release dates and associated years
+release_dates <- read.delim(file.path(sim_input_path, paste0("cfgs_",year[1],"-",year[length(year)]), "release_dates.txt"))
+release_years <- unique(lubridate::year(as.Date(release_dates[,1])))
 
 # If RESET is T, delete all the output files
 if (RESET[1]){
@@ -104,9 +107,10 @@ n_weight_methods <- dim(weight_informations)[1]
 Names <- list()
 #'       Sub-routine 1
 Names$log1 <- file.path(output_paths[1], "log.txt")
-Names$coverRiver <- file.path(output_paths[1], "n_cover_per_river.csv")
-Names$coverMouth <- file.path(output_paths[1], "n_cover_per_mouth.csv")
-Names$coverGlobal <- file.path(output_paths[1], "number_of_cover_points_per_input_point.csv")
+Names$coverRiver <- file.path(output_paths[1], paste0("cover_surface_per_river_",release_years[-length(release_years)],".csv"))
+# Names$coverMouth <- file.path(output_paths[1], paste0("n_cover_per_mouth_",release_years[-length(release_years)],".csv"))
+Names$coverGlobal <- file.path(output_paths[1], paste0("cover_surface_per_input_point_",release_years[-length(release_years)],".csv"))
+Names$coastalSurface <- file.path(output_paths[1], "coastal_surface_per_input_point.csv")
 #'       Sub-routine 2
 Names$log2 <- file.path(output_paths[2], "log.txt")
 Names$weightInput <- c(file.path(output_paths[2], "weight_per_points_summary.csv"),
@@ -135,6 +139,7 @@ rm(output_path_3_more)
 # Logical to know if output files exist
 Exists <- list()
 Exists$cover <- all(file.exists(c(Names$coverGlobal, Names$coverRiver)))
+Exists$coastalSurface <- file.exists(Names$coastalSurface)
 Exists$weight <- all(file.exists(Names$weightInput))
 Exists$log3 <- file.exists(Names$log3)
 Exists$globArray <- file.exists(Names$globArray)
@@ -205,6 +210,5 @@ if (!Exists$cover | !Exists$weight){
   
   st_drop_geometry(rivers_filtered) %>%
     dplyr::select(MAIN_RIV, HYRIV_ID) -> link_HYRIV_MAINRIV
-  
 }
 
