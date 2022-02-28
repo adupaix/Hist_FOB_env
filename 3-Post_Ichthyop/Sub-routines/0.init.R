@@ -107,9 +107,9 @@ n_weight_methods <- dim(weight_informations)[1]
 Names <- list()
 #'       Sub-routine 1
 Names$log1 <- file.path(output_paths[1], "log.txt")
-Names$coverRiver <- file.path(output_paths[1], paste0("cover_surface_per_river_",release_years[-length(release_years)],".csv"))
+Names$coverRiver <- file.path(output_paths[1], "cover_surface_per_river.csv")
 # Names$coverMouth <- file.path(output_paths[1], paste0("n_cover_per_mouth_",release_years[-length(release_years)],".csv"))
-Names$coverGlobal <- file.path(output_paths[1], paste0("cover_surface_per_input_point_",release_years[-length(release_years)],".csv"))
+Names$coverGlobal <- file.path(output_paths[1], "cover_surface_per_input_point.csv")
 Names$coastalSurface <- file.path(output_paths[1], "coastal_surface_per_input_point.csv")
 #'       Sub-routine 2
 Names$log2 <- file.path(output_paths[2], "log.txt")
