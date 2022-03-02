@@ -2,7 +2,7 @@
 
 Scripts to perform simulations of natural floating objects (NLOGs) distributions from 1990 to 2020
 
-The study uses __Ichthyop__ (available here: [website](www.ichthyop.org) ; [github](https://github.com/ichthyop/ichthyop)) and the __Ichthyop mpi wrapper__ (available here: [github](https://github.com/ichthyop/ichthyop-mpi))
+The study uses __Ichthyop__ (available here: [website](https://www.ichthyop.org) ; [github](https://github.com/ichthyop/ichthyop)) and the __Ichthyop mpi wrapper__ (available here: [github](https://github.com/ichthyop/ichthyop-mpi))
 
 ## `0-Generate_river_shp`
 

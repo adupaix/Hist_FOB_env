@@ -48,14 +48,19 @@ write.cfg.xml <- function(initial_time,
   
   value <- list(paste0(formatC(transport_duration, width = 4, flag = "0"),
                        " day\\(s\\) 00 hour\\(s\\) 00 minute\\(s\\)"),
-                #' sample is used to shuffle the release dates. Because a lot of simulations will run at the same time, if the release dates
-                #' are ordered, all simulations will read the same forcing product more or less at the same time. Shuffling the release dates
-                #' should allow to gain time
-                sample(paste0("year ",year(initial_time),
-                              " month ",formatC(month(initial_time), width = 2, flag = "0"),
-                              " day ",formatC(day(initial_time), width = 2, flag = "0"),
-                              " at ",formatC(hour(initial_time), width = 2, flag = "0"),
-                              ":",formatC(minute(initial_time), width = 2, flag = "0"))),
+                #' #' sample is used to shuffle the release dates. Because a lot of simulations will run at the same time, if the release dates
+                #' #' are ordered, all simulations will read the same forcing product more or less at the same time. Shuffling the release dates
+                #' #' should allow to gain time
+                #' sample(paste0("year ",year(initial_time),
+                #'               " month ",formatC(month(initial_time), width = 2, flag = "0"),
+                #'               " day ",formatC(day(initial_time), width = 2, flag = "0"),
+                #'               " at ",formatC(hour(initial_time), width = 2, flag = "0"),
+                #'               ":",formatC(minute(initial_time), width = 2, flag = "0"))),
+                paste0("year ",year(initial_time),
+                       " month ",formatC(month(initial_time), width = 2, flag = "0"),
+                       " day ",formatC(day(initial_time), width = 2, flag = "0"),
+                       " at ",formatC(hour(initial_time), width = 2, flag = "0"),
+                       ":",formatC(minute(initial_time), width = 2, flag = "0")),
                 sim_input_path,
                 file.path(sim_output_path, paste0("points_", i_chr), nb),
                 long,
@@ -134,7 +139,7 @@ generate.command.list <- function(sim_input_path, cfg_path, cfg_dir, n_pbs_jobs,
   
   n_per_job <- c(1,
                  cumsum(round(l * n_mpi / sum(n_mpi))))
-  n_per_job[length(n_per_job)] <- l
+  n_per_job[length(n_per_job)] <- l+1
   
   for (i in 1:n_pbs_jobs){
     indexes = n_per_job[i]:(n_per_job[i+1]-1)

@@ -103,7 +103,7 @@ get.nb.cover.per.input <- function(indexes, coastal_cover, input_points,
   dist_mat <- sqrt((x_cover - x_input)^2 + (y_cover - y_input)^2)
   
   n_closest_points <- unlist(lapply(apply(dist_mat, 1, function(x) which(x == min(x))), function(x) length(x)))
-  if (any(n_closest_points != 1)){
+  if (any(n_closest_points > 1)){
     stop("Error: some cover points are at the exact same distance from two input points")
   }
   

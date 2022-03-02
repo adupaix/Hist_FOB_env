@@ -35,36 +35,52 @@ if (!Exists$weight){
     dir.create(file.path(output_paths[2], sub_dirs[i]), recursive = T, showWarnings = F)
     
     #' get all the names of the rds files in the sub directory
-    rds_files <- list.files(file.path(sim_output_path, sub_dirs[i]), recursive = T, pattern = ".rds")
+    dens_files <- list.files(file.path(sim_output_path, sub_dirs[i]), recursive = T, pattern = "density.nc")
     
     #'@!!! uncomment for script testing
-    # rds_files <- rds_files[1:480]
-      
-    #'@arguments
-    #'**********
-      
+    # dens_files <- dens_files[1:480]
+    
     cat(lines.to.cat)
     cat("Sub_directory", i, "/", length(sub_dirs), " - ",sub_dirs[i], "\n")
+    cat("Getting release dates from .nc files\n")
+    
+    #' get release dates
+    #' and rename the ichthyop outputs so that they contain the date
+    release_dates <- rep(as.Date("1900-01-01"), length(dens_files))
+    for (k in 1:length(dens_files)){
+      dens_nc <- open.nc(file.path(sim_output_path, sub_dirs[i], dens_files[k]))
+      release_dates[k] <- release_dates[k] + min(as.difftime(var.get.nc(dens_nc, "time"), units = "secs"), na.rm = T)
+      close.nc(dens_nc)
+      
+      file.rename(from = file.path(sim_output_path, sub_dirs[i], dens_files[k]),
+                  to = file.path(sim_output_path, sub_dirs[i], sub("density.nc", paste0("density_", release_dates[k],".nc"), dens_files[k])))
+    }
+    
+    #' update the names of the rds files in the sub directory
+    dens_files <- list.files(file.path(sim_output_path, sub_dirs[i]), recursive = T, pattern = ".nc")
     
     #selecting only the points which are in the area of interest
-    input_in_IO <- cover_surface_per_input$id_curr[cover_surface_per_input$id_curr > (i-1) * n_points_per_dir & cover_surface_per_input$id_curr <= i * n_points_per_dir]
-    if (length(input_in_IO) != 0){
+    # input_in_IO <- cover_surface_per_input$id_curr[(cover_surface_per_input$id_curr > (i-1) * n_points_per_dir) & (cover_surface_per_input$id_curr <= i * n_points_per_dir)]
+    # input_in_IO <- unique(input_in_IO)
+    # if (length(input_in_IO) != 0){
+    #   
+    #   input_in_IO <- formatC(input_in_IO, flag = "0", digits = 4)
+    #   dens_files <- grep(pattern = paste(input_in_IO, collapse = "|"),
+    #                     x = dens_files,
+    #                     value = T)
       
-      input_in_IO <- formatC(input_in_IO, flag = "0", digits = 4)
-      rds_files <- grep(pattern = paste(input_in_IO, collapse = "|"),
-                        x = rds_files,
-                        value = T)
-      
+    cat("Getting information on input points\n")
+    
       # set cluster for parallel run, and initialize progress bar
       cl <- makeCluster(nb_cores)
       registerDoSNOW(cl)
-      pb <- txtProgressBar(max = length(rds_files), style = 3)
+      pb <- txtProgressBar(max = length(dens_files), style = 3)
       progress <- function(n) setTxtProgressBar(pb, n)
       opts <- list(progress = progress)
       
       #' for each rds file (each rds file contains the density matrices
       #' associated with a release at 1 release date from 1 release point)
-      weight_per_points[[i]] <- foreach(k = 1:length(rds_files),
+      weight_per_points[[i]] <- foreach(k = 1:length(dens_files),
                                         .combine = rbind,
                                         .packages = srcUsedPackages,
                                         .options.snow = opts) %dopar% {
@@ -76,10 +92,10 @@ if (!Exists$weight){
                                           point <- list()
                                           
                                           #' get the id from the file name
-                                          point$id <- sub("/.*","",rds_files[k])
+                                          point$id <- sub("/.*","",dens_files[k])
                                           
                                           #' keep the file name
-                                          fname <- sub(".*/","",rds_files[k])
+                                          fname <- sub(".*/","",dens_files[k])
                                           
                                           #'@get_information_on_release_point
                                           #'***********************************
@@ -89,7 +105,7 @@ if (!Exists$weight){
                                                                       point)
                                           
                                           # get release date
-                                          point$release_date <- as.Date(sub("\\..*", "", sub(".*_", "", fname)))
+                                          point$release_date <- release_dates[k]
                                           
                                           # get precipitations
                                           point <- get.precipitations(precip, point)
@@ -146,7 +162,7 @@ if (!Exists$weight){
       weight_per_points[[i]] <- as.data.frame(weight_per_points[[i]])
       names(weight_per_points[[i]]) <- c("sub_dir", "point_id", "release_date", paste0("w", 1:n_weight_methods))
       
-    }
+    # }
     
   }
     
@@ -163,7 +179,7 @@ if (!Exists$weight){
     #'     column 1: sub_dir names where the release point is saved into
     #'     column 2: point_id
     #'     following columns: for each release date, the weight associated with each release point
-    weight_per_points %>% select(-(grep(i, wmethods, value = T, invert = T))) %>%
+    weight_per_points %>% dplyr::select(-(grep(i, wmethods, value = T, invert = T))) %>%
       tidyr::spread(release_date, paste0("w", i)) -> weight_per_points_matrix
     
     #' save the matrix with the weight_method number in the name

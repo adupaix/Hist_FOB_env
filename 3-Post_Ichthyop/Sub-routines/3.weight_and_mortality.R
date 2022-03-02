@@ -75,7 +75,16 @@ if(!Exists$log3){
                          .packages = srcUsedPackages,
                          .options.snow = opts) %dopar% {
                            
-                           array.k <- readRDS(file.path(sim_output_path, sub_dirs[k], points_id[k], paste0(points_id[k], "_", release_date.i, ".rds")))
+                           dens_files <- list.files(file.path(sim_output_path, sub_dirs[k], points_id[k]))
+                           nc_file_name.k <- grep(release_date.i, dens_files, value = T)
+                           
+                           nc.k <- open.nc(file.path(sim_output_path, sub_dirs[k], points_id[k], nc_file_name.k))
+                           t <- var.get.nc(nc.k, "time")
+                           t <- t[which(!is.na(t))]
+                           array.k <- var.get.nc(nc.k, "density")[,,which(!is.na(var.get.nc(nc.k, "time")))]
+                           close.nc(nc.k)
+                           # array.k <- readRDS(file.path(sim_output_path, sub_dirs[k], points_id[k], paste0(points_id[k], "_", release_date.i, ".rds")))
+                           dimnames(array.k)[[3]] <- t
                            
                            array.k <- array.k * weight.i[k]
                            
@@ -87,6 +96,9 @@ if(!Exists$log3){
       close(pb)
       stopCluster(cl)
       registerDoSEQ()
+      
+      #' transform the dates in dimnames back to date format
+      dimnames(array.i)[[3]] <- as.character(as.difftime(as.numeric(dimnames(array.i)[[3]]), units = "secs") + as.Date("1900-01-01"))
       
       #' apply mortality
       array.i <- apply.mortality(array.i, ltime, ltime_method, ltime_sd)
