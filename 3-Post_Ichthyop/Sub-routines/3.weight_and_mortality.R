@@ -75,9 +75,10 @@ if(!Exists$log3){
                          .packages = srcUsedPackages,
                          .options.snow = opts) %dopar% {
                            
-                           nc_file_name.k <- grep(release_date.i, dens_files[grep(points_id[k], dens_files)], value = T)
+                           dens_files <- list.files(file.path(sim_output_path, sub_dirs[k], points_id[k]))
+                           nc_file_name.k <- grep(release_date.i, dens_files, value = T)
                            
-                           nc.k <- open.nc(file.path(sim_output_path, sub_dirs[k], nc_file_name.k))
+                           nc.k <- open.nc(file.path(sim_output_path, sub_dirs[k], points_id[k], nc_file_name.k))
                            t <- var.get.nc(nc.k, "time")
                            t <- t[which(!is.na(t))]
                            array.k <- var.get.nc(nc.k, "density")[,,which(!is.na(var.get.nc(nc.k, "time")))]
