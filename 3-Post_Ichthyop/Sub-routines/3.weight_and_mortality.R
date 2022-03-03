@@ -35,6 +35,8 @@ if(!Exists$log3){
   
   if(any(is.na(input_to_keep))){
     stop("Error: some points don't have any associated weight")
+  } else if (all(input_to_keep) == F){
+    stop("Error: no point has any non null weight")
   }
   
   weight_per_points_matrix <- weight_per_points_matrix[input_to_keep,]
