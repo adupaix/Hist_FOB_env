@@ -45,6 +45,9 @@ Parallel = c(T, 1/2)
 #'  each element of RESET concerns the outputs obtained from the corresponding sub-routine (1 to 4)
 RESET = c(F,F,F,F)
 
+#' @cluster (log): script running on the cluster ?
+#'  allows to choose if foreach loops will be run in parallel (F) or not (T)
+cluster = T
 
 #' Arguments on the current study
 #' ******************************
@@ -110,6 +113,9 @@ year = 2000
 #'## @n_points_per_dir (num): number of simulations saved in each sub-directory of Ichthyop output
 n_points_per_dir = 28*8*5
 
+#'## @sim_output_path (chr): path to the directory where the Ichthyop outputs are stored
+#'                           if sim_output_path = "", it is automatically set to file.path(DATA_PATH, "Output_Ichthyop", sim_name, year)
+sim_output_path = ""
 
 #' Arguments used for the ggplot:
 #'******************************
