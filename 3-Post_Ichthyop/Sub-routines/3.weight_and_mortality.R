@@ -64,40 +64,67 @@ if(!Exists$log3){
       # get the weights associated with each release points at the given date
       weight.i <- as.numeric(as.character(weight_per_points_matrix[,i]))
       
-      # set cluster for parallel run, and initialize progress bar
-      cl <- makeCluster(nb_cores)
-      registerDoSNOW(cl)
-      pb <- txtProgressBar(max = length(points_id), style = 3)
-      progress <- function(n) setTxtProgressBar(pb, n)
-      opts <- list(progress = progress)
-      
-      #' read, weight and sum all the arrays for the release date i
-      array.i <- foreach(k = 1:length(points_id),
-                         .combine = f.for.combining,
-                         .packages = srcUsedPackages,
-                         .options.snow = opts) %dopar% {
-                           
-                           dens_files <- list.files(file.path(sim_output_path, sub_dirs[k], points_id[k]))
-                           nc_file_name.k <- grep(release_date.i, dens_files, value = T)
-                           
-                           nc.k <- open.nc(file.path(sim_output_path, sub_dirs[k], points_id[k], nc_file_name.k))
-                           t <- var.get.nc(nc.k, "time")
-                           t <- t[which(!is.na(t))]
-                           array.k <- var.get.nc(nc.k, "density")[,,which(!is.na(var.get.nc(nc.k, "time")))]
-                           close.nc(nc.k)
-                           # array.k <- readRDS(file.path(sim_output_path, sub_dirs[k], points_id[k], paste0(points_id[k], "_", release_date.i, ".rds")))
-                           dimnames(array.k)[[3]] <- t
-                           
-                           array.k <- array.k * weight.i[k]
-                           
-                           array.k
-                           
-                         }
-      
-      #' stop parallel and close progress bar
-      close(pb)
-      stopCluster(cl)
-      registerDoSEQ()
+      if (!cluster){
+        # set cluster for parallel run, and initialize progress bar
+        cl <- makeCluster(nb_cores)
+        registerDoSNOW(cl)
+        pb <- txtProgressBar(max = length(points_id), style = 3)
+        progress <- function(n) setTxtProgressBar(pb, n)
+        opts <- list(progress = progress)
+        
+        #' read, weight and sum all the arrays for the release date i
+        array.i <- foreach(k = 1:length(points_id),
+                           .combine = f.for.combining,
+                           .packages = srcUsedPackages,
+                           .options.snow = opts) %dopar% {
+                             
+                             dens_files <- list.files(file.path(sim_output_path, sub_dirs[k], points_id[k]))
+                             nc_file_name.k <- grep(release_date.i, dens_files, value = T)
+                             
+                             nc.k <- ncdf4::nc_open(file.path(sim_output_path, sub_dirs[k], points_id[k], nc_file_name.k))
+                             t <- ncdf4::ncvar_get(nc.k, varid = "time")
+                             time_to_keep <- which(!is.na(t) & t<10^30)
+                             t <- t[time_to_keep]
+                             array.k <- ncdf4::ncvar_get(nc.k, varid = "density")[,,time_to_keep]
+                             ncdf4::nc_close(nc.k)
+                             # array.k <- readRDS(file.path(sim_output_path, sub_dirs[k], points_id[k], paste0(points_id[k], "_", release_date.i, ".rds")))
+                             dimnames(array.k)[[3]] <- t
+                             
+                             array.k <- array.k * weight.i[k]
+                             
+                             array.k
+                             
+                           }
+        
+        #' stop parallel and close progress bar
+        close(pb)
+        stopCluster(cl)
+        registerDoSEQ()
+      } else {
+        
+        #' read, weight and sum all the arrays for the release date i
+        array.i <- foreach(k = 1:length(points_id),
+                           .combine = f.for.combining,
+                           .packages = srcUsedPackages) %do% {
+                             
+                             dens_files <- list.files(file.path(sim_output_path, sub_dirs[k], points_id[k]))
+                             nc_file_name.k <- grep(release_date.i, dens_files, value = T)
+                             
+                             nc.k <- ncdf4::nc_open(file.path(sim_output_path, sub_dirs[k], points_id[k], nc_file_name.k))
+                             t <- ncdf4::ncvar_get(nc.k, varid = "time")
+                             time_to_keep <- which(!is.na(t) & t<10^30)
+                             t <- t[time_to_keep]
+                             array.k <- ncdf4::ncvar_get(nc.k, varid = "density")[,,time_to_keep]
+                             ncdf4::nc_close(nc.k)
+                             # array.k <- readRDS(file.path(sim_output_path, sub_dirs[k], points_id[k], paste0(points_id[k], "_", release_date.i, ".rds")))
+                             dimnames(array.k)[[3]] <- t
+                             
+                             array.k <- array.k * weight.i[k]
+                             
+                             array.k
+                             
+                           }
+      }
       
       #' transform the dates in dimnames back to date format
       dimnames(array.i)[[3]] <- as.character(as.difftime(as.numeric(dimnames(array.i)[[3]]), units = "secs") + as.Date("1900-01-01"))

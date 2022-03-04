@@ -35,7 +35,7 @@ if (!Exists$weight){
     dir.create(file.path(output_paths[2], sub_dirs[i]), recursive = T, showWarnings = F)
     
     #' get all the names of the rds files in the sub directory
-    dens_files <- list.files(file.path(sim_output_path, sub_dirs[i]), recursive = T, pattern = "density.nc")
+    dens_files <- list.files(file.path(sim_output_path, sub_dirs[i]), recursive = T, pattern = ".nc")
     
     #'@!!! uncomment for script testing
     # dens_files <- dens_files[1:480]
@@ -48,9 +48,9 @@ if (!Exists$weight){
     #' and rename the ichthyop outputs so that they contain the date
     release_dates <- rep(as.Date("1900-01-01"), length(dens_files))
     for (k in 1:length(dens_files)){
-      dens_nc <- open.nc(file.path(sim_output_path, sub_dirs[i], dens_files[k]))
-      release_dates[k] <- release_dates[k] + min(as.difftime(var.get.nc(dens_nc, "time"), units = "secs"), na.rm = T)
-      close.nc(dens_nc)
+      dens_nc <- ncdf4::nc_open(file.path(sim_output_path, sub_dirs[i], dens_files[k]))
+      release_dates[k] <- release_dates[k] + min(as.difftime(ncdf4::ncvar_get(dens_nc, varid = "time"), units = "secs"), na.rm = T)
+      ncdf4::nc_close(dens_nc)
       
       file.rename(from = file.path(sim_output_path, sub_dirs[i], dens_files[k]),
                   to = file.path(sim_output_path, sub_dirs[i], sub("density.nc", paste0("density_", release_dates[k],".nc"), dens_files[k])))
@@ -71,6 +71,7 @@ if (!Exists$weight){
       
     cat("Getting information on input points\n")
     
+    if (!cluster){
       # set cluster for parallel run, and initialize progress bar
       cl <- makeCluster(nb_cores)
       registerDoSNOW(cl)
@@ -86,7 +87,7 @@ if (!Exists$weight){
                                         .options.snow = opts) %dopar% {
                                           
                                           ## open the precipitations netcdf file
-                                          precip <- open.nc(con = file.path(DATA_PATH,"precip.mon.mean.nc"))
+                                          precip <- ncdf4::nc_open(filename = file.path(DATA_PATH,"precip.mon.mean.nc"))
                                           
                                           #' create a point "object"
                                           point <- list()
@@ -148,6 +149,9 @@ if (!Exists$weight){
                                           
                                           saveRDS(point, file.path(out_dir, outfile_name))
                                           
+                                          #close the netcdf connection
+                                          ncdf4::nc_close(precip)
+                                          
                                           #' return the vector with c(sub_dir, point_id, release_date, all the weights)
                                           weight_per_point
                                           
@@ -157,6 +161,86 @@ if (!Exists$weight){
       close(pb)
       stopCluster(cl)
       registerDoSEQ()
+    } else {
+      #' for each rds file (each rds file contains the density matrices
+      #' associated with a release at 1 release date from 1 release point)
+      weight_per_points[[i]] <- foreach(k = 1:length(dens_files),
+                                        .combine = rbind,
+                                        .packages = srcUsedPackages) %do% {
+                                          
+                                          ## open the precipitations netcdf file
+                                          precip <- ncdf4::nc_open(filename = file.path(DATA_PATH,"precip.mon.mean.nc"))
+                                          
+                                          #' create a point "object"
+                                          point <- list()
+                                          
+                                          #' get the id from the file name
+                                          point$id <- sub("/.*","",dens_files[k])
+                                          
+                                          #' keep the file name
+                                          fname <- sub(".*/","",dens_files[k])
+                                          
+                                          #'@get_information_on_release_point
+                                          #'***********************************
+                                          
+                                          # get release coordinates
+                                          point <- get.coords.release(sim_input_path,
+                                                                      point)
+                                          
+                                          # get release date
+                                          point$release_date <- release_dates[k]
+                                          
+                                          # get precipitations
+                                          point <- get.precipitations(precip, point)
+                                          
+                                          # get forest cover
+                                          point <- get.cover.surface(cover_surface_per_input, point)
+                                          
+                                          # get rivers and associated discharge
+                                          point <- get.associated.rivers.and.precip(link_river_input, cover_surface_per_river, embouchures, point, precip)
+                                          
+                                          # get river mouths and associated discharge + cover
+                                          # point <- get.associated.rivers(link_river_input, n_cover_per_mouth, embouchures, point, mouth = T)
+                                          
+                                          if (any(!is.na(point$rivers))){
+                                            if (round(point$nb_cover_points) != round(point$nb_coastal_cover_points +
+                                                                                      sum(unlist(lapply(point$rivers$data, function(x) sum(x$river_cover_surface_m2)))))){
+                                              stop("Error: total number of cover points does not correspond to sum of coastal and river associated points")
+                                            }
+                                          }
+                                          
+                                          #' get length of coastline associated with the point
+                                          point <- get.coastline.length(cover_surface_per_input, point)
+                                          
+                                          #' get weights (returns a vector with the weight for all the weighting methods)
+                                          weights <- get.weights(point)
+                                          point$weights <- weights
+                                          
+                                          # fill in weight_per_points
+                                          weight_per_point <- c(sub_dirs[i],
+                                                                point$id,
+                                                                # the date will be changed to character (hence keep the number of days since 1990-01-01, to choose the time origin)
+                                                                as.numeric(difftime(point$release_date, as.Date("1990-01-01"), units = "days")),
+                                                                as.numeric(weights))
+                                          
+                                          # Save the point object
+                                          outfile_name <- paste0(point$id, "_", point$release_date, "_infos.rds")
+                                          
+                                          out_dir <- file.path(output_paths[2], sub_dirs[i], point$id)
+                                          dir.create(out_dir, showWarnings = F)
+                                          
+                                          saveRDS(point, file.path(out_dir, outfile_name))
+                                          
+                                          #close the netcdf connection
+                                          ncdf4::nc_close(precip)
+                                          
+                                          #' return the vector with c(sub_dir, point_id, release_date, all the weights)
+                                          weight_per_point
+                                          
+                                        }
+      
+    }
+      
       
       # change format of weight_per_points
       weight_per_points[[i]] <- as.data.frame(weight_per_points[[i]])
