@@ -45,22 +45,22 @@ get.precipitations <- function(precip,
   y = point$y
   
   # select the interval of interest
-  time <- var.get.nc(precip, "time")
+  time <- ncdf4::ncvar_get(precip, varid = "time")
   init_nc <- as.Date("1800-01-01")
   time <- as.difftime(time, units = "days") + init_nc
   time_of_int <- which(paste0(year(time),"-",month(time)) == paste0(year(point$release_date),"-",month(point$release_date)))
   
   
-  lon <- var.get.nc(precip, "lon")
+  lon <- ncdf4::ncvar_get(precip, varid = "lon")
   lon_of_int <- which(abs(lon - x) == min(abs(lon - x)))
   
-  lat <- var.get.nc(precip, "lat")
+  lat <- ncdf4::ncvar_get(precip, varid = "lat")
   lat_of_int <- which(abs(lat - y) == min(abs(lat - y)))
   
   of_int <- c(lon_of_int, lat_of_int, time_of_int)
   
   # get the precipitation value
-  point$precip <- var.get.nc(precip, "precip", start = of_int, count = rep(1,3))
+  point$precip <- ncdf4::ncvar_get(precip, varid = "precip", start = of_int, count = rep(1,3))
   
   return(point)
 }
@@ -103,22 +103,22 @@ get.associated.rivers.and.precip <- function(link_river_input,
         y <- ys[k]
         
         # select the interval of interest
-        time <- var.get.nc(precip, "time")
+        time <- ncdf4::ncvar_get(precip, varid = "time")
         init_nc <- as.Date("1800-01-01")
         time <- as.difftime(time, units = "days") + init_nc
         time_of_int <- which(paste0(year(time),"-",month(time)) == paste0(year(point$release_date),"-",month(point$release_date)))
         
         
-        lon <- var.get.nc(precip, "lon")
+        lon <- ncdf4::ncvar_get(precip, varid = "lon")
         lon_of_int <- which(abs(lon - x) == min(abs(lon - x)))
         
-        lat <- var.get.nc(precip, "lat")
+        lat <- ncdf4::ncvar_get(precip, varid = "lat")
         lat_of_int <- which(abs(lat - y) == min(abs(lat - y)))
         
         of_int <- c(lon_of_int, lat_of_int, time_of_int)
         
         # get the precipitation value
-        data$precip[k] <- var.get.nc(precip, "precip", start = of_int, count = rep(1,3))
+        data$precip[k] <- ncdf4::ncvar_get(precip, varid = "precip", start = of_int, count = rep(1,3))
       }
       
       
