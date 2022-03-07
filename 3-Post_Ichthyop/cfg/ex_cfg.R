@@ -73,9 +73,9 @@ ltime_sd = 30 # in days, used only if ltime_method == 1
 #'   9. weight proportional to the @total surface of forest cover (w3 + w4 without discharge)
 weight_method = 9
 
-#'## @gsize (num): size of the grid cells used (2° or a multiple of 2°)
+#'## @gsize (num): size of the grid cells used (1° or a multiple of 1°)
 #' fixed because of the post-processing script performed on the cluster
-gsize = 2
+# gsize = 2
 
 #'## @thr_disch (num): the mean water discharge of the input river is used as a filter 
 #' only particles originating from a river with a maximum value > thr_disch (in m3/s) are kept 
