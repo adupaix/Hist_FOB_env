@@ -128,15 +128,15 @@ if (!Exists$maps){
       
     new_mean_agg_array <- foreach (i = 1:dim(mean_agg_array)[3],
                                    .combine = function(x,y) abind::abind(x,y, along = 3)) %do% {
-                                     r <- create.raster(gsize = 2)
-                                     r[] <- mean_agg_array[,,i]
+                                     r <- create.raster(gsize = 1)
+                                     r[] <- t(mean_agg_array[,,i])[(dim(t(mean_agg_array[,,i]))[1]):1,]
                                      r <- crop(r, new_extent)
                                      as.matrix(r)
                                      }
     dimnames(new_mean_agg_array)  <- dimnames(mean_agg_array)
   } else {
-    r <- create.raster(gsize = 2)
-    r[] <- mean_agg_array
+    r <- create.raster(gsize = 1)
+    r[] <- t(mean_agg_array)[(dim(t(mean_agg_array))[1]):1,]
     r <- crop(r, new_extent)
     new_mean_agg_array <- as.matrix(r)
   }
@@ -201,11 +201,11 @@ if (!Exists$maps){
     l = length(mean.ggplot.list)
     n_col <- ceiling(sqrt(l))
     n_row <- ceiling(l / n_col)
-    p <- ggarrange(plotlist = mean.ggplot.list,
-                   ncol = n_col, nrow = n_row,
-                   align = "hv", labels = "AUTO",
-                   common.legend = common_scale_max,
-                   legend = "right")
+    p <- ggpubr::ggarrange(plotlist = mean.ggplot.list,
+                           ncol = n_col, nrow = n_row,
+                           align = "hv", labels = "AUTO",
+                           common.legend = common_scale_max,
+                           legend = "right")
     
     ggsave(Names$pngMaps, p, width = ifelse(common_scale_max, xratio*180*n_col + 20, xratio*180*n_col),
            height = yratio*120*n_row, units = "mm")

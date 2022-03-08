@@ -4,7 +4,6 @@
 */Outputs
 *.png
 *Rmd
-*.nc
 test*
 *output
 *cfgs/

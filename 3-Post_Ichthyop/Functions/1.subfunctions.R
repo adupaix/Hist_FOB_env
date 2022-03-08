@@ -188,16 +188,18 @@ get.forcing.bbox <- function(RESOURCE_PATH, forcing){
   
   if (forcing %in% c("nemo","nemo15m","PHILIN12.L75")){
     if (forcing == "nemo15m"){forcing <- 'nemo'}
-    mask <- open.nc(file.path(RESOURCE_PATH, "masks_current_products", paste0(forcing,".nc")))
+    mask <- ncdf4::nc_open(file.path(RESOURCE_PATH, "masks_current_products", paste0(forcing,".nc")))
     
     lon_name <- "longitude"
     lat_name <- "latitude"
     if(forcing == "PHILIN12.L75"){lon_name <- "nav_lon"; lat_name <- "nav_lat"}
     
-    bbox <- c(xmin = min(var.get.nc(mask, lon_name)),
-              ymin = min(var.get.nc(mask, lat_name)),
-              xmax = max(var.get.nc(mask, lon_name)),
-              ymax = max(var.get.nc(mask, lat_name)))
+    bbox <- c(xmin = min(ncdf4::ncvar_get(mask, varid = lon_name)),
+              ymin = min(ncdf4::ncvar_get(mask, varid = lat_name)),
+              xmax = max(ncdf4::ncvar_get(mask, varid = lon_name)),
+              ymax = max(ncdf4::ncvar_get(mask, varid = lat_name)))
+    
+    ncdf4::nc_close(mask)
     
   } else if (forcing %in% c("oscar", "globcurrent")){
     mask <- read_sf(file.path(RESOURCE_PATH, "masks_current_products", paste0(forcing,".shp")))

@@ -44,7 +44,9 @@ dir.create(output_paths[4], recursive = T, showWarnings = F)
 
 
 # create paths used to read data from the simulation and from the 1-Input_Ichthyop folder
-sim_output_path <- file.path(DATA_PATH, "Output_Ichthyop", sim_name, year)
+if (sim_output_path == ""){
+  sim_output_path <- file.path(DATA_PATH, "Output_Ichthyop", sim_name, year)
+}
 sim_input_path <- file.path(DATA_PATH, "Input_Ichthyop", paste0(input_location, "_nlog_input_", forcing, "_", input_method))
 
 #get the release dates and associated years

@@ -118,17 +118,18 @@ build.ggplot <- function(df, titre, col_title, log_color_scale, fixed_scale_max,
     xlab("Longitude") +
     ylab("Latitude") +
     theme(plot.title = element_text(hjust = 0.5),
-          legend.title = element_text(hjust = 0.5)) +
-    # echelle distance
-    annotation_scale(location = "bl", width_hint = 0.5) +
-    # fleche nord
-    annotation_north_arrow(
-      location = "tr",
-      which_north = "true",
-      pad_x = unit(0.25, "in"),
-      pad_y = unit(0.25, "in"),
-      style = north_arrow_fancy_orienteering
-    )
+          legend.title = element_text(hjust = 0.5))
+    #       legend.title = element_text(hjust = 0.5)) +
+    # # echelle distance
+    # annotation_scale(location = "bl", width_hint = 0.5) +
+    # # fleche nord
+    # annotation_north_arrow(
+    #   location = "tr",
+    #   which_north = "true",
+    #   pad_x = unit(0.25, "in"),
+    #   pad_y = unit(0.25, "in"),
+    #   style = north_arrow_fancy_orienteering
+    # )
 
 
   ### Position de la legend de couleur
