@@ -141,6 +141,8 @@ rm(output_path_3_more)
 # Logical to know if output files exist
 Exists <- list()
 Exists$cover <- all(file.exists(c(Names$coverGlobal, Names$coverRiver)))
+Exists$coverRiver <- file.exists(Names$coverRiver)
+Exists$coverGlobal <- file.exists(Names$coverGlobal)
 Exists$coastalSurface <- file.exists(Names$coastalSurface)
 Exists$weight <- all(file.exists(Names$weightInput))
 Exists$log3 <- file.exists(Names$log3)
