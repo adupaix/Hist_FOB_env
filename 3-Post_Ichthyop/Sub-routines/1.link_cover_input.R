@@ -57,7 +57,7 @@ if(!Exists$cover){
     river_cover_fnames <- file.path(output_paths[1], paste0("link_rivers_",sub(".shp", "", cover_files),"_",release_years[y],".txt"))
     
     coastal_cover_fnames <- file.path(output_paths[1],
-                                      sub(length(cover_files), "f", paste0("input_point_with_cover_nb_v", 1:length(cover_files),"_",release_years[y],".txt")))
+                                      sub(length(cover_files), "f", paste0("input_point_with_cover_surface_v", 1:length(cover_files),"_",release_years[y],".txt")))
     
     # if any of the file counting the number of cover points per river is missing, we need the buffer around the rivers
     if ( !all(file.exists(river_cover_fnames)) & !all(file.exists(coastal_cover_fnames)) & !exists("river_buffer")){
@@ -265,25 +265,19 @@ if(!Exists$cover){
 msg <- "\n\n3. Get the length of coastline associated with each input point\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
 
-# fname <- file.path(output_paths[1], "input_point_with_cover_and_coast_nb.txt")
-
 if(!Exists$coastalSurface){
+  
+  #' Generate file containing the coastal surface associated with each input point
+  #' @filename: coastal_surface_per_input_point.csv (Names$coastalSurface)
+  #' @format:
+  #'    | x | y | id_curr | coastal_surface_m2 |
+  #'    |---|---|---------|--------------------|
   
   coastal_surface <- read.table(file.path(sim_input_path, "IDs.txt"))
   names(coastal_surface) <- c("x","y", "id_curr")
   
   # add a column to save the surface of coastal buffer
   coastal_surface$coastal_surface_m2 <- 0
-  
-  #' Define the frame of study (same as the one used to generate the input points)
-  # IO <- st_sf(data.frame("IO"),
-  #             geometry = st_sfc(st_polygon(list(
-  #               matrix(c(25,-35, 25,30, 140, 30, 140,-35, 25,-35),
-  #                      ncol = 2,
-  #                      byrow = T)))
-  #             ),
-  #             crs = 4326
-  # )
   
   msg <- "  - Load coastline and sample points on it\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
@@ -381,7 +375,8 @@ if(!Exists$coastalSurface){
     rm(coast_df) ; invisible(gc())
     
     write.csv(coastal_surface,
-              file = Names$coastalSurface)
+              file = Names$coastalSurface,
+              row.names = F)
     
   }
   
@@ -398,95 +393,109 @@ if(!Exists$coastalSurface){
 #'********************************************************************************
 
   msg <- "\n4. Merge coastal, river, river mouth and coastline length information\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-
-  link_riv_cov_files <- list.files(output_paths[1], pattern = "link_rivers_")
-  # link_mouth_cov_files <- list.files(output_paths[1], pattern = "link_mouths_")
   
-  river_cover_summary <- list()
-  # n_cover_per_mouth <- list()
-
-  for (i in 1:length(link_riv_cov_files)){
-    river_cover_summary[[i]] <- read.table(file.path(output_paths[1], link_riv_cov_files[i]), header = T)
-    # n_cover_per_mouth[[i]] <- read.table(file.path(output_paths[1], link_mouth_cov_files[i]), header = T)
+  #' Generate river summary
+  #' @filename: cover_surface_per_river.csv (Names$coverRiver)
+  #' @format:
+  #'    | HYRIV_ID | year | river_cover_surface_m2 | MAIN_RIV |
+  #'    |----------|------|------------------------|----------|
+  if (!Exists$coverRiver){
+    link_riv_cov_files <- list.files(output_paths[1], pattern = "link_rivers_")
+    # link_mouth_cov_files <- list.files(output_paths[1], pattern = "link_mouths_")
+    
+    river_cover_summary <- list()
+    # n_cover_per_mouth <- list()
+    
+    for (i in 1:length(link_riv_cov_files)){
+      river_cover_summary[[i]] <- read.table(file.path(output_paths[1], link_riv_cov_files[i]), header = T)
+      # n_cover_per_mouth[[i]] <- read.table(file.path(output_paths[1], link_mouth_cov_files[i]), header = T)
+    }
+    
+    bind_rows(river_cover_summary) %>%
+      group_by(HYRIV_ID, year) %>%
+      summarise(n = sum(river_cover_surface_m2), .groups = "keep") %>%
+      ungroup() %>%
+      right_join(link_HYRIV_MAINRIV, by = "HYRIV_ID") %>%
+      mutate(n = ifelse(is.na(n), 0, n)) %>%
+      rename("river_cover_surface_m2" = "n") %>%
+      dplyr::arrange(MAIN_RIV, HYRIV_ID) -> river_cover_summary
+    
+    write.csv(river_cover_summary,
+              file = Names$coverRiver,
+              row.names = F)
+  } else {
+    
+    river_cover_summary <- read.csv(file = Names$coverRiver)
+    
   }
-
-  bind_rows(river_cover_summary) %>%
-    group_by(HYRIV_ID, year) %>%
-    summarise(n = sum(river_cover_surface_m2), .groups = "keep") %>%
-    ungroup() %>%
-    right_join(link_HYRIV_MAINRIV, by = "HYRIV_ID") %>%
-    mutate(n = ifelse(is.na(n), 0, n)) %>%
-    rename("river_cover_surface_m2" = "n") %>%
-    dplyr::arrange(MAIN_RIV, HYRIV_ID) -> river_cover_summary
-
-  write.csv(river_cover_summary,
-            file = Names$coverRiver,
-            row.names = F)
   
-  # bind_rows(n_cover_per_mouth) %>%
-  #   group_by(MAIN_RIV) %>%
-  #   summarise(n = sum(nb_mouth_cover_points), .groups = "keep") %>%
-  #   ungroup() %>%
-  #   rename("nb_mouth_cover_points" = "n") -> n_cover_per_mouth
-  # 
-  # write.csv(n_cover_per_mouth,
-  #           file = Names$coverMouth,
-  #           row.names = F)
-
+  
+  
   link_river_input <- read.table(file.path(sim_input_path, "Link_table.txt"), header = T)
 
   if (!all(river_cover_summary$MAIN_RIV %in% link_river_input$MAIN_RIV)){
     stop("Error: some rivers are not linked with the input points")
   }
+
   
-  #'@ADD_INPUT_POINTS_MERGING_HERE-----------------------------------------------------------
-  #'@----------------------------------------------------------------------------------------
-  
-  coastal_cover_fnames <- list.files(output_paths[1], pattern = "input_point_with_cover_nb_vf", full.names = T)
-  input_points <- list()
-  for (i in 1:length(coastal_cover_fnames)){
-    input_points[[i]] <- read.table(coastal_cover_fnames[i])
-  }
-  bind_rows(input_points) %>%
-    full_join(coastal_surface, by = c("x","y","id_curr")) -> input_points
-  
-  input_points %>%
-    full_join(link_river_input, by = "id_curr") %>%
-    arrange(id_curr) %>%
-    dplyr::filter(!is.na(x)) %>%
-    dplyr::select(-HYBAS_L12) %>%
-    full_join(river_cover_summary, by = c("MAIN_RIV","year")) -> cover_global_summary
+  #' Generate global summary
+  #' @filename: cover_surface_per_input_point.csv (Names$coverGlobal)
+  #' @format:
+  #'    | id_curr | x | y | year | river_cover_surface_m2 | coastal_cover_surface_m2 | total_cover_surface_m2 | coastal_surface_m2 |
+  #'    |--------|----|---|------|------------------------|--------------------------|------------------------|--------------------|
+  if (!Exists$coverGlobal){
+    coastal_cover_fnames <- list.files(output_paths[1], pattern = "input_point_with_cover_surface_vf", full.names = T)
+    input_points <- list()
+    for (i in 1:length(coastal_cover_fnames)){
+      input_points[[i]] <- read.table(coastal_cover_fnames[i])
+    }
+    bind_rows(input_points) %>%
+      full_join(coastal_surface, by = c("x","y","id_curr")) -> input_points
+    
+    input_points %>%
+      full_join(link_river_input, by = "id_curr") %>%
+      arrange(id_curr) %>%
+      dplyr::filter(!is.na(x)) %>%
+      dplyr::select(-HYBAS_L12) %>%
+      full_join(river_cover_summary, by = c("MAIN_RIV","year")) -> cover_global_summary
     # full_join(river_cover_summary, by = "MAIN_RIV") %>%
     # full_join(n_cover_per_mouth, by = "MAIN_RIV") -> cover_global_summary
-
-  cover_global_summary$river_cover_surface_m2[which(is.na(cover_global_summary$river_cover_surface_m2))] <- 0
-  # cover_global_summary$nb_mouth_cover_points[which(is.na(cover_global_summary$nb_mouth_cover_points))] <- 0
+    
+    cover_global_summary$river_cover_surface_m2[which(is.na(cover_global_summary$river_cover_surface_m2))] <- 0
+    # cover_global_summary$nb_mouth_cover_points[which(is.na(cover_global_summary$nb_mouth_cover_points))] <- 0
+    
+    cover_global_summary %>%
+      dplyr::filter(MAIN_RIV == HYRIV_ID) %>% #keep only the river mouths
+      group_by(id_curr) %>%
+      summarise(nb_mouth_cover_points = sum(river_cover_surface_m2), .groups = "keep") -> mouth_cover_summary
+    
+    cover_global_summary %>%
+      group_by(year, id_curr) %>%
+      summarise(river_cover_surface_m2 = sum(river_cover_surface_m2),
+                .groups = "keep") %>%
+      # left_join(y = mouth_cover_summary, by = "id_curr") %>%
+      left_join(y = input_points, by = c("id_curr", "year")) %>%
+      dplyr::mutate(total_cover_surface_m2 = river_cover_surface_m2 + coastal_cover_surface_m2) %>%
+      # dplyr::mutate(nb_cover_points = nb_mouth_cover_points + river_cover_surface_m2 + nb_coastal_cover_points) %>%
+      dplyr::select(id_curr, x, y, year,
+                    river_cover_surface_m2,
+                    # MAIN_RIV, HYRIV_ID,
+                    # nb_mouth_cover_points,
+                    coastal_cover_surface_m2,
+                    total_cover_surface_m2,
+                    coastal_surface_m2) %>%
+      filter(!is.na(id_curr)) -> cover_surface_per_input
+    
+    write.csv(cover_surface_per_input,
+              file = Names$coverGlobal,
+              row.names = F)
+    
+  } else {
+    
+    cover_surface_per_input <- read.csv(file = Names$coverGlobal)
+    
+  }
   
-  cover_global_summary %>%
-    dplyr::filter(MAIN_RIV == HYRIV_ID) %>% #keep only the river mouths
-    group_by(id_curr) %>%
-    summarise(nb_mouth_cover_points = sum(river_cover_surface_m2), .groups = "keep") -> mouth_cover_summary
-  
-  cover_global_summary %>%
-    group_by(year, id_curr) %>%
-    summarise(river_cover_surface_m2 = sum(river_cover_surface_m2),
-              .groups = "keep") %>%
-    # left_join(y = mouth_cover_summary, by = "id_curr") %>%
-    left_join(y = input_points, by = c("id_curr", "year")) %>%
-    dplyr::mutate(total_cover_surface_m2 = river_cover_surface_m2 + coastal_cover_surface_m2) %>%
-    # dplyr::mutate(nb_cover_points = nb_mouth_cover_points + river_cover_surface_m2 + nb_coastal_cover_points) %>%
-    dplyr::select(id_curr, x, y, year,
-                  river_cover_surface_m2,
-                  # MAIN_RIV, HYRIV_ID,
-                  # nb_mouth_cover_points,
-                  coastal_cover_surface_m2,
-                  total_cover_surface_m2,
-                  coastal_surface_m2) %>%
-    filter(!is.na(id_curr)) -> cover_surface_per_input
-
-  write.csv(cover_surface_per_input,
-            file = Names$coverGlobal,
-            row.names = F)
 
   #' save a log
   sink(Names$log1, append = F)
@@ -510,4 +519,4 @@ cover_surface_per_mouth <- read.csv(file = Names$coverRiver) %>% dplyr::filter(M
 
 
 #' Do not delete
-toKeep <- c(toKeep, "cover_surface_per_input", "n_cover_per_river", "n_cover_per_mouth")
+toKeep <- c(toKeep, "cover_surface_per_input", "cover_surface_per_river", "cover_surface_per_mouth")
