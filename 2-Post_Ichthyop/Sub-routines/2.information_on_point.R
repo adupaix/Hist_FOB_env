@@ -35,7 +35,7 @@ if (!Exists$weight){
     dir.create(file.path(output_paths[2], sub_dirs[i]), recursive = T, showWarnings = F)
     
     #' get all the names of the rds files in the sub directory
-    dens_files <- list.files(file.path(sim_output_path, sub_dirs[i]), recursive = T, pattern = "density.nc")
+    dens_files <- list.files(file.path(sim_output_path, sub_dirs[i]), recursive = T, pattern = ".nc")
     
     #'@!!! uncomment for script testing
     # dens_files <- dens_files[1:480]
@@ -44,34 +44,37 @@ if (!Exists$weight){
     cat("Sub_directory", i, "/", length(sub_dirs), " - ",sub_dirs[i], "\n")
     cat("Getting release dates from .nc files\n")
     
-    # if the length is null, it means that the files were already renamed (it happens if the script already ran before)
-    if (length(dens_files) != 0){
-      #' get release dates
-      #' and rename the ichthyop outputs so that they contain the date
-      #' 
-      #' At the same time, check if any of the Ichthyop outputs are empty
-      #' if an .nc file is empty, save its name in "empty_ichthyop_outputs.txt"
-      #' and delete it from the dens_files list of names
+    #' get release dates
+    #' and rename the ichthyop outputs so that they contain the date
+    #' 
+    #' At the same time, check if any of the Ichthyop outputs are empty
+    #' if an .nc file is empty, save its name in "empty_ichthyop_outputs.txt"
+    #' and delete it from the dens_files list of names
       release_dates <- rep(as.Date("1900-01-01"), length(dens_files))
       empty_files <- c()
       for (k in 1:length(dens_files)){
-        dens_nc <- try(ncdf4::nc_open(file.path(sim_output_path, sub_dirs[i], dens_files[k])))
-        if (class(dens_nc) == "try-error"){
-          empty_files <- c(empty_files, dens_files[k])
-          add_to_log <- paste("\n\nWarning: some Ichthyop outputs were empty. Please see\n", Names$error_ichthyop_outputs, "\nto have the list of empty .nc files")
+        if(grepl("density.nc", dens_files[k])){
+          dens_nc <- try(ncdf4::nc_open(file.path(sim_output_path, sub_dirs[i], dens_files[k])))
+          if (class(dens_nc) == "try-error"){
+            empty_files <- c(empty_files, dens_files[k])
+            add_to_log <- paste("\n\nWarning: some Ichthyop outputs were empty. Please see\n", Names$error_ichthyop_outputs, "\nto have the list of empty .nc files")
+          } else {
+            release_dates[k] <- release_dates[k] + min(as.difftime(ncdf4::ncvar_get(dens_nc, varid = "time"), units = "secs"), na.rm = T)
+            ncdf4::nc_close(dens_nc)
+            
+            file.rename(from = file.path(sim_output_path, sub_dirs[i], dens_files[k]),
+                        to = file.path(sim_output_path, sub_dirs[i], sub("density.nc", paste0("density_", release_dates[k],".nc"), dens_files[k])))
+          }
         } else {
-          release_dates[k] <- release_dates[k] + min(as.difftime(ncdf4::ncvar_get(dens_nc, varid = "time"), units = "secs"), na.rm = T)
-          ncdf4::nc_close(dens_nc)
-          
-          file.rename(from = file.path(sim_output_path, sub_dirs[i], dens_files[k]),
-                      to = file.path(sim_output_path, sub_dirs[i], sub("density.nc", paste0("density_", release_dates[k],".nc"), dens_files[k])))
+          release_dates[k] <- as.Date(sub(".nc","", sub(".*density_", "", dens_files[k])))
         }
+        
       }
-    }
     
     #' update the names stored in dens_files
     dens_files <- list.files(file.path(sim_output_path, sub_dirs[i]), recursive = T, pattern = ".nc")
     dens_files <- dens_files[!dens_files %in% empty_files]
+    release_dates <- release_dates[!release_dates == "1900-01-01"]
     
     #' save the name of the outputs with an error
     sink(Names$error_ichthyop_outputs, append = T)
