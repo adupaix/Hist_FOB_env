@@ -46,18 +46,34 @@ if (!Exists$weight){
     
     #' get release dates
     #' and rename the ichthyop outputs so that they contain the date
+    #' 
+    #' At the same time, check if any of the Ichthyop outputs are empty
+    #' if an .nc file is empty, save its name in "empty_ichthyop_outputs.txt"
+    #' and delete it from the dens_files list of names
     release_dates <- rep(as.Date("1900-01-01"), length(dens_files))
+    empty_files <- c()
     for (k in 1:length(dens_files)){
-      dens_nc <- ncdf4::nc_open(file.path(sim_output_path, sub_dirs[i], dens_files[k]))
-      release_dates[k] <- release_dates[k] + min(as.difftime(ncdf4::ncvar_get(dens_nc, varid = "time"), units = "secs"), na.rm = T)
-      ncdf4::nc_close(dens_nc)
-      
-      file.rename(from = file.path(sim_output_path, sub_dirs[i], dens_files[k]),
-                  to = file.path(sim_output_path, sub_dirs[i], sub("density.nc", paste0("density_", release_dates[k],".nc"), dens_files[k])))
+      dens_nc <- try(ncdf4::nc_open(file.path(sim_output_path, sub_dirs[i], dens_files[k])))
+      if (class(dens_nc) == "try-error"){
+        empty_files <- c(empty_files, dens_files[k])
+        add_to_log <- paste("\n\nWarning: some Ichthyop outputs were empty. Please see\n", Names$error_ichthyop_outputs, "\nto have the list of empty .nc files")
+      } else {
+        release_dates[k] <- release_dates[k] + min(as.difftime(ncdf4::ncvar_get(dens_nc, varid = "time"), units = "secs"), na.rm = T)
+        ncdf4::nc_close(dens_nc)
+        
+        file.rename(from = file.path(sim_output_path, sub_dirs[i], dens_files[k]),
+                    to = file.path(sim_output_path, sub_dirs[i], sub("density.nc", paste0("density_", release_dates[k],".nc"), dens_files[k])))
+      }
     }
     
     #' update the names of the rds files in the sub directory
     dens_files <- list.files(file.path(sim_output_path, sub_dirs[i]), recursive = T, pattern = ".nc")
+    dens_files <- dens_files[!dens_files %in% empty_files]
+    
+    #' save the name of the outputs with an error
+    sink(Names$error_ichthyop_outputs, append = T)
+    writeLines(file.path(sub_dirs[i], empty_files))
+    sink()
     
     #selecting only the points which are in the area of interest
     # input_in_IO <- cover_surface_per_input$id_curr[(cover_surface_per_input$id_curr > (i-1) * n_points_per_dir) & (cover_surface_per_input$id_curr <= i * n_points_per_dir)]
@@ -277,6 +293,7 @@ if (!Exists$weight){
   #' save a log
   sink(Names$log2, append = F)
   cat("Date & time :", format(Sys.time()), "\n")
+  if (exists(add_to_log)){cat(add_to_log)}
   sink()
   
 } else {
