@@ -49,10 +49,6 @@ if (sim_output_path == ""){
 }
 sim_input_path <- file.path(DATA_PATH, "Input_Ichthyop", paste0(input_location, "_nlog_input_", forcing, "_", input_method))
 
-#get the release dates and associated years
-release_dates <- read.delim(file.path(sim_input_path, paste0("cfgs_",year[1],"-",year[length(year)]), "release_dates.txt"))
-release_years <- unique(lubridate::year(as.Date(release_dates[,1])))
-
 # If RESET is T, delete all the output files
 if (RESET[1]){
   try(unlink(list.files(output_paths[1], full.names = T),
@@ -150,6 +146,37 @@ Exists$log3 <- file.exists(Names$log3)
 Exists$globArray <- file.exists(Names$globArray)
 Exists$aggArray <- file.exists(Names$aggArray)
 Exists$maps <- file.exists(Names$pngMaps)
+
+# Logical to check that the needed data exist
+Exists$data <- list()
+Exists$data$river <- file.exists(file.path(DATA_PATH, "river_data", "rivers_IO.rds"))
+Exists$data$precipitations <- file.exists(file.path(DATA_PATH,"precip.mon.mean.nc"))
+Exists$data$release_dates <- file.exists(file.path(sim_input_path, paste0("cfgs_",year[1],"-",year[length(year)]), "release_dates.txt"))
+Exists$data$input_ichthyop_IDs <- file.exists(file.path(sim_input_path, "IDs.txt"))
+Exists$data$input_ichthyop_link_table <- file.exists(file.path(sim_input_path, "Link_table.txt"))
+
+if(any(unlist(Exists$data) == F)){
+  stop(paste("the following data is missing:",
+             paste(names(which(unlist(Exists$data) == F)), collapse = " ; ")))
+}
+
+#get the release dates and associated years
+release_dates <- read.delim(file.path(sim_input_path, paste0("cfgs_",year[1],"-",year[length(year)]), "release_dates.txt"))
+release_years <- unique(lubridate::year(as.Date(release_dates[,1])))
+
+# Logical to check that the cover data exists
+Exists$data$cover <- all(dir.exists(file.path(DATA_PATH,
+                                          "forest_cover",
+                                          paste0("forest_cover_", release_years))))
+
+Exists$data$coast_surface <- dir.exists(file.path(DATA_PATH,"coast_cover_with_zeros"))
+Exists$data$simulation_output <- dir.exists(sim_output_path)
+
+if(any(unlist(Exists$data) == F)){
+  stop(paste("the following data is missing:",
+             paste(names(which(unlist(Exists$data) == F)), collapse = " ; ")))
+}
+
 
 # For parallel:
 # On Windows, or if don't want to parralelize, set cores number to 1
