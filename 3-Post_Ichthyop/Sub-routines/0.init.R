@@ -117,6 +117,7 @@ Names$coastalSurface <- file.path(output_paths[1], "coastal_surface_per_input_po
 Names$log2 <- file.path(output_paths[2], "log.txt")
 Names$weightInput <- c(file.path(output_paths[2], "weight_per_points_summary.csv"),
                  file.path(output_paths[2], paste0("weight_per_points_matrix_w",weight_method,".csv")))
+Names$error_ichthyop_outputs <- file.path(output_paths[2], "empty_ichthyop_outputs.txt")
 #'       Sub-routine 3
 Names$log3 <- file.path(output_paths[3], "log.txt")
 #'       Sub-routine 4
@@ -141,6 +142,8 @@ rm(output_path_3_more)
 # Logical to know if output files exist
 Exists <- list()
 Exists$cover <- all(file.exists(c(Names$coverGlobal, Names$coverRiver)))
+Exists$coverRiver <- file.exists(Names$coverRiver)
+Exists$coverGlobal <- file.exists(Names$coverGlobal)
 Exists$coastalSurface <- file.exists(Names$coastalSurface)
 Exists$weight <- all(file.exists(Names$weightInput))
 Exists$log3 <- file.exists(Names$log3)
