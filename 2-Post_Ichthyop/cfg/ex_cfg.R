@@ -15,7 +15,7 @@ invisible(gc())
 STUDY_DIR <- "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/"
 
 #' generate basic paths
-WD <- file.path(STUDY_DIR,'3-Post_Ichthyop')
+WD <- file.path(STUDY_DIR,'2-Post_Ichthyop')
 DATA_PATH <- file.path(STUDY_DIR,'0-Data')
 
 OUTPUT_PATH <- file.path(WD,"Outputs")
