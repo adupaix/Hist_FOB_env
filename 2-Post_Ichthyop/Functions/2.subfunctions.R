@@ -123,7 +123,8 @@ get.associated.rivers.and.precip <- function(link_river_input,
       
       
       # get the number of cover points associated with each river segment
-      data %>% left_join(n_cover, by = c("HYRIV_ID","MAIN_RIV")) -> data
+      data %>% left_join(n_cover, by = c("HYRIV_ID","MAIN_RIV")) %>%
+        dplyr::filter(year == year(point$release_date)) -> data
       
       point$rivers$data[[i]] <- data
       

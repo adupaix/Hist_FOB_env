@@ -143,9 +143,9 @@ if (!Exists$weight){
                                           # point <- get.associated.rivers(link_river_input, n_cover_per_mouth, embouchures, point, mouth = T)
                                           
                                           if (any(!is.na(point$rivers))){
-                                            if (round(point$nb_cover_points) != round(point$nb_coastal_cover_points +
-                                                                                      sum(unlist(lapply(point$rivers$data, function(x) sum(x$river_cover_surface_m2)))))){
-                                              stop("Error: total number of cover points does not correspond to sum of coastal and river associated points")
+                                            if (round(point$total_cover_surface_m2) != round(point$coastal_cover_surface_m2 +
+                                                                                             sum(unlist(lapply(point$rivers$data, function(x) sum(x$river_cover_surface_m2)))))){
+                                              stop("Error: total cover surface does not correspond to sum of coastal and river associated cover surfaces")
                                             }
                                           }
                                           
@@ -225,9 +225,9 @@ if (!Exists$weight){
                                           # point <- get.associated.rivers(link_river_input, n_cover_per_mouth, embouchures, point, mouth = T)
                                           
                                           if (any(!is.na(point$rivers))){
-                                            if (round(point$nb_cover_points) != round(point$nb_coastal_cover_points +
-                                                                                      sum(unlist(lapply(point$rivers$data, function(x) sum(x$river_cover_surface_m2)))))){
-                                              stop("Error: total number of cover points does not correspond to sum of coastal and river associated points")
+                                            if (round(point$total_cover_surface_m2) != round(point$coastal_cover_surface_m2 +
+                                                                                             sum(unlist(lapply(point$rivers$data, function(x) sum(x$river_cover_surface_m2)))))){
+                                              stop("Error: total cover surface does not correspond to sum of coastal and river associated cover surfaces")
                                             }
                                           }
                                           
