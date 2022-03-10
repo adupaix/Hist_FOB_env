@@ -130,6 +130,9 @@ if (!Exists$weight){
                                           # get release date
                                           point$release_date <- release_dates[k]
                                           
+                                          cheat = F
+                                          if (year(point$release_date) == max(release_years)){cheat = T ; year(point$release_date) <- year(point$release_date) - 1}
+                                          
                                           # get precipitations
                                           point <- get.precipitations(precip, point)
                                           
@@ -155,6 +158,8 @@ if (!Exists$weight){
                                           #' get weights (returns a vector with the weight for all the weighting methods)
                                           weights <- get.weights(point)
                                           point$weights <- weights
+                                          
+                                          if (cheat == T){year(point$release_date) <- year(point$release_date) + 1}
                                           
                                           # fill in weight_per_points
                                           weight_per_point <- c(sub_dirs[i],
