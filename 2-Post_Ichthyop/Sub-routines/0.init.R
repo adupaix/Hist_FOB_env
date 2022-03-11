@@ -113,7 +113,7 @@ Names$coastalSurface <- file.path(output_paths[1], "coastal_surface_per_input_po
 Names$log2 <- file.path(output_paths[2], "log.txt")
 Names$weightInput <- c(file.path(output_paths[2], "weight_per_points_summary.csv"),
                  file.path(output_paths[2], paste0("weight_per_points_matrix_w",weight_method,".csv")))
-Names$error_ichthyop_outputs <- file.path(output_paths[2], "empty_ichthyop_outputs.txt")
+Names$error_ichthyop_outputs <- file.path(output_paths[2], "empty_ichthyop_outputs.txt") ; unlink(Names$error_ichthyop_outputs)
 #'       Sub-routine 3
 Names$log3 <- file.path(output_paths[3], "log.txt")
 #'       Sub-routine 4
