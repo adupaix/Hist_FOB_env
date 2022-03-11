@@ -50,12 +50,16 @@ get.precipitations <- function(precip,
   time <- as.difftime(time, units = "days") + init_nc
   time_of_int <- which(paste0(year(time),"-",month(time)) == paste0(year(point$release_date),"-",month(point$release_date)))
   
+  #' @remark: modification on 03/11/2022
+  #' if a point is on the limit of 2 precipitation cells,
+  #' we take the cell on the west (lower longitude)
+  #' and the cell on the south (lower latitude)
   
   lon <- ncdf4::ncvar_get(precip, varid = "lon")
-  lon_of_int <- which(abs(lon - x) == min(abs(lon - x)))
+  lon_of_int <- min(which(abs(lon - x) == min(abs(lon - x))))
   
   lat <- ncdf4::ncvar_get(precip, varid = "lat")
-  lat_of_int <- which(abs(lat - y) == min(abs(lat - y)))
+  lat_of_int <- min(which(abs(lat - y) == min(abs(lat - y))))
   
   of_int <- c(lon_of_int, lat_of_int, time_of_int)
   
