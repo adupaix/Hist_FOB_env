@@ -27,7 +27,11 @@ if (!Exists$weight){
   #' for each sub directory, weight_per_point will contain a data frame with all the weights associated
   #' with all the release point - release date pairs
   weight_per_points <- list()
-    
+  
+  #' delete the file which contains the ichthyop output errors
+  #' cannot delete it in the initialization - 0.Init - because it is geenrated only if !Exists$weight
+  unlink(Names$error_ichthyop_outputs)
+  
   # for each sub directory
   for (i in 1:length(sub_dirs)){
       
@@ -309,7 +313,7 @@ if (!Exists$weight){
   #' save a log
   sink(Names$log2, append = F)
   cat("Date & time :", format(Sys.time()), "\n")
-  if (exists(add_to_log)){cat(add_to_log)}
+  if (exists("add_to_log")){cat(add_to_log) ; rm(add_to_log)}
   sink()
   
 } else {

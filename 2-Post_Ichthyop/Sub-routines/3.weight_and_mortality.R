@@ -33,11 +33,28 @@ if(!Exists$log3){
   #' keep only the input points with non null weight at at least one release date
   input_to_keep <- apply(weight_per_points_matrix, 1, sum) != 0
   
-  if(any(is.na(input_to_keep))){
-    stop("Error: some points don't have any associated weight")
+  #' If any input_to_keep is NA, there is an error (no weight is associated to a point)
+  #' However, if that point with no weight is in error_ichthyop_outputs, we do not take it into account
+  #' it means that there is no associated weight because the Ichthyop output was empty and it has already be signaled 
+  #' in the second routine
+  na_points_id <- points_id[which(is.na(input_to_keep))]
+  theres_an_error <- c()
+  if (length(na_points_id) != 0){
+    add_to_log <- paste("\n\nWarning: some Ichthyop outputs were empty. Please see\n", Names$error_ichthyop_outputs, "\nto have the list of empty .nc files")
+    for (i in 1:length(na_points_id)){
+      theres_an_error[i] <- !any(grepl(na_points_id[i], readLines(Names$error_ichthyop_outputs)))
+      if (!theres_an_error[i]){input_to_keep[which(is.na(input_to_keep))][i] <- F}
+    }
+  }
+  
+  if(any(theres_an_error)){
+    stop("Error: some points - for which the Ichthyop simulations worked - don't have any associated weight")
   } else if (all(input_to_keep) == F){
     stop("Error: no point has any non null weight")
   }
+  #' if no error was detected, remove the NAs and replace them by F
+  input_to_keep[which(is.na(input_to_keep))] <- F
+  
   
   weight_per_points_matrix <- weight_per_points_matrix[input_to_keep,]
   sub_dirs <- sub_dirs[input_to_keep]
@@ -146,6 +163,7 @@ if(!Exists$log3){
   cat("\n\n  Life time method :", ltime_method)
   cat("\n  Mean life time :", ltime)
   if (ltime_method == 1){cat("\n  Life time standard deviation:", ltime_sd)}
+  if (exists("add_to_log")){cat(add_to_log) ; rm(add_to_log)}
   sink()
   
   
