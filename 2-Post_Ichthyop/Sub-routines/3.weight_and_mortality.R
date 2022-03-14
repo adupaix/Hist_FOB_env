@@ -43,7 +43,6 @@ if(!Exists$log3){
     add_to_log <- paste("\n\nWarning: some Ichthyop outputs were empty. Please see\n", Names$error_ichthyop_outputs, "\nto have the list of empty .nc files")
     for (i in 1:length(na_points_id)){
       theres_an_error[i] <- !any(grepl(na_points_id[i], readLines(Names$error_ichthyop_outputs)))
-      if (!theres_an_error[i]){input_to_keep[which(is.na(input_to_keep))][i] <- F}
     }
   }
   
