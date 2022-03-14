@@ -49,12 +49,11 @@ if(!Exists$log3){
   
   if(any(theres_an_error)){
     stop("Error: some points - for which the Ichthyop simulations worked - don't have any associated weight")
-  } else if (all(input_to_keep) == F){
+  } else if (all(input_to_keep, na.rm = T) == F){
     stop("Error: no point has any non null weight")
   }
   #' if no error was detected, remove the NAs and replace them by F
   input_to_keep[which(is.na(input_to_keep))] <- F
-  
   
   weight_per_points_matrix <- weight_per_points_matrix[input_to_keep,]
   sub_dirs <- sub_dirs[input_to_keep]
