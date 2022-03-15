@@ -44,20 +44,24 @@ apply.mortality <- function(array.k, ltime, ltime_method, sd = 30){
 #'   If its not the case (eg. dim(x)[3] > dim(y)[3])
 #'   complete the smallest matrix (in that case y) with zeros
 
+# f.for.combining <- function(x,y){
+#   
+#   if(!identical(dim(x),dim(y))){
+#     if (dim(x)[3] > dim(y)[3]){
+#       x2 <- x
+#       y2 <- abind::abind(y, array(0, dim = c(dim(y)[1:2],dim(x)[3]-dim(y)[3])))
+#     } else {
+#       x2 <- y
+#       y2 <- abind::abind(x, array(0, dim = c(dim(x)[1:2],dim(y)[3]-dim(x)[3])))
+#     }
+#   } else {
+#     x2 <- x
+#     y2 <- y
+#   }
+#   
+#   return(sweep(x2, 1:3, y2, "+"))
+# }
+
 f.for.combining <- function(x,y){
-  
-  if(!identical(dim(x),dim(y))){
-    if (dim(x)[3] > dim(y)[3]){
-      x2 <- x
-      y2 <- abind::abind(y, array(0, dim = c(dim(y)[1:2],dim(x)[3]-dim(y)[3])))
-    } else {
-      x2 <- y
-      y2 <- abind::abind(x, array(0, dim = c(dim(x)[1:2],dim(y)[3]-dim(x)[3])))
-    }
-  } else {
-    x2 <- x
-    y2 <- y
-  }
-  
-  return(sweep(x2, 1:3, y2, "+"))
+  return(sweep(x, 1:3, y, "+"))
 }
