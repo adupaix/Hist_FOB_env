@@ -117,18 +117,20 @@ if(!Exists$log3){
         registerDoSEQ()
       } else {
         
+        cl <- parallel::makeCluster(nb_cores)
+        doParallel::registerDoParallel(cl)
         #' read, weight and sum all the arrays for the release date i
         array.i <- foreach(k = 1:length(points_id),
                            .combine = f.for.combining,
-                           .packages = srcUsedPackages) %do% {
+                           .packages = srcUsedPackages) %dopar% {
                              
                              dens_files <- list.files(file.path(sim_output_path, sub_dirs[k], points_id[k]))
                              nc_file_name.k <- grep(release_date.i, dens_files, value = T)
                              
                              nc.k <- ncdf4::nc_open(file.path(sim_output_path, sub_dirs[k], points_id[k], nc_file_name.k))
-                             t <- ncdf4::ncvar_get(nc.k, varid = "time")
-                             time_to_keep <- which(!is.na(t) & t<10^30)
-                             t <- t[time_to_keep]
+                             # t <- ncdf4::ncvar_get(nc.k, varid = "time")
+                             # time_to_keep <- which(!is.na(t) & t<10^30)
+                             # t <- t[time_to_keep]
                              array.k <- ncdf4::ncvar_get(nc.k, varid = "density")[,,time_to_keep]
                              ncdf4::nc_close(nc.k)
                              # array.k <- readRDS(file.path(sim_output_path, sub_dirs[k], points_id[k], paste0(points_id[k], "_", release_date.i, ".rds")))
@@ -140,6 +142,8 @@ if(!Exists$log3){
                              
                            }
       }
+      
+      parallel::stopCluster(cl)
       
       #' transform the dates in dimnames back to date format
       dimnames(array.i)[[3]] <- as.character(as.difftime(as.numeric(dimnames(array.i)[[3]]), units = "secs") + as.Date("1900-01-01"))

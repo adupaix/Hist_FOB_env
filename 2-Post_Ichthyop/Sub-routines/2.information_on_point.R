@@ -193,11 +193,14 @@ if (!Exists$weight){
       stopCluster(cl)
       registerDoSEQ()
     } else {
+      
+      cl <- parallel::makeCluster(nb_cores)
+      doParallel::registerDoParallel(cl)
       #' for each rds file (each rds file contains the density matrices
       #' associated with a release at 1 release date from 1 release point)
       weight_per_points[[i]] <- foreach(k = 1:length(dens_files),
                                         .combine = rbind,
-                                        .packages = srcUsedPackages) %do% {
+                                        .packages = srcUsedPackages) %dopar% {
                                           
                                           ## open the precipitations netcdf file
                                           precip <- ncdf4::nc_open(filename = file.path(DATA_PATH,"precip.mon.mean.nc"))
@@ -277,7 +280,8 @@ if (!Exists$weight){
       
     }
       
-      
+    parallel::stopCluster(cl)
+    
       # change format of weight_per_points
       weight_per_points[[i]] <- as.data.frame(weight_per_points[[i]])
       names(weight_per_points[[i]]) <- c("sub_dir", "point_id", "release_date", paste0("w", 1:n_weight_methods))
