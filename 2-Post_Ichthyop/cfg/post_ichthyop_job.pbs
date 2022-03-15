@@ -1,6 +1,6 @@
 #!/bin/csh
 #PBS -q omp
-#PBS -l select=1:ncpus=28:mem=32g
+#PBS -l select=1:ncpus=10:mem=115g
 #PBS -l walltime=20:00:00
 
 # move to datawork

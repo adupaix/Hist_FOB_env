@@ -185,7 +185,7 @@ if (.Platform$OS.type == "windows" | as.logical(Parallel[1]) == F) {
 } else if (!cluster){ #use a fraction of the available cores
   nb_cores = trunc(detectCores() * as.numeric(Parallel[2]))
 } else if (cluster){
-  nb_cores = 28
+  nb_cores = 10
 }
 
 #'@read_rivers
