@@ -14,3 +14,4 @@ script_test_duree_de_vie.R
 *.tex
 
 !*/cfg/ex_cfg.R
+!*/cfg/post_ichthyop_job.pbs
