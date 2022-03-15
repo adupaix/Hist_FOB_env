@@ -8,8 +8,9 @@ test*
 *output
 *cfgs/
 *.log
-3-Post_Ichthyop/cfg/*
+2-Post_Ichthyop/cfg/*
 Years_selection*
 script_test_duree_de_vie.R
+*.tex
 
 !*/cfg/ex_cfg.R
