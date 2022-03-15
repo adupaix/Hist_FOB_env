@@ -182,8 +182,10 @@ if(any(unlist(Exists$data) == F)){
 # On Windows, or if don't want to parralelize, set cores number to 1
 if (.Platform$OS.type == "windows" | as.logical(Parallel[1]) == F) {
   nb_cores = 1
-} else { #use a fraction of the available cores
+} else if (!cluster){ #use a fraction of the available cores
   nb_cores = trunc(detectCores() * as.numeric(Parallel[2]))
+} else if (cluster){
+  nb_cores = 28
 }
 
 #'@read_rivers
