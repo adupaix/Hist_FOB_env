@@ -117,34 +117,41 @@ if(!Exists$log3){
         registerDoSEQ()
       } else {
         
+        L = length(points_id)
+        n_per_step = 100
+        n_steps = floor(L/n_per_step)
+        
+        array.i <- list()
+        
+        for (j in 1:n_steps){
+          k.indices <- ((j-1)*n_per_step+1):(j*n_per_step)
+          cl <- parallel::makeCluster(nb_cores)
+          array.j <- snow::parLapply(cl, k.indices, get.array.k,
+                                     points_id = points_id,
+                                     sim_output_path = sim_output_path,
+                                     sub_dirs = sub_dirs,
+                                     release_date.i = release_date.i,
+                                     weight.i = weight.i)
+          # array.j <- lapply(indices, f)
+          parallel::stopCluster(cl)
+          array.i[[j]] <- Reduce("+", array.j)
+          rm(array.j) ; invisible(gc())
+        }
+        
+        j=j+1
+        k.indices <- ((j-1)*n_per_step+1):L
         cl <- parallel::makeCluster(nb_cores)
-        doParallel::registerDoParallel(cl)
-        #' read, weight and sum all the arrays for the release date i
-        array.i <- foreach(k = 1:length(points_id),
-                           .combine = f.for.combining,
-                           .packages = srcUsedPackages) %dopar% {
-                             
-                             dens_files <- list.files(file.path(sim_output_path, sub_dirs[k], points_id[k]))
-                             nc_file_name.k <- grep(release_date.i, dens_files, value = T)
-                             
-                             nc.k <- ncdf4::nc_open(file.path(sim_output_path, sub_dirs[k], points_id[k], nc_file_name.k))
-                             t <- ncdf4::ncvar_get(nc.k, varid = "time")
-                             time_to_keep <- which(!is.na(t) & t<10^30) # this part is very long, but it is there to take into account the potential errors in Ichthyop outputs. It can be deleted afterwards
-                             t <- t[time_to_keep]
-                             array.k <- ncdf4::ncvar_get(nc.k, varid = "density")[,,time_to_keep]
-                             # array.k <- ncdf4::ncvar_get(nc.k, varid = "density")
-                             ncdf4::nc_close(nc.k)
-                             # array.k <- readRDS(file.path(sim_output_path, sub_dirs[k], points_id[k], paste0(points_id[k], "_", release_date.i, ".rds")))
-                             dimnames(array.k)[[3]] <- t
-                             
-                             array.k <- array.k * weight.i[k]
-                             
-                             array.k
-                             
-                           }
-      }
-      
-      parallel::stopCluster(cl)
+        array.j <- snow::parLapply(cl, k.indices, func.for.parApply,
+                                   points_id = points_id,
+                                   sim_output_path = sim_output_path,
+                                   sub_dirs = sub_dirs,
+                                   release_date.i = release_date.i,
+                                   weight.i = weight.i)
+        parallel::stopCluster(cl)
+        array.i[[j]] <- Reduce("+", array.j)
+        rm(array.j) ; invisible(gc())
+        
+        array.i <- Reduce("+", array.i)
       
       #' transform the dates in dimnames back to date format
       dimnames(array.i)[[3]] <- as.character(as.difftime(as.numeric(dimnames(array.i)[[3]]), units = "secs") + as.Date("1900-01-01"))
