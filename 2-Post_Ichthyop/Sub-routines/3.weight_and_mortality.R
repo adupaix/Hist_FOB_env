@@ -117,6 +117,25 @@ if(!Exists$log3){
         registerDoSEQ()
       } else {
         
+        #' read, weight and sum all the arrays for the release date i
+        #' 
+        #' indices:
+        #' @j is in 1:n_steps (it allows to read the arrays subset by subset)
+        #' @k is in each subset
+        #' 
+        #' For example:
+        #' if length(points_id) == 13 and n_per_step == 5
+        #' each | represents an iteration of read.array.k() 
+        #' 
+        #'     | | | | |    | | | | |    | | |      L = 13 
+        #'    |_________| |__________| |______|     n_step = 2
+        #'      j = 1       j = 2        j = 3
+        #'k = 1 2 3 4 5    1 2 3 4 5    1 2 3   
+        #'    |______________________|              runs in the for loop
+        #'                            |______|      runs after the for loop
+        #'                            
+        #' for each @j, combine the k arrays by summing them, using Reduce()
+        
         L = length(points_id)
         n_per_step = 100
         n_steps = floor(L/n_per_step)
@@ -153,14 +172,16 @@ if(!Exists$log3){
         
         array.i <- Reduce("+", array.i)
       
-      #' transform the dates in dimnames back to date format
-      dimnames(array.i)[[3]] <- as.character(as.difftime(as.numeric(dimnames(array.i)[[3]]), units = "secs") + as.Date("1900-01-01"))
+        #' transform the dates in dimnames back to date format
+        dimnames(array.i)[[3]] <- as.character(as.difftime(as.numeric(dimnames(array.i)[[3]]), units = "secs") + as.Date("1900-01-01"))
       
-      #' apply mortality
-      array.i <- apply.mortality(array.i, ltime, ltime_method, ltime_sd)
+        #' apply mortality
+        array.i <- apply.mortality(array.i, ltime, ltime_method, ltime_sd)
       
-      #' save the results
-      saveRDS(array.i, fname)
+        #' save the results
+        saveRDS(array.i, fname)
+      }
+    
     }
     
   }
