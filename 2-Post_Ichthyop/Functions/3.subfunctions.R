@@ -68,7 +68,7 @@ f.for.combining <- function(x,y){
 
 #'@sub-function 3
 #'***************
-get.array.k <- function(k, points_id, sim_output_path, sub_dirs, release_date.i, weight.i.k){
+get.array.k <- function(k, points_id, sim_output_path, sub_dirs, release_date.i, weight.i){
   dens_files <- list.files(file.path(sim_output_path, sub_dirs[k], points_id[k]))
   nc_file_name.k <- grep(release_date.i, dens_files, value = T)
   
