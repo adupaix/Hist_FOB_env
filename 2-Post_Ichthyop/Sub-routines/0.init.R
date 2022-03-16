@@ -182,10 +182,12 @@ if(any(unlist(Exists$data) == F)){
 # On Windows, or if don't want to parralelize, set cores number to 1
 if (.Platform$OS.type == "windows" | as.logical(Parallel[1]) == F) {
   nb_cores = 1
-} else if (!cluster){ #use a fraction of the available cores
-  nb_cores = trunc(detectCores() * as.numeric(Parallel[2]))
-} else if (cluster){
-  nb_cores = 10
+} else if (as.logical(Parallel[1]) == T){
+  if (!cluster){ #use a fraction of the available cores
+    nb_cores = trunc(detectCores() * as.numeric(Parallel[2]))
+  } else if (cluster){
+    nb_cores = 10
+  }
 }
 
 #'@read_rivers

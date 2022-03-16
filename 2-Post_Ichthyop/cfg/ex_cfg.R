@@ -46,7 +46,8 @@ Parallel = c(T, 1/2)
 RESET = c(F,F,F,F)
 
 #' @cluster (log): script running on the cluster ?
-#'  allows to choose if foreach loops will be run in parallel (F) or not (T)
+#'  allows to choose how the foreach loops are run in parallel (if Parallel[1] is TRUE)
+#'  use doParallel if T and use doSNOW if F
 cluster = T
 
 #' Arguments on the current study
