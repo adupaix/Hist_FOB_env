@@ -137,7 +137,7 @@ if(!Exists$log3){
         #' for each @j, combine the k arrays by summing them, using Reduce()
         
         L = length(points_id)
-        n_per_step = 100
+        n_per_step = 150
         n_steps = floor(L/n_per_step)
         
         array.i <- list()
@@ -160,7 +160,7 @@ if(!Exists$log3){
         j=j+1
         k.indices <- ((j-1)*n_per_step+1):L
         cl <- parallel::makeCluster(nb_cores)
-        array.j <- snow::parLapply(cl, k.indices, func.for.parApply,
+        array.j <- snow::parLapply(cl, k.indices, get.array.k,
                                    points_id = points_id,
                                    sim_output_path = sim_output_path,
                                    sub_dirs = sub_dirs,
