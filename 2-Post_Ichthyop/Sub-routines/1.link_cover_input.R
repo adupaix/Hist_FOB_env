@@ -298,14 +298,15 @@ if(!Exists$coastalSurface){
     # read the coast file
     read_sf(file.path(DATA_PATH,
                       "coast_cover_with_zeros",
-                      coast_files[k])) -> coast_df 
+                      coast_files[k])) -> coast_df
+    
+    # remove the cover column (not useful)
+    coast_df %>% dplyr::select(-couvert) -> coast_df
     
     
     # test if the forest coast shp is in the right format
     if (!testing){
-      if(!identical(as.numeric(0:9), as.numeric(levels(as.factor(coast_df$couvert))))){
-        stop("Error: wrong coast file format (levels different from 0:9)")
-      } else if(dim(coast_df)[1] != max(coast_df$id)){
+      if(dim(coast_df)[1] != max(coast_df$id)){
         stop("Error: missing points in coast file format")
       }
     }
@@ -326,7 +327,7 @@ if(!Exists$coastalSurface){
     
     msg <- "  - Get input points associated with coastal cells\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
     
-    sample_size <- 2000
+    sample_size <- 1000
     
     niter <- floor( dim(coast_df)[1] / sample_size )
     
@@ -340,18 +341,20 @@ if(!Exists$coastalSurface){
       
       cover_surface_per_points <- get.nb.cover.per.input(indexes, coast_df, coastal_surface, count_cover = F)
       
-      #'@test: result: fastest sample size is 2000?
+      #'@test: result: fastest sample size is 1000
       # indexes1 <- ((i-1)*500+1):(i*500)
       # indexes2 <- ((i-1)*1000+1):(i*1000)
       # indexes3 <- ((i-1)*1500+1):(i*1500)
       # indexes4 <- ((i-1)*1750+1):(i*1750)
       # indexes5 <- ((i-1)*2000+1):(i*2000)
-      # microbenchmark(s500 = {cover_surface_per_points <- get.nb.cover.per.input(indexes1, coast_df, coastal_surface, count_cover = F)},
-      #                s1000 = {cover_surface_per_points <- get.nb.cover.per.input(indexes2, coast_df, coastal_surface, count_cover = F)},
-      #                s1500 = {cover_surface_per_points <- get.nb.cover.per.input(indexes3, coast_df, coastal_surface, count_cover = F)},
-      #                s1750 = {cover_surface_per_points <- get.nb.cover.per.input(indexes4, coast_df, coastal_surface, count_cover = F)},
-      #                s2000 = {cover_surface_per_points <- get.nb.cover.per.input(indexes5, coast_df, coastal_surface, count_cover = F)})
-      # 
+      # indexes6 <- ((i-1)*2500+1):(i*2500)
+      # microbenchmark::microbenchmark(s500 = {cover_surface_per_points <- get.nb.cover.per.input(indexes1, coast_df, coastal_surface, count_cover = F)},
+      #                                s1000 = {cover_surface_per_points <- get.nb.cover.per.input(indexes2, coast_df, coastal_surface, count_cover = F)},
+      #                                s1500 = {cover_surface_per_points <- get.nb.cover.per.input(indexes3, coast_df, coastal_surface, count_cover = F)},
+      #                                s1750 = {cover_surface_per_points <- get.nb.cover.per.input(indexes4, coast_df, coastal_surface, count_cover = F)},
+      #                                s2000 = {cover_surface_per_points <- get.nb.cover.per.input(indexes5, coast_df, coastal_surface, count_cover = F)},
+      #                                s2500 = {cover_surface_per_points <- get.nb.cover.per.input(indexes6, coast_df, coastal_surface, count_cover = F)})
+
       coastal_surface$coastal_surface_m2[
         coastal_surface$id_curr == as.numeric(names(cover_surface_per_points))] <-
         coastal_surface$coastal_surface_m2[ coastal_surface$id_curr == as.numeric(names(cover_surface_per_points)) ] + cover_surface_per_points
