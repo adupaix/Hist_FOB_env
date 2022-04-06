@@ -142,41 +142,18 @@ Exists$coverRiver <- file.exists(Names$coverRiver)
 Exists$coverGlobal <- file.exists(Names$coverGlobal)
 Exists$coastalSurface <- file.exists(Names$coastalSurface)
 Exists$weight <- all(file.exists(Names$weightInput))
-Exists$log3 <- file.exists(Names$log3)
 Exists$globArray <- file.exists(Names$globArray)
 Exists$aggArray <- file.exists(Names$aggArray)
 Exists$maps <- file.exists(Names$pngMaps)
 
-# Logical to check that the needed data exist
-Exists$data <- list()
-Exists$data$river <- file.exists(file.path(DATA_PATH, "river_data", "rivers_IO.rds"))
-Exists$data$precipitations <- file.exists(file.path(DATA_PATH,"precip.mon.mean.nc"))
-Exists$data$release_dates <- file.exists(file.path(sim_input_path, paste0("cfgs_",year[1],"-",year[length(year)]), "release_dates.txt"))
-Exists$data$input_ichthyop_IDs <- file.exists(file.path(sim_input_path, "IDs.txt"))
-Exists$data$input_ichthyop_link_table <- file.exists(file.path(sim_input_path, "Link_table.txt"))
-
-if(any(unlist(Exists$data) == F)){
-  stop(paste("the following data is missing:",
-             paste(names(which(unlist(Exists$data) == F)), collapse = " ; ")))
-}
-
-#get the release dates and associated years
-release_dates <- read.delim(file.path(sim_input_path, paste0("cfgs_",year[1],"-",year[length(year)]), "release_dates.txt"))
-release_years <- unique(lubridate::year(as.Date(release_dates[,1])))
-
-# Logical to check that the cover data exists
-Exists$data$cover <- all(dir.exists(file.path(DATA_PATH,
-                                          "forest_cover",
-                                          paste0("forest_cover_", release_years))))
-
-Exists$data$coast_surface <- dir.exists(file.path(DATA_PATH,"coast_cover_with_zeros"))
-Exists$data$simulation_output <- dir.exists(sim_output_path)
-
-if(any(unlist(Exists$data) == F)){
-  stop(paste("the following data is missing:",
-             paste(names(which(unlist(Exists$data) == F)), collapse = " ; ")))
-}
-
+#' logs are generated at the end each subroutine. If the log exists, it means that
+#' the sub-routine ran and that the outputs exist
+#' As each sub-routine generate several different output files, it is simpler to
+#' use log files
+Exists$log1 <- file.exists(Names$log1)
+Exists$log2 <- file.exists(Names$log2)
+Exists$log3 <- file.exists(Names$log3)
+Exists$log4 <- file.exists(Names$log4)
 
 # For parallel:
 # On Windows, or if don't want to parralelize, set cores number to 1
@@ -190,13 +167,60 @@ if (.Platform$OS.type == "windows" | as.logical(Parallel[1]) == F) {
   }
 }
 
-#'@read_rivers
-#'**********
+#' @check_data_existence & @read_rivers
+#' ***********************************
+#' Logical to check that the needed data exist
+Exists$data <- list()
+
+#' List of the needed data and where it is needed:
+#' 
+#' | Sub-routine  |  0  |  1  |  2  |  3  |  4  |
+#' |--------------|-----|-----|-----|-----|-----|
+#' | precip.      |     |     |  X  |     |     |
+#' | rivers       |     |  X  |  X  |     |     |
+#' | release dates|  X  |  X  |  X  |     |     |
+#' | input link   |     |  X  |  X  |     |     |
+#' | input IDs    |     |  X  |     |     |     |
+#' | cover        |     |  X  |     |     |     |
+#' | coastal cover|     |  X  |     |     |     |
+#' | sim outputs  |     |     |  X  |  X  |     |
+
+
 #' The 2 first sub routines need to use data on rivers
 #' If none of these 2 subroutines need to be run, we do not
 #' read the rivers data
-if (!Exists$cover | !Exists$weight){
+if (!Exists$log1 | !Exists$log2){
   
+  Exists$data$river <- file.exists(file.path(DATA_PATH, "river_data", "rivers_IO.rds"))
+  if (!Exists$log2){
+    Exists$data$precipitations <- file.exists(file.path(DATA_PATH,"precip.mon.mean.nc"))
+    Exists$data$simulation_output <- dir.exists(sim_output_path)
+  }
+  
+  Exists$data$release_dates <- file.exists(file.path(sim_input_path, paste0("cfgs_",year[1],"-",year[length(year)]), "release_dates.txt"))
+  Exists$data$input_ichthyop_link_table <- file.exists(file.path(sim_input_path, "Link_table.txt"))
+  
+  if(any(unlist(Exists$data) == F)){
+    stop(paste("the following data is missing:",
+               paste(names(which(unlist(Exists$data) == F)), collapse = " ; ")))
+  }
+  
+  #get the release dates and associated years
+  release_dates <- read.delim(file.path(sim_input_path, paste0("cfgs_",year[1],"-",year[length(year)]), "release_dates.txt"))
+  release_years <- unique(lubridate::year(as.Date(release_dates[,1])))
+  
+  
+  if (!Exists$log1){
+    Exists$data$input_ichthyop_IDs <- file.exists(file.path(sim_input_path, "IDs.txt"))
+    # Logical to check that the cover data exists
+    Exists$data$cover <- all(dir.exists(file.path(DATA_PATH,
+                                                  "forest_cover",
+                                                  paste0("forest_cover_", release_years))))
+    Exists$data$coast_surface <- dir.exists(file.path(DATA_PATH,"coast_cover_with_zeros"))
+  }
+  
+  
+  #'@read_rivers
   msg <- "Reading and filtering rivers file\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   msg <- "    - Reading\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
@@ -248,3 +272,13 @@ if (!Exists$cover | !Exists$weight){
     dplyr::select(MAIN_RIV, HYRIV_ID) -> link_HYRIV_MAINRIV
 }
 
+# check that the simulation outputs exist
+if (!Exists$log3){
+  Exists$data$simulation_output <- dir.exists(sim_output_path)
+}
+
+# if any needed data is missing, stop the script
+if(any(unlist(Exists$data) == F)){
+  stop(paste("the following data is missing:",
+             paste(names(which(unlist(Exists$data) == F)), collapse = " ; ")))
+}
