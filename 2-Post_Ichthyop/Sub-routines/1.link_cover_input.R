@@ -59,6 +59,7 @@ if(!Exists$cover){
     coastal_cover_fnames <- file.path(output_paths[1],
                                       sub(length(cover_files), "f", paste0("input_point_with_cover_surface_v", 1:length(cover_files),"_",release_years[y],".txt")))
     
+    
     # if any of the file counting the number of cover points per river is missing, we need the buffer around the rivers
     if ( !all(file.exists(river_cover_fnames)) & !all(file.exists(coastal_cover_fnames)) & !exists("river_buffer")){
       # build buffer of 1km around the rivers
@@ -233,9 +234,9 @@ if(!Exists$cover){
           
           cover_surface_per_points <- get.nb.cover.per.input(indexes, coastal_cover, input_points)
           
-          input_points$nb_coastal_cover_points[
+          input_points$coastal_cover_surface_m2[
             input_points$id_curr == as.numeric(names(cover_surface_per_points))] <-
-            input_points$nb_coastal_cover_points[ input_points$id_curr == as.numeric(names(cover_surface_per_points)) ] + cover_surface_per_points
+            input_points$coastal_cover_surface_m2[ input_points$id_curr == as.numeric(names(cover_surface_per_points)) ] + cover_surface_per_points
         }
         
         pb$tick()
