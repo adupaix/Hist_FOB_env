@@ -101,13 +101,13 @@ build.ggplot <- function(df, titre, col_title, log_color_scale, fixed_scale_max,
   if (log_color_scale == T){
     p <- p + scale_fill_gradientn(
       trans = "log10",
-      colors = c("gray80", "blue", "yellow", "red"),
+      colors = c("black", "blue", "yellow", "red"),
       name = col_title,
       limits = c(min, max))
     #sans transformation log
   } else {
     p <- p + scale_fill_gradientn(
-      colors = c("gray80", "blue", "yellow", "red"),
+      colors = c("black", "blue", "yellow", "red"),
       name = col_title,
       limits = c(0,max))
   }

@@ -157,10 +157,15 @@ if (!Exists$maps){
     time_scale <- 1
   }
   
+  #' if del_low_values is TRUE, we filter the array
+  if (del_low_values){
+    mean_agg_array[which(mean_agg_array < max(mean_agg_array)*10**(-10))] <- NA
+  }
+  
   #' if the scale is the same for all the maps
   if (common_scale_max == T){
     #' fix the max
-    fixed_scale_max <- ceiling(max(mean_agg_array))
+    fixed_scale_max <- ceiling(max(mean_agg_array, na.rm = T))
   } else{
     #' else fix at zero (see limits in ?ggplot2::scale_fill_gradientn)
     fixed_scale_max <- 0

@@ -151,6 +151,9 @@ color_scale_pos = "out_panel"
 #' c(80,110, 0,30): gulf of Bengal
 area_to_map = c(20,140,-40,40)
 
+#'## @del_low_values (log): specify if a filter is applied to the low density values (T) or not (F)
+del_low_values = T
+
 
 #' ***************
 #' Launch analysis
