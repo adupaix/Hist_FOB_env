@@ -277,7 +277,7 @@ if(!Exists$cover){
 #'********************************************************************************
 
 
-msg <- "\n\n3. Get the length of coastline associated with each input point\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+msg <- crayon::bold("\n\n3. Get the length of coastline associated with each input point\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
 
 if(!all(file.exists(coastal_surface_fnames)) & !Exists$coastalSurface){
@@ -294,8 +294,6 @@ if(!all(file.exists(coastal_surface_fnames)) & !Exists$coastalSurface){
   # add a column to save the surface of coastal buffer
   coastal_surface$coastal_surface_m2 <- 0
   
-  msg <- "  - Load coastal cover with zeros\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-  
   #' #' get the cover files names from 2000 (the cover files from 2000 also contain the zeros,
   #' #' which allows to count the number of points and hence count the number of coastline points)
   #' coast_files <- list.files(path = file.path(DATA_PATH,
@@ -310,7 +308,11 @@ if(!all(file.exists(coastal_surface_fnames)) & !Exists$coastalSurface){
   
   for (k in 1:length(coast_files)){
     
+    msg <- paste("\nCoastal file n", k, "/", length(coast_files), "\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+    
     if(!file.exists(coastal_surface_fnames[k])){
+      
+      msg <- "  - Load coastal cover with zeros\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
       
       # read the coast file
       read_sf(file.path(DATA_PATH,
@@ -344,7 +346,7 @@ if(!all(file.exists(coastal_surface_fnames)) & !Exists$coastalSurface){
       
       msg <- "  - Get input points associated with coastal cells\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
       
-      sample_size <- 1000
+      sample_size <- 12000
       
       niter <- floor( dim(coast_df)[1] / sample_size )
       
@@ -358,7 +360,7 @@ if(!all(file.exists(coastal_surface_fnames)) & !Exists$coastalSurface){
         
         cover_surface_per_points <- get.nb.cover.per.input(indexes, coast_df, coastal_surface, count_cover = F)
         
-        #'@test: result: fastest sample size is 1000
+        #'@test: result: fastest sample size is 1000 (in my computer, other tests on the cluster show that bigger distance matrices are better)
         # indexes1 <- ((i-1)*500+1):(i*500)
         # indexes2 <- ((i-1)*1000+1):(i*1000)
         # indexes3 <- ((i-1)*1500+1):(i*1500)
