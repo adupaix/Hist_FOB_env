@@ -209,6 +209,9 @@ if (!Exists$log1 | !Exists$log2){
   release_dates <- read.delim(file.path(sim_input_path, paste0("cfgs_",year[1],"-",year[length(year)]), "release_dates.txt"))
   release_years <- unique(lubridate::year(as.Date(release_dates[,1])))
   
+  ### Not really satisfying
+  release_years <- release_years[which(release_years >= 2000)]
+  
   
   if (!Exists$log1){
     Exists$data$input_ichthyop_IDs <- file.exists(file.path(sim_input_path, "IDs.txt"))
