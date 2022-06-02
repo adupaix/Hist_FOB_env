@@ -30,13 +30,25 @@ if(!Exists$cover){
     cover_files <- list.files(path = file.path(DATA_PATH,
                                                "forest_cover",
                                                paste0("forest_cover_", release_years[y])),
-                              pattern = "shp")
+                              pattern = "shp$")
     
     #' @testing
     #' uncomment line 38 for script testing
     #' uncomment line 39 to run the script
     # cover_files <- grep("sample",cover_files, value = T)
     cover_files <- cover_files[!grepl("sample",cover_files)]
+    
+    
+    #' get the cover files names which contain the zeros,
+    #' it allows to count the number of points and hence count the number of coastline points
+    coast_files <- list.files(path = file.path(DATA_PATH,
+                                               "coast_cover_with_zeros"),
+                              pattern = "shp$")
+    #' @testing
+    #' uncomment 1st line for script testing
+    #' uncomment 2nd line to run the script
+    # coast_files <- grep("sample",coast_files, value = T)
+    coast_files <- coast_files[!grepl("sample",coast_files)]
     
     #' read the input points
     #' filter them to keep only the IO ones
@@ -52,12 +64,15 @@ if(!Exists$cover){
       arrange(id_curr)
     input_points$coastal_cover_surface_m2 <- 0
     
-    # mouth_cover_fnames <- file.path(output_paths[1], paste0("link_mouths_",sub(".shp", "", cover_files),".txt"))
-    
+    # generate the output files names
     river_cover_fnames <- file.path(output_paths[1], paste0("link_rivers_",sub(".shp", "", cover_files),"_",release_years[y],".txt"))
     
     coastal_cover_fnames <- file.path(output_paths[1],
                                       sub(length(cover_files), "f", paste0("input_point_with_cover_surface_v", 1:length(cover_files),"_",release_years[y],".txt")))
+    
+    coastal_surface_fnames <- file.path(output_paths[1],
+                                        sub(length(coast_files), "f", paste0("coastal_surface_per_input_point_v", 1:length(coast_files),".txt")))
+    
     
     # if any of the file counting the number of cover points per river is missing, we need the buffer around the rivers
     if ( !all(file.exists(river_cover_fnames)) & !all(file.exists(coastal_cover_fnames)) & !exists("river_buffer")){
@@ -233,9 +248,9 @@ if(!Exists$cover){
           
           cover_surface_per_points <- get.nb.cover.per.input(indexes, coastal_cover, input_points)
           
-          input_points$nb_coastal_cover_points[
+          input_points$coastal_cover_surface_m2[
             input_points$id_curr == as.numeric(names(cover_surface_per_points))] <-
-            input_points$nb_coastal_cover_points[ input_points$id_curr == as.numeric(names(cover_surface_per_points)) ] + cover_surface_per_points
+            input_points$coastal_cover_surface_m2[ input_points$id_curr == as.numeric(names(cover_surface_per_points)) ] + cover_surface_per_points
         }
         
         pb$tick()
@@ -262,10 +277,10 @@ if(!Exists$cover){
 #'********************************************************************************
 
 
-msg <- "\n\n3. Get the length of coastline associated with each input point\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+msg <- crayon::bold("\n\n3. Get the length of coastline associated with each input point\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
 
-if(!Exists$coastalSurface){
+if(!all(file.exists(coastal_surface_fnames)) & !Exists$coastalSurface){
   
   #' Generate file containing the coastal surface associated with each input point
   #' @filename: coastal_surface_per_input_point.csv (Names$coastalSurface)
@@ -279,13 +294,11 @@ if(!Exists$coastalSurface){
   # add a column to save the surface of coastal buffer
   coastal_surface$coastal_surface_m2 <- 0
   
-  msg <- "  - Load coastline and sample points on it\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-  
-  #' get the cover files names from 2000 (the cover files from 2000 also contain the zeros,
-  #' which allows to count the number of points and hence count the number of coastline points)
-  coast_files <- list.files(path = file.path(DATA_PATH,
-                                             "coast_cover_with_zeros"),
-                            pattern = "shp$")
+  #' #' get the cover files names from 2000 (the cover files from 2000 also contain the zeros,
+  #' #' which allows to count the number of points and hence count the number of coastline points)
+  #' coast_files <- list.files(path = file.path(DATA_PATH,
+  #'                                            "coast_cover_with_zeros"),
+  #'                           pattern = "shp$")
   
   #' @testing
   #' uncomment 1st line for script testing
@@ -294,91 +307,113 @@ if(!Exists$coastalSurface){
   coast_files <- coast_files[!grepl("sample",coast_files)] ; testing = F
   
   for (k in 1:length(coast_files)){
-
-    # read the coast file
-    read_sf(file.path(DATA_PATH,
-                      "coast_cover_with_zeros",
-                      coast_files[k])) -> coast_df 
     
+    msg <- paste("\nCoastal file n", k, "/", length(coast_files), "\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
     
-    # test if the forest coast shp is in the right format
-    if (!testing){
-      if(!identical(as.numeric(0:9), as.numeric(levels(as.factor(coast_df$couvert))))){
-        stop("Error: wrong coast file format (levels different from 0:9)")
-      } else if(dim(coast_df)[1] != max(coast_df$id)){
-        stop("Error: missing points in coast file format")
+    if(!file.exists(coastal_surface_fnames[k])){
+      
+      msg <- "  - Load coastal cover with zeros\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+      
+      # read the coast file
+      read_sf(file.path(DATA_PATH,
+                        "coast_cover_with_zeros",
+                        coast_files[k])) -> coast_df
+      
+      # remove the cover column (not useful)
+      coast_df %>% dplyr::select(-couvert) -> coast_df
+      
+      
+      # test if the forest coast shp is in the right format
+      if (!testing){
+        if(dim(coast_df)[1] != max(coast_df$id)){
+          stop("Error: missing points in coast file format")
+        }
       }
-    }
-    
-    msg <- "  - Filtering coastal points with the current product mask if needed\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-    
-    coast_bbox <- st_bbox(coast_df)
-    # read the bbox of the forcing product from the mask saved in the Resources folder
-    forcing_bbox <- get.forcing.bbox(RESOURCE_PATH, forcing)
-    #' crop the coast points df only if any of the points are outside the forcing product 
-    #' if it's not the case, it would also work but it's useless and we'd loose time...
-    coast_is_to_crop <- any(c(coast_bbox[1:2]<forcing_bbox[1:2],
-                              coast_bbox[3:4]>forcing_bbox[3:4]))
-    
-    if (coast_is_to_crop){
-      coast_df <- faster.st_crop.points(coast_df, forcing_bbox)
-    }
-    
-    msg <- "  - Get input points associated with coastal cells\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-    
-    sample_size <- 2000
-    
-    niter <- floor( dim(coast_df)[1] / sample_size )
-    
-    pb <- progress_bar$new(format = "[:bar] :percent | Coastal points sample :current / :total",
-                           total = niter+1
-    )
-    
-    for (i in 1:niter){
       
-      indexes <- ((i-1)*sample_size+1):(i*sample_size)
+      msg <- "  - Filtering coastal points with the current product mask if needed\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
       
-      cover_surface_per_points <- get.nb.cover.per.input(indexes, coast_df, coastal_surface, count_cover = F)
+      coast_bbox <- st_bbox(coast_df)
+      # read the bbox of the forcing product from the mask saved in the Resources folder
+      forcing_bbox <- get.forcing.bbox(RESOURCE_PATH, forcing)
+      #' crop the coast points df only if any of the points are outside the forcing product 
+      #' if it's not the case, it would also work but it's useless and we'd loose time...
+      coast_is_to_crop <- any(c(coast_bbox[1:2]<forcing_bbox[1:2],
+                                coast_bbox[3:4]>forcing_bbox[3:4]))
       
-      #'@test: result: fastest sample size is 2000?
-      # indexes1 <- ((i-1)*500+1):(i*500)
-      # indexes2 <- ((i-1)*1000+1):(i*1000)
-      # indexes3 <- ((i-1)*1500+1):(i*1500)
-      # indexes4 <- ((i-1)*1750+1):(i*1750)
-      # indexes5 <- ((i-1)*2000+1):(i*2000)
-      # microbenchmark(s500 = {cover_surface_per_points <- get.nb.cover.per.input(indexes1, coast_df, coastal_surface, count_cover = F)},
-      #                s1000 = {cover_surface_per_points <- get.nb.cover.per.input(indexes2, coast_df, coastal_surface, count_cover = F)},
-      #                s1500 = {cover_surface_per_points <- get.nb.cover.per.input(indexes3, coast_df, coastal_surface, count_cover = F)},
-      #                s1750 = {cover_surface_per_points <- get.nb.cover.per.input(indexes4, coast_df, coastal_surface, count_cover = F)},
-      #                s2000 = {cover_surface_per_points <- get.nb.cover.per.input(indexes5, coast_df, coastal_surface, count_cover = F)})
-      # 
-      coastal_surface$coastal_surface_m2[
-        coastal_surface$id_curr == as.numeric(names(cover_surface_per_points))] <-
-        coastal_surface$coastal_surface_m2[ coastal_surface$id_curr == as.numeric(names(cover_surface_per_points)) ] + cover_surface_per_points
+      if (coast_is_to_crop){
+        coast_df <- faster.st_crop.points(coast_df, forcing_bbox)
+      }
+      
+      msg <- "  - Get input points associated with coastal cells\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+      
+      sample_size <- 12000
+      
+      niter <- floor( dim(coast_df)[1] / sample_size )
+      
+      pb <- progress_bar$new(format = "[:bar] :percent | Coastal points sample :current / :total",
+                             total = niter+1
+      )
+      
+      for (i in 1:niter){
+        
+        indexes <- ((i-1)*sample_size+1):(i*sample_size)
+        
+        cover_surface_per_points <- get.nb.cover.per.input(indexes, coast_df, coastal_surface, count_cover = F)
+        
+        #'@test: result: fastest sample size is 1000 (in my computer, other tests on the cluster show that bigger distance matrices are better)
+        # indexes1 <- ((i-1)*500+1):(i*500)
+        # indexes2 <- ((i-1)*1000+1):(i*1000)
+        # indexes3 <- ((i-1)*1500+1):(i*1500)
+        # indexes4 <- ((i-1)*1750+1):(i*1750)
+        # indexes5 <- ((i-1)*2000+1):(i*2000)
+        # indexes6 <- ((i-1)*2500+1):(i*2500)
+        # microbenchmark::microbenchmark(s500 = {cover_surface_per_points <- get.nb.cover.per.input(indexes1, coast_df, coastal_surface, count_cover = F)},
+        #                                s1000 = {cover_surface_per_points <- get.nb.cover.per.input(indexes2, coast_df, coastal_surface, count_cover = F)},
+        #                                s1500 = {cover_surface_per_points <- get.nb.cover.per.input(indexes3, coast_df, coastal_surface, count_cover = F)},
+        #                                s1750 = {cover_surface_per_points <- get.nb.cover.per.input(indexes4, coast_df, coastal_surface, count_cover = F)},
+        #                                s2000 = {cover_surface_per_points <- get.nb.cover.per.input(indexes5, coast_df, coastal_surface, count_cover = F)},
+        #                                s2500 = {cover_surface_per_points <- get.nb.cover.per.input(indexes6, coast_df, coastal_surface, count_cover = F)})
+        
+        coastal_surface$coastal_surface_m2[
+          coastal_surface$id_curr == as.numeric(names(cover_surface_per_points))] <-
+          coastal_surface$coastal_surface_m2[ coastal_surface$id_curr == as.numeric(names(cover_surface_per_points)) ] + cover_surface_per_points
+        
+        pb$tick()
+        
+      }
+      
+      if (niter != dim(coast_df)[1] / sample_size){
+        indexes <- (niter*sample_size+1):(dim(coast_df)[1])
+        
+        cover_surface_per_points <- get.nb.cover.per.input(indexes, coast_df, coastal_surface, count_cover = F)
+        
+        coastal_surface$coastal_surface_m2[
+          coastal_surface$id_curr == as.numeric(names(cover_surface_per_points))] <-
+          coastal_surface$coastal_surface_m2[ coastal_surface$id_curr == as.numeric(names(cover_surface_per_points)) ] + cover_surface_per_points
+      }
       
       pb$tick()
       
-    }
-    
-    if (niter != dim(coast_df)[1] / sample_size){
-      indexes <- (niter*sample_size+1):(dim(coast_df)[1])
+      rm(coast_df) ; invisible(gc())
       
-      cover_surface_per_points <- get.nb.cover.per.input(indexes, coast_df, coastal_surface, count_cover = F)
+      write.table(coastal_surface,
+                  file = coastal_surface_fnames[k])
       
-      coastal_surface$coastal_surface_m2[
-        coastal_surface$id_curr == as.numeric(names(cover_surface_per_points))] <-
-        coastal_surface$coastal_surface_m2[ coastal_surface$id_curr == as.numeric(names(cover_surface_per_points)) ] + cover_surface_per_points
+    } else {
+      
+      msg <- "  - Reading existing coastal surface - release point table\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+      
+      coastal_surface <- read.table(coastal_surface_fnames[k])
+      
     }
-    
-    pb$tick()
-    
-    rm(coast_df) ; invisible(gc())
-    
-    write.csv(coastal_surface,
-              file = Names$coastalSurface,
-              row.names = F)
     
   }
+  
+  write.csv(coastal_surface,
+            file = Names$coastalSurface,
+            row.names = F,
+            append = F)
+  
   
 } else {
   

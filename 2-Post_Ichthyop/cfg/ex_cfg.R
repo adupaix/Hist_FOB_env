@@ -46,7 +46,8 @@ Parallel = c(T, 1/2)
 RESET = c(F,F,F,F)
 
 #' @cluster (log): script running on the cluster ?
-#'  allows to choose if foreach loops will be run in parallel (F) or not (T)
+#'  allows to choose how the foreach loops are run in parallel (if Parallel[1] is TRUE)
+#'  use doParallel if T and use doSNOW if F
 cluster = T
 
 #' Arguments on the current study
@@ -149,6 +150,9 @@ color_scale_pos = "out_panel"
 #' c(20,80, -30,30): western Indian Ocean
 #' c(80,110, 0,30): gulf of Bengal
 area_to_map = c(20,140,-40,40)
+
+#'## @del_low_values (log): specify if a filter is applied to the low density values (T) or not (F)
+del_low_values = T
 
 
 #' ***************

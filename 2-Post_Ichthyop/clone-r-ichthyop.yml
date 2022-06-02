@@ -136,6 +136,7 @@ dependencies:
   - r-desc=1.4.0=r40hc72bb7e_0
   - r-diffobj=0.3.5=r40hcfec24a_0
   - r-digest=0.6.28=r40h03ef668_0
+  - r-doparallel=1.0.17=r40hc72bb7e_0
   - r-dosnow=1.0.19=r40hc72bb7e_1
   - r-dplyr=1.0.2=r40h0357c0b_0
   - r-e1071=1.7_9=r40h03ef668_0
@@ -292,4 +293,4 @@ dependencies:
   - xz=5.2.5=h516909a_1
   - zlib=1.2.11=h36c2ea0_1013
   - zstd=1.4.8=hdf46e1d_0
-prefix: /home/adupaix/anaconda3/envs/clone-r-ichthyop
+prefix: /home/barrier/Softwares/anaconda3/envs/clone-r-ichthyop

@@ -1,0 +1,13 @@
+#!/bin/csh
+#PBS -l mem=32g
+#PBS -l walltime=30:00:00
+
+# move to datawork
+cd /home1/datawork/adupaix/Hist_FOB_env/2-Post_Ichthyop
+
+# activate the conda environment
+source /appli/anaconda/latest/etc/profile.d/conda.csh
+conda activate clone-r-ichthyop
+
+# run rscript
+Rscript cfg/22.03.04-test_w1.R > 22.03.04-test_w1.log

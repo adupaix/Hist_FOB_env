@@ -44,20 +44,45 @@ apply.mortality <- function(array.k, ltime, ltime_method, sd = 30){
 #'   If its not the case (eg. dim(x)[3] > dim(y)[3])
 #'   complete the smallest matrix (in that case y) with zeros
 
+# f.for.combining <- function(x,y){
+#   
+#   if(!identical(dim(x),dim(y))){
+#     if (dim(x)[3] > dim(y)[3]){
+#       x2 <- x
+#       y2 <- abind::abind(y, array(0, dim = c(dim(y)[1:2],dim(x)[3]-dim(y)[3])))
+#     } else {
+#       x2 <- y
+#       y2 <- abind::abind(x, array(0, dim = c(dim(x)[1:2],dim(y)[3]-dim(x)[3])))
+#     }
+#   } else {
+#     x2 <- x
+#     y2 <- y
+#   }
+#   
+#   return(sweep(x2, 1:3, y2, "+"))
+# }
+
 f.for.combining <- function(x,y){
+  return(sweep(x, 1:3, y, "+"))
+}
+
+#'@sub-function 3
+#'***************
+get.array.k <- function(k, points_id, sim_output_path, sub_dirs, release_date.i, weight.i){
+  dens_files <- list.files(file.path(sim_output_path, sub_dirs[k], points_id[k]))
+  nc_file_name.k <- grep(release_date.i, dens_files, value = T)
   
-  if(!identical(dim(x),dim(y))){
-    if (dim(x)[3] > dim(y)[3]){
-      x2 <- x
-      y2 <- abind::abind(y, array(0, dim = c(dim(y)[1:2],dim(x)[3]-dim(y)[3])))
-    } else {
-      x2 <- y
-      y2 <- abind::abind(x, array(0, dim = c(dim(x)[1:2],dim(y)[3]-dim(x)[3])))
-    }
-  } else {
-    x2 <- x
-    y2 <- y
-  }
+  nc.k <- ncdf4::nc_open(file.path(sim_output_path, sub_dirs[k], points_id[k], nc_file_name.k))
+  t <- ncdf4::ncvar_get(nc.k, varid = "time")
+  time_to_keep <- which(!is.na(t) & t<10^30) # this part is very long, but it is there to take into account the potential errors in Ichthyop outputs. It can be deleted afterwards
+  t <- t[time_to_keep]
+  array.k <- ncdf4::ncvar_get(nc.k, varid = "density")[,,time_to_keep]
+  # array.k <- ncdf4::ncvar_get(nc.k, varid = "density")
+  ncdf4::nc_close(nc.k)
+  # array.k <- readRDS(file.path(sim_output_path, sub_dirs[k], points_id[k], paste0(points_id[k], "_", release_date.i, ".rds")))
+  dimnames(array.k)[[3]] <- t
   
-  return(sweep(x2, 1:3, y2, "+"))
+  array.k <- array.k * weight.i[k]
+  
+  return(array.k)
 }

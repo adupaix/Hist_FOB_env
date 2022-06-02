@@ -78,10 +78,16 @@ generate.sim_name <- function(forcing,
 get.nb.cover.per.input <- function(indexes, coastal_cover, input_points,
                                    count_cover = T){
   
-  sub_coastal_cover <- data.frame(cbind(coastal_cover$id[indexes],
-                                        coastal_cover$couvert[indexes],
-                                        st_coordinates(coastal_cover[indexes,])))
-  names(sub_coastal_cover) <- c("id_cover", "couvert", "x", "y")
+  if (count_cover == F){
+    sub_coastal_cover <- data.frame(cbind(coastal_cover$id[indexes],
+                                          st_coordinates(coastal_cover[indexes,])))
+    names(sub_coastal_cover) <- c("id_cover", "x", "y")
+  } else if (count_cover == T){
+    sub_coastal_cover <- data.frame(cbind(coastal_cover$id[indexes],
+                                          coastal_cover$couvert[indexes],
+                                          st_coordinates(coastal_cover[indexes,])))
+    names(sub_coastal_cover) <- c("id_cover", "couvert", "x", "y")
+  }
 
   x_input <- t(matrix(input_points$x,
                       nrow = length(input_points$x),
