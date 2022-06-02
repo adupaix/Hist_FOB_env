@@ -128,7 +128,7 @@ get.associated.rivers.and.precip <- function(link_river_input,
       
       # get the number of cover points associated with each river segment
       data %>% left_join(n_cover, by = c("HYRIV_ID","MAIN_RIV")) %>%
-        dplyr::filter(year == year(point$release_date)) -> data
+        dplyr::filter(year == ifelse(year(point$release_date) <= 2000, 2000, year(point$release_date))) -> data
       
       point$rivers$data[[i]] <- data
       
@@ -150,9 +150,9 @@ get.associated.rivers.and.precip <- function(link_river_input,
 #' forest_surface is in m2
 get.cover.surface <- function(link_table, point){
   
-  point$coastal_cover_surface_m2 <- link_table$coastal_cover_surface_m2[link_table$id_curr == as.numeric(point$id) & link_table$year == year(point$release_date)]
+  point$coastal_cover_surface_m2 <- link_table$coastal_cover_surface_m2[link_table$id_curr == as.numeric(point$id) & link_table$year == ifelse(year(point$release_date) <= 2000, 2000, year(point$release_date))]
   
-  point$total_cover_surface_m2 <- link_table$total_cover_surface_m2[link_table$id_curr == as.numeric(point$id) & link_table$year == year(point$release_date)]
+  point$total_cover_surface_m2 <- link_table$total_cover_surface_m2[link_table$id_curr == as.numeric(point$id) & link_table$year == ifelse(year(point$release_date) <= 2000, 2000, year(point$release_date))]
   
   return(point)
 }
@@ -163,7 +163,7 @@ get.cover.surface <- function(link_table, point){
 #' get the length of coastline associated with the point
 get.coastline.length <- function(link_table, point){
   
-  point$coastal_surface_m2 <- link_table$coastal_surface_m2[link_table$id_curr == as.numeric(point$id) & link_table$year == year(point$release_date)]
+  point$coastal_surface_m2 <- link_table$coastal_surface_m2[link_table$id_curr == as.numeric(point$id) & link_table$year == ifelse(year(point$release_date) <= 2000, 2000, year(point$release_date))]
   
   return(point)
   
