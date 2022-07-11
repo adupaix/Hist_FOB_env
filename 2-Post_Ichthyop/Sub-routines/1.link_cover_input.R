@@ -346,53 +346,116 @@ if(!all(file.exists(coastal_surface_fnames)) & !Exists$coastalSurface){
       
       msg <- "  - Get input points associated with coastal cells\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
       
-      sample_size <- 12000
+      # keep only the points coordinates
+      x_y_coast <- as.data.frame(st_coordinates(coast_df))
+      # round the coordinates to get access to the cell (at the same resolution as the forcing product)
+      #' @to_correct: get the proper resolution and not @res
+      #' @to_correct: regarder si ca fonctionne avec le plus gros fichier de coastal_surface
+      x_y_coast$X_ <- floor((x_y_coast$X+res/2) / res) * res
+      x_y_coast$Y_ <- floor((x_y_coast$Y+res/2) / res) * res
       
-      niter <- floor( dim(coast_df)[1] / sample_size )
+      # todel <- c()
+      # for (i in 1:dim(coastal_surface)[1]){
+      #   
+      #   coastal_surface$coastal_surface_m2[i] <- length( which(x_y_coast$X_ == coastal_surface[i,"x"] &
+      #                                                            x_y_coast$Y_ == coastal_surface[i,"y"]) ) * 90**2
+      #   
+      #   if (length( which(x_y_coast$X_ == coastal_surface[i,"x"] &
+      #                     x_y_coast$Y_ == coastal_surface[i,"y"]) ) != 0){
+      #     todel <- c(todel, which(x_y_coast$X_ == coastal_surface[i,"x"] &
+      #                                     x_y_coast$Y_ == coastal_surface[i,"y"]))
+      #   }
+      # }
+      # 
+      # coast_df <- coast_df[-todel, ]
+      # x_y_coast <- x_y_coast[-todel,]
       
-      pb <- progress_bar$new(format = "[:bar] :percent | Coastal points sample :current / :total",
-                             total = niter+1
-      )
+      # generate a cell id
+      x_y_coast$id_cell <- paste0(x_y_coast$X_, x_y_coast$Y_)
       
-      for (i in 1:niter){
-        
-        indexes <- ((i-1)*sample_size+1):(i*sample_size)
-        
-        cover_surface_per_points <- get.nb.cover.per.input(indexes, coast_df, coastal_surface, count_cover = F)
-        
-        #'@test: result: fastest sample size is 1000 (in my computer, other tests on the cluster show that bigger distance matrices are better)
-        # indexes1 <- ((i-1)*500+1):(i*500)
-        # indexes2 <- ((i-1)*1000+1):(i*1000)
-        # indexes3 <- ((i-1)*1500+1):(i*1500)
-        # indexes4 <- ((i-1)*1750+1):(i*1750)
-        # indexes5 <- ((i-1)*2000+1):(i*2000)
-        # indexes6 <- ((i-1)*2500+1):(i*2500)
-        # microbenchmark::microbenchmark(s500 = {cover_surface_per_points <- get.nb.cover.per.input(indexes1, coast_df, coastal_surface, count_cover = F)},
-        #                                s1000 = {cover_surface_per_points <- get.nb.cover.per.input(indexes2, coast_df, coastal_surface, count_cover = F)},
-        #                                s1500 = {cover_surface_per_points <- get.nb.cover.per.input(indexes3, coast_df, coastal_surface, count_cover = F)},
-        #                                s1750 = {cover_surface_per_points <- get.nb.cover.per.input(indexes4, coast_df, coastal_surface, count_cover = F)},
-        #                                s2000 = {cover_surface_per_points <- get.nb.cover.per.input(indexes5, coast_df, coastal_surface, count_cover = F)},
-        #                                s2500 = {cover_surface_per_points <- get.nb.cover.per.input(indexes6, coast_df, coastal_surface, count_cover = F)})
-        
-        coastal_surface$coastal_surface_m2[
-          coastal_surface$id_curr == as.numeric(names(cover_surface_per_points))] <-
-          coastal_surface$coastal_surface_m2[ coastal_surface$id_curr == as.numeric(names(cover_surface_per_points)) ] + cover_surface_per_points
-        
-        pb$tick()
-        
-      }
+      # keep only one duplicate the cells
+      x_y_coast %>%
+        dplyr::mutate(id_cell = paste0(X_,Y_)) %>%
+        dplyr::filter(!duplicated(id_cell)) %>%
+        dplyr::select(X_,Y_) -> for_link_matrix
       
-      if (niter != dim(coast_df)[1] / sample_size){
-        indexes <- (niter*sample_size+1):(dim(coast_df)[1])
-        
-        cover_surface_per_points <- get.nb.cover.per.input(indexes, coast_df, coastal_surface, count_cover = F)
-        
-        coastal_surface$coastal_surface_m2[
-          coastal_surface$id_curr == as.numeric(names(cover_surface_per_points))] <-
-          coastal_surface$coastal_surface_m2[ coastal_surface$id_curr == as.numeric(names(cover_surface_per_points)) ] + cover_surface_per_points
-      }
+      # calculate the distance matrix between the cells and the input points
+      x_input <- t(matrix(coastal_surface$x,
+                          nrow = length(coastal_surface$x),
+                          ncol = length(for_link_matrix$X_)))
       
-      pb$tick()
+      x_cover <- matrix(for_link_matrix$X_,
+                        nrow = length(for_link_matrix$X_),
+                        ncol = length(coastal_surface$x))
+      
+      y_input <- t(matrix(coastal_surface$y,
+                          nrow = length(coastal_surface$y),
+                          ncol = length(for_link_matrix$Y_)))
+      
+      y_cover <- matrix(for_link_matrix$Y_,
+                        nrow = length(for_link_matrix$Y_),
+                        ncol = length(coastal_surface$y))
+      
+      dist_mat <- sqrt((x_cover - x_input)^2 + (y_cover - y_input)^2)
+      # use the distance matrix to do a "link" matrix between the cells and the input points
+      for_link_matrix$link <- unlist(apply(dist_mat, 1, function(x) which(x == min(x))[1]))
+      
+      # merge the link matrix with the coastal points
+      x_y_coast <- merge(x_y_coast, for_link_matrix)
+      
+      # fill in the input points
+      coastal_surface$coastal_surface_m2[as.numeric(names(table(x_y_coast$link)))] <-
+        coastal_surface$coastal_surface_m2[as.numeric(names(table(x_y_coast$link)))] + table(x_y_coast$link)
+      
+      # rattraper sur sauvegarder, etc.
+      
+      # sample_size <- 12000
+      # 
+      # niter <- floor( dim(coast_df)[1] / sample_size )
+      # 
+      # pb <- progress_bar$new(format = "[:bar] :percent | Coastal points sample :current / :total",
+      #                        total = niter+1
+      # )
+      
+      #' for (i in 1:niter){
+      #'   
+      #'   indexes <- ((i-1)*sample_size+1):(i*sample_size)
+      #'   
+      #'   cover_surface_per_points <- get.nb.cover.per.input(indexes, coast_df, coastal_surface, count_cover = F)
+      #'   
+      #'   #'@test: result: fastest sample size is 1000 (in my computer, other tests on the cluster show that bigger distance matrices are better)
+      #'   # indexes1 <- ((i-1)*500+1):(i*500)
+      #'   # indexes2 <- ((i-1)*1000+1):(i*1000)
+      #'   # indexes3 <- ((i-1)*1500+1):(i*1500)
+      #'   # indexes4 <- ((i-1)*1750+1):(i*1750)
+      #'   # indexes5 <- ((i-1)*2000+1):(i*2000)
+      #'   # indexes6 <- ((i-1)*2500+1):(i*2500)
+      #'   # microbenchmark::microbenchmark(s500 = {cover_surface_per_points <- get.nb.cover.per.input(indexes1, coast_df, coastal_surface, count_cover = F)},
+      #'   #                                s1000 = {cover_surface_per_points <- get.nb.cover.per.input(indexes2, coast_df, coastal_surface, count_cover = F)},
+      #'   #                                s1500 = {cover_surface_per_points <- get.nb.cover.per.input(indexes3, coast_df, coastal_surface, count_cover = F)},
+      #'   #                                s1750 = {cover_surface_per_points <- get.nb.cover.per.input(indexes4, coast_df, coastal_surface, count_cover = F)},
+      #'   #                                s2000 = {cover_surface_per_points <- get.nb.cover.per.input(indexes5, coast_df, coastal_surface, count_cover = F)},
+      #'   #                                s2500 = {cover_surface_per_points <- get.nb.cover.per.input(indexes6, coast_df, coastal_surface, count_cover = F)})
+      #'   
+      #'   coastal_surface$coastal_surface_m2[
+      #'     coastal_surface$id_curr == as.numeric(names(cover_surface_per_points))] <-
+      #'     coastal_surface$coastal_surface_m2[ coastal_surface$id_curr == as.numeric(names(cover_surface_per_points)) ] + cover_surface_per_points
+      #'   
+      #'   pb$tick()
+      #'   
+      #' }
+      #' 
+      #' if (niter != dim(coast_df)[1] / sample_size){
+      #'   indexes <- (niter*sample_size+1):(dim(coast_df)[1])
+      #'   
+      #'   cover_surface_per_points <- get.nb.cover.per.input(indexes, coast_df, coastal_surface, count_cover = F)
+      #'   
+      #'   coastal_surface$coastal_surface_m2[
+      #'     coastal_surface$id_curr == as.numeric(names(cover_surface_per_points))] <-
+      #'     coastal_surface$coastal_surface_m2[ coastal_surface$id_curr == as.numeric(names(cover_surface_per_points)) ] + cover_surface_per_points
+      #' }
+      #' 
+      #' pb$tick()
       
       rm(coast_df) ; invisible(gc())
       
