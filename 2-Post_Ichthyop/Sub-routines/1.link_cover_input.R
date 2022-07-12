@@ -206,7 +206,7 @@ if(!Exists$cover){
           
         cover_bbox <- st_bbox(coastal_cover)
           # read the bbox of the forcing product from the mask saved in the Resources folder
-        forcing_bbox <- get.forcing.bbox(RESOURCE_PATH, forcing)
+        forcing_bbox <- get.forcing.info(RESOURCE_PATH, forcing, info = "bbox")
           #' crop the cover points df only if any of the points are outside the forcing product 
           #' if it's not the case, it would also work but it's useless and we'd loose time...
         cover_is_to_crop <- any(c(cover_bbox[1:2]<forcing_bbox[1:2],
