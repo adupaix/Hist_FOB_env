@@ -334,7 +334,7 @@ if(!all(file.exists(coastal_surface_fnames)) & !Exists$coastalSurface){
       
       coast_bbox <- st_bbox(coast_df)
       # read the bbox of the forcing product from the mask saved in the Resources folder
-      forcing_bbox <- get.forcing.bbox(RESOURCE_PATH, forcing)
+      forcing_bbox <- get.forcing.info(RESOURCE_PATH, forcing, info = "bbox")
       #' crop the coast points df only if any of the points are outside the forcing product 
       #' if it's not the case, it would also work but it's useless and we'd loose time...
       coast_is_to_crop <- any(c(coast_bbox[1:2]<forcing_bbox[1:2],
@@ -350,9 +350,9 @@ if(!all(file.exists(coastal_surface_fnames)) & !Exists$coastalSurface){
       x_y_coast <- as.data.frame(st_coordinates(coast_df))
       # round the coordinates to get access to the cell (at the same resolution as the forcing product)
       #' @to_correct: get the proper resolution and not @res
-      #' @to_correct: regarder si ca fonctionne avec le plus gros fichier de coastal_surface
-      x_y_coast$X_ <- floor((x_y_coast$X+res/2) / res) * res
-      x_y_coast$Y_ <- floor((x_y_coast$Y+res/2) / res) * res
+      res <- get.forcing.info(RESOURCE_PATH, forcing, info = "res")
+      x_y_coast$X_ <- floor((x_y_coast$X+res["lon"]/2) / res["lon"]) * res["lon"]
+      x_y_coast$Y_ <- floor((x_y_coast$Y+res["lat"]/2) / res["lat"]) * res["lat"]
       
       # todel <- c()
       # for (i in 1:dim(coastal_surface)[1]){
