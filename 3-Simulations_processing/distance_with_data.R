@@ -13,7 +13,7 @@ rm(list=ls()[!ls() %in% c("year","effort_threshold")])
 STUDY_DIR <- "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/"
 
 #' generate basic paths
-WD <- file.path(STUDY_DIR,'3-Distance_with_data')
+WD <- file.path(STUDY_DIR,'3-Simulations_processing')
 DATA_PATH <- file.path(STUDY_DIR,'0-Data')
 
 OUTPUT_PATH <- file.path(WD,"Outputs")
@@ -28,7 +28,7 @@ sim_output_path <- file.path(STUDY_DIR, "2-Post_Ichthyop/Outputs/nemo_river_allM
 RESET = T
 
 #' Year for which we want to do the comparison
-year = 2008
+year = 2016
 
 #' Threshold used to filter the observers data, noted "T"
 #' Cells with a number of days of observation < T are discarded 
