@@ -41,7 +41,7 @@ Parallel = c(T, 1/2)
 #'    Second element of the vector:
 #'                   if T, delete all the cfg files and rebuild them
 #'                   if F, build cfg files only if they do not exist
-RESET = c(F,T)
+RESET = c(F,F)
 
 #'                                                                           
 #' save (logical) : if T, save a txt file ready for use in ichthyop                  
@@ -95,23 +95,23 @@ generate_xml = T
 #' @warning: 2022-02-02 - modification of the generate.jobs.pbs() function in Functions/2.1.write_xml.R
 #'                                 and of the Resource/template_ichthyop_job_cp.pbs
 #'                        Now the first job will copy the forcing products to the sim_input_path
-#'                        @but the files need to be stored in "path_where_the_forcing_product_is_stored/curr_prod/"
+#'                        @but the files need to be stored in "path_where_the_forcing_product_is_stored/[curr_prod]/"
 #'                             their name must contain the year, and they should not be stored in the same folder as other product named with the samed format (*year*.nc)
 #' @warning: path should end by the folder name and not by a slash ("/"), or it could be a problem in the .pbs job
 sim_input_path <- "/home1/scratch/adupaix/input-ichthyop"
 path_where_the_forcing_product_is_stored <- "/home1/datawork/adupaix/input-ichthyop"
 # sim_output_path <- "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/2-Launch_Ichthyop_datarmor/ichthyop-output"
-sim_output_path <- "/home1/scratch/adupaix/output-ichthyop"
+sim_output_path <- "/home/datawork-marbec-pmod/outputs/ICHTHYOP/adupaix/2004"
 
 
 #~ Arguments to generate the xml files
 transport_duration = 500 #in days
 
-first_release_year = 2000 #' release from transport_duration days before first_release_year-01-01
+first_release_year = 2004 #' release from transport_duration days before first_release_year-01-01
                           #' For example, transport_duration = 500
                           #'          and first_release_year = 2000
                           #' the first release will be on the 1998-08-19
-last_release_year = 2000 #' The last release will be on January of the following year, depending on the release_period
+last_release_year = 2004 #' The last release will be on January of the following year, depending on the release_period
                          #' For example, if the first release was on 1998-08-19
                          #'             and the release_period = 7 days
                          #'             and last_release_year = 2000
