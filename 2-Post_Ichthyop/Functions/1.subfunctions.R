@@ -187,34 +187,55 @@ keep.which.is.in.IO <- function(RESOURCE_PATH,
 
 #'@sub-function 4
 #'***************
-#' get the bbox of the forcing product used for the Ichthyop simulation
+#' get information on the forcing product used for the Ichthyop simulation
 #'     forcing (chr): one of nemo, nemo15m, oscar, globcurrent, PHILIN12.L75
+#'     info (chr): one of bbox, res
 
-get.forcing.bbox <- function(RESOURCE_PATH, forcing){
+get.forcing.info <- function(RESOURCE_PATH, forcing, info = c("bbox","res")){
   
   if (forcing %in% c("nemo","nemo15m","PHILIN12.L75")){
     if (forcing == "nemo15m"){forcing <- 'nemo'}
+    
     mask <- ncdf4::nc_open(file.path(RESOURCE_PATH, "masks_current_products", paste0(forcing,".nc")))
     
     lon_name <- "longitude"
     lat_name <- "latitude"
     if(forcing == "PHILIN12.L75"){lon_name <- "nav_lon"; lat_name <- "nav_lat"}
     
-    bbox <- c(xmin = min(ncdf4::ncvar_get(mask, varid = lon_name)),
-              ymin = min(ncdf4::ncvar_get(mask, varid = lat_name)),
-              xmax = max(ncdf4::ncvar_get(mask, varid = lon_name)),
-              ymax = max(ncdf4::ncvar_get(mask, varid = lat_name)))
+    if (info == "bbox"){
+      bbox <- c(xmin = min(ncdf4::ncvar_get(mask, varid = lon_name)),
+                ymin = min(ncdf4::ncvar_get(mask, varid = lat_name)),
+                xmax = max(ncdf4::ncvar_get(mask, varid = lon_name)),
+                ymax = max(ncdf4::ncvar_get(mask, varid = lat_name)))
+    } else if (info == "res" & forcing == "nemo"){
+      res <- c(lon = ncdf4::ncatt_get(mask, varid = lon_name, attname = "step")$value,
+               lat = ncdf4::ncatt_get(mask, varid = lat_name, attname = "step")$value)
+    } else if (info == "res" & forcing == "PHILIN12.L75"){
+      res = c(lon = 1/12, lat = 1/12)
+    }
     
     ncdf4::nc_close(mask)
     
   } else if (forcing %in% c("oscar", "globcurrent")){
-    mask <- read_sf(file.path(RESOURCE_PATH, "masks_current_products", paste0(forcing,".shp")))
+    mask <- sf::read_sf(file.path(RESOURCE_PATH, "masks_current_products", paste0(forcing,".shp")))
     
-    bbox <- as.numeric(st_bbox(mask))
-    names(bbox) <- c("xmin","ymin","xmax","ymax")
+    if (info == "bbox"){
+      bbox <- as.numeric(st_bbox(mask))
+      names(bbox) <- c("xmin","ymin","xmax","ymax")
+    } else if (info == "res" & forcing == "oscar"){
+      res = c(lon = 1/3, lat = 1/3)
+    } else if (info == "res" & forcing == "globcurrent"){
+      res = c(lon = 1/4, lat = 1/4)
+    }
+    
   }
   
-  return(bbox)
+  if (info == "bbox"){
+    return(bbox)
+  } else if (info == "res"){
+    return(res)
+  }
+  
 }
 
 #'@sub-function 5

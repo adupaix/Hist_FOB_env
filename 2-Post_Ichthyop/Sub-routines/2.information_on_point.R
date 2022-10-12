@@ -17,7 +17,7 @@ msg <- bold("\n\n2. Getting information on input points\n\n") ; cat(msg) ; lines
 
 if (!Exists$weight){
   
-  sub_dirs <- list.files(sim_output_path)
+  sub_dirs <- list.dirs(sim_output_path, recursive=F, full.names=F)
   
   #' Get the table linking river ids with input point ids
   link_river_input <- read.table(file.path(sim_input_path, "Link_table.txt"), header = T)

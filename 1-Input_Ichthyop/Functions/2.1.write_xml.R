@@ -200,6 +200,13 @@ generate.jobs.pbs <- function(template, sim_input_path, cfg_path, cfg_dir,
   }
   pbs_text <- pbs_text[-grep("[year]", pbs_text, fixed=T)]
   
+  #add lines to launch the other jobs
+  pbs_text <- append(pbs_text,
+                     paste0("qsub ", path_where_the_forcing_product_is_stored,
+                            "/",curr_prod,"/cfgs_",first_release_year,"-",last_release_year,
+                            "/sim_ichthyop-",last_release_year,"-",1:n_pbs_jobs,".pbs")
+                     )
+  
   # save the file
   file.create(file.path(cfg_path, paste0("sim_ichthyop-",last_release_year,"-0.pbs")))
   job <- file(file.path(cfg_path, paste0("sim_ichthyop-",last_release_year,"-0.pbs")), open = "w")
@@ -238,47 +245,47 @@ generate.jobs.pbs <- function(template, sim_input_path, cfg_path, cfg_dir,
 #'    the pbs job which will be run after the Ichthyop simulations
 #'        to pre-process the Ichthyop outputs using the ichth_to_rds.R script
 #'    the txt file which contains the commands to launch ichth_to_rds.R (called by the pbs job)
-generate.post.ichthyop <- function(template, cfg_path, last_release_year, sim_output_path){
-  
-  # generate commands
-  lignes <- paste0("Rscript ichth_to_rds.R ", list.files(cfg_path, pattern = "cfg_point", recursive = T), " ", sim_output_path)
-  lignes <- gsub("cfgs", "points", lignes)
-  lignes <- gsub("cfg_point_", "", lignes)
-  lignes <- gsub("\\.xml", "", lignes)
-  l = length(lignes)
-  
-  file.create(file.path(cfg_path, paste0("commands_post_simu-",last_release_year,".txt")))
-  cmds <- file(file.path(cfg_path, paste0("commands_post_simu-",last_release_year,".txt")), open = "w")
-  writeLines(lignes, cmds)
-  close(cmds)
-  
-  # generate job
-  pbs_text <- scan(template, what = "", sep = "\n", quiet = T)
-  
-  pbs_text[grep("MPI_LAUNCH", pbs_text)] <- paste0("time $MPI_LAUNCH -np 168 ichthyop-mpi/ichthyopmpi ",
-                                                   sim_input_path, "/",
-                                                   cfg_dir, "/commands_post_simu-",
-                                                   last_release_year,
-                                                   ".txt >& out.log")
-  
-  file.create(file.path(cfg_path, paste0("post_sim_ichthyop-",last_release_year,".pbs")))
-  job <- file(file.path(cfg_path, paste0("post_sim_ichthyop-",last_release_year,".pbs")), open = "w")
-  writeLines(pbs_text, job)
-  close(job)
-  
-}
-
-#' @5
-#' Generate a file which can be executed as follow '. launch_jobs.sh' and will
-#' launch all the jobs
-generate.sh.launch.jobs <- function(cfg_path, last_release_year, n_pbs_jobs){
-  
-  sh_text <- c(paste0("qsub -u sim_ichthyop-",last_release_year,"-0.pbs"),
-               "sleep 6m",
-               paste0("qsub -u sim_ichthyop-", last_release_year, "-", 1:n_pbs_jobs, ".pbs"))
-  
-  file.create(file.path(cfg_path, "launch_jobs.sh"))
-  launch <- file(file.path(cfg_path, "launch_jobs.sh"), open = "w")
-  writeLines(sh_text, launch)
-  close(launch)
-}
+#' generate.post.ichthyop <- function(template, cfg_path, last_release_year, sim_output_path){
+#'   
+#'   # generate commands
+#'   lignes <- paste0("Rscript ichth_to_rds.R ", list.files(cfg_path, pattern = "cfg_point", recursive = T), " ", sim_output_path)
+#'   lignes <- gsub("cfgs", "points", lignes)
+#'   lignes <- gsub("cfg_point_", "", lignes)
+#'   lignes <- gsub("\\.xml", "", lignes)
+#'   l = length(lignes)
+#'   
+#'   file.create(file.path(cfg_path, paste0("commands_post_simu-",last_release_year,".txt")))
+#'   cmds <- file(file.path(cfg_path, paste0("commands_post_simu-",last_release_year,".txt")), open = "w")
+#'   writeLines(lignes, cmds)
+#'   close(cmds)
+#'   
+#'   # generate job
+#'   pbs_text <- scan(template, what = "", sep = "\n", quiet = T)
+#'   
+#'   pbs_text[grep("MPI_LAUNCH", pbs_text)] <- paste0("time $MPI_LAUNCH -np 168 ichthyop-mpi/ichthyopmpi ",
+#'                                                    sim_input_path, "/",
+#'                                                    cfg_dir, "/commands_post_simu-",
+#'                                                    last_release_year,
+#'                                                    ".txt >& out.log")
+#'   
+#'   file.create(file.path(cfg_path, paste0("post_sim_ichthyop-",last_release_year,".pbs")))
+#'   job <- file(file.path(cfg_path, paste0("post_sim_ichthyop-",last_release_year,".pbs")), open = "w")
+#'   writeLines(pbs_text, job)
+#'   close(job)
+#'   
+#' }
+#' 
+#' #' @5
+#' #' Generate a file which can be executed as follow '. launch_jobs.sh' and will
+#' #' launch all the jobs
+#' generate.sh.launch.jobs <- function(cfg_path, last_release_year, n_pbs_jobs){
+#'   
+#'   sh_text <- c(paste0("qsub -u sim_ichthyop-",last_release_year,"-0.pbs"),
+#'                "sleep 6m",
+#'                paste0("qsub -u sim_ichthyop-", last_release_year, "-", 1:n_pbs_jobs, ".pbs"))
+#'   
+#'   file.create(file.path(cfg_path, "launch_jobs.sh"))
+#'   launch <- file(file.path(cfg_path, "launch_jobs.sh"), open = "w")
+#'   writeLines(sh_text, launch)
+#'   close(launch)
+#' }

@@ -121,9 +121,9 @@ if (!all(Exist$output_2)){
                     path_where_the_forcing_product_is_stored,
                     first_release_year, last_release_year)
   
-  generate.post.ichthyop(Template$pbs_post, output_path2, last_release_year, sim_output_path)
+  # generate.post.ichthyop(Template$pbs_post, output_path2, last_release_year, sim_output_path)
   
-  generate.sh.launch.jobs(output_path2, last_release_year, n_pbs_jobs)
+  # generate.sh.launch.jobs(output_path2, last_release_year, n_pbs_jobs)
 
 
 } else {
