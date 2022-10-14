@@ -16,19 +16,6 @@
 source(file.path(FUNC_PATH,'Prep_obs.R'))
 source(file.path(FUNC_PATH, 'Maps','1.1.subfunctions_maps_obs.R'))
 
-###BESOIN PACKAGES SUIVANTS
-library(ggplot2)
-library(plyr)
-library("sf")## objet de type sf pour les
-library("ggspatial")#superposer les cartes et legende
-library("rnaturalearth")
-library("rnaturalearthdata")# carte du monde
-library("rgeos")
-library(raster)
-library(rworldmap)
-library(shape)
-library(dplyr)
-
 #======================================================================================#
 #                               CARTE DES RATIOS LOG/FAD ou FAD/LOG                    #
 #======================================================================================#
