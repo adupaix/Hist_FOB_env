@@ -8,7 +8,7 @@
 #'@revision
 #'#*******************************************************************************************************************
 
-rm(list=ls()[!ls() %in% c("year","effort_threshold")])
+rm(list=ls()[!ls() %in% c("year","effort_threshold", "RESET", "run_from_other_script")])
 
 STUDY_DIR <- "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/"
 
@@ -32,17 +32,24 @@ installAndLoad_packages(srcUsedPackages, loadPackages = TRUE)
 #' @arguments
 sim_output_path <- file.path(STUDY_DIR, "2-Post_Ichthyop/Outputs/nemo_river_allMask")
 
+#' Can run the main script from another script (to do a loop over the arguments from example)
+#' then, an object called run_from_other_script needs to be created
+#' and the arguments won't be changed
+if (!exists("run_from_other_script")){
+  
+  
 #' Delete the outputs to calculate anew (T) or not (F)
 RESET = T
 
 #' Year for which we want to do the comparison
 #' After 2007, because no data is available before
 #' Available years (on 2022-10-12): 2008, 2012, 2016, 2018
-year = 2016
+year = 2018
 
 #' Threshold used to filter the observers data, noted "T"
 #' Cells with a number of days of observation < T are discarded 
 effort_threshold = 6
+}
 
 ## Generate df of NLOG observations
 source(file.path(FUNC_PATH, "Maps", "1.Maps_obs.R"))
