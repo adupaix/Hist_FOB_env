@@ -89,7 +89,7 @@ thr_disch = 100
 #' Arguments used previously for the Ichthyop simulation
 #'*******************************************************
 #'## @forcing (chr): forcing product used in ICHTHYOP simulation (oscar/globcurrent/nemo/PHILIN12.L75)     
-forcing="PHILIN12.L75"
+forcing="nemo"
 #'## @input_location (chr): either "river" or "mangrove"
 #'@only "river" used in this study
 input_location="river"
@@ -109,7 +109,7 @@ dist=100
 bouncing=F
 
 #'## @year (num): Year of the simulation
-year = 2000
+year = 2018
 
 #'## @n_points_per_dir (num): number of simulations saved in each sub-directory of Ichthyop output
 n_points_per_dir = 28*8*5
