@@ -113,7 +113,7 @@ if(!Exists$cover){
         for (j in 1:length(other_output_years)){
           file_to_test <- sub(year, other_output_years[j], river_cover_fnames[k])
           if (file.exists(file_to_test) & !river_cover_exists_in_other_years) {
-            river_cover_summary <- read.table(file_to_test)
+            river_cover_summary <- read.table(file_to_test, header = T)
             river_cover_exists_in_other_years <- T
             msg <- paste0("  - Reading existing river-cover and mouth-cover link tables in year ",other_output_years[j]," outputs\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
             write.table(river_cover_summary,
@@ -199,7 +199,7 @@ if(!Exists$cover){
         
         msg <- "  - Reading existing river-cover and mouth-cover link tables\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
         
-        river_cover_summary <- read.table(river_cover_fnames[k])
+        river_cover_summary <- read.table(river_cover_fnames[k], header = T)
         
         # mouth_cover_summary <- read.table(mouth_cover_fnames[k])
         
@@ -215,7 +215,7 @@ if(!Exists$cover){
         for (j in 1:length(other_output_years)){
           file_to_test <- sub(year, other_output_years[j], coastal_cover_fnames[k])
           if (file.exists(file_to_test) & !coastal_cover_exists_in_other_years) {
-            input_points <- read.table(file_to_test)
+            input_points <- read.table(file_to_test, header = T)
             coastal_cover_exists_in_other_years <- T
             msg <- paste0("  - Reading existing coastal cover - release point table in year ",other_output_years[j],"outputs \n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
             write.table(input_points,
@@ -298,7 +298,7 @@ if(!Exists$cover){
         
         msg <- "  - Reading existing coastal cover - release point table\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
         
-        input_points <- read.table(coastal_cover_fnames[k])
+        input_points <- read.table(coastal_cover_fnames[k], header = T)
         
       }
       
@@ -498,7 +498,7 @@ if(!all(file.exists(coastal_surface_fnames)) & !Exists$coastalSurface){
       
       msg <- "  - Reading existing coastal surface - release point table\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
       
-      coastal_surface <- read.table(coastal_surface_fnames[k])
+      coastal_surface <- read.table(coastal_surface_fnames[k], header = T)
       
     }
     
@@ -577,7 +577,7 @@ if(!all(file.exists(coastal_surface_fnames)) & !Exists$coastalSurface){
     coastal_cover_fnames <- list.files(output_paths[1], pattern = "input_point_with_cover_surface_vf", full.names = T)
     input_points <- list()
     for (i in 1:length(coastal_cover_fnames)){
-      input_points[[i]] <- read.table(coastal_cover_fnames[i])
+      input_points[[i]] <- read.table(coastal_cover_fnames[i], header = T)
     }
     bind_rows(input_points) %>%
       full_join(coastal_surface, by = c("x","y","id_curr")) -> input_points
