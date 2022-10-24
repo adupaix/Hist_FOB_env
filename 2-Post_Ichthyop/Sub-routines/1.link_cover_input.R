@@ -115,7 +115,10 @@ if(!Exists$cover){
           if (file.exists(file_to_test) & !river_cover_exists_in_other_years) {
             river_cover_summary <- read.table(file_to_test)
             river_cover_exists_in_other_years <- T
-            msg <- paste0("  - Reading existing river-cover and mouth-cover link tables in year ",other_output_years[j],"outputs \n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+            msg <- paste0("  - Reading existing river-cover and mouth-cover link tables in year ",other_output_years[j]," outputs\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+            write.table(river_cover_summary,
+                        file = river_cover_fnames[k],
+                        row.names = F)
           }
         }
         
@@ -215,6 +218,9 @@ if(!Exists$cover){
             input_points <- read.table(file_to_test)
             coastal_cover_exists_in_other_years <- T
             msg <- paste0("  - Reading existing coastal cover - release point table in year ",other_output_years[j],"outputs \n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+            write.table(input_points,
+                        file = coastal_cover_fnames[k],
+                        row.names = F)
           }
         }
         
