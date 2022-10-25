@@ -8,7 +8,7 @@ test*
 *output
 *cfgs/
 *.log
-2-Post_Ichthyop/cfg/*
+*/cfg/*
 Years_selection*
 script_test_duree_de_vie.R
 *.tex
