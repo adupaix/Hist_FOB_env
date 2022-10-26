@@ -108,14 +108,13 @@ sim_output_path <- "/home/datawork-marbec-pmod/outputs/ICHTHYOP/adupaix/2000"
 #~ Arguments to generate the xml files
 transport_duration = 500 #in days
 
-first_release_year = 2000 #' release from transport_duration days before first_release_year-01-01
+release_year = 2000 #' release from transport_duration days before release_year-01-01
 #' For example, transport_duration = 500
-#'          and first_release_year = 2000
+#'          and release_year = 2000
 #' the first release will be on the 1998-08-19
-last_release_year = 2000 #' The last release will be on January of the following year, depending on the release_period
-#' For example, if the first release was on 1998-08-19
+#' The last release will be on January of the following year, depending on the release_period
+#' For example, if the first release was on 1998-08-19 (release_year = 2000)
 #'             and the release_period = 7 days
-#'             and last_release_year = 2000
 #'             then the last release date (L) will be 2001-01-03
 #'             L = 1998-08-19 + 7 * n, with n being the smallest number such that L is in 2001
 release_period = 7 # in days, (interval between two release)

@@ -22,10 +22,10 @@ if (!all(Exist$output_2)){
                        style = 3)
   
   # generate the initial times from the start/end dates, the release_period and the transport_duration
-  start <- as.Date(paste0(first_release_year, "-01-01")) - as.difftime(transport_duration, units = "days") # start transport_duration before 01-01-first_release_year
-  end <- seq(as.Date(paste0(last_release_year+1, "-01-01")),
-            as.Date(paste0(last_release_year+1, "-01-01"))+as.difftime(release_period, units = "days"),
-            as.difftime(1, units = "days")) # get all the release_period first days of the year following the last_release_year
+  start <- as.Date(paste0(release_year, "-01-01")) - as.difftime(transport_duration, units = "days") # start transport_duration before 01-01-release_year
+  end <- seq(as.Date(paste0(release_year+1, "-01-01")),
+            as.Date(paste0(release_year+1, "-01-01"))+as.difftime(release_period, units = "days"),
+            as.difftime(1, units = "days")) # get all the release_period first days of the year following the release_year
   end <- end[min(which(as.numeric(end-start) %% release_period == 0))] # select the one that is n times release_period after start
   
   initial_time <- seq(start, end,
@@ -119,11 +119,7 @@ if (!all(Exist$output_2)){
   generate.jobs.pbs(Template, sim_input_path, output_path2, cfg_dir,
                     n_pbs_jobs, n_mpi, walltime, curr_prod, initial_time, transport_duration,
                     path_where_the_forcing_product_is_stored,
-                    first_release_year, last_release_year)
-  
-  # generate.post.ichthyop(Template$pbs_post, output_path2, last_release_year, sim_output_path)
-  
-  # generate.sh.launch.jobs(output_path2, last_release_year, n_pbs_jobs)
+                    release_year)
 
 
 } else {
