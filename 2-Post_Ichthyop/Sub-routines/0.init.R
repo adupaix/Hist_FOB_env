@@ -197,7 +197,7 @@ if (!Exists$log1 | !Exists$log2){
     Exists$data$simulation_output <- dir.exists(sim_output_path)
   }
   
-  Exists$data$release_dates <- file.exists(file.path(sim_input_path, paste0("cfgs_",year[1],"-",year[length(year)]), "release_dates.txt"))
+  Exists$data$release_dates <- file.exists(file.path(sim_input_path, paste0("cfgs_",year), "release_dates.txt"))
   Exists$data$input_ichthyop_link_table <- file.exists(file.path(sim_input_path, "Link_table.txt"))
   
   if(any(unlist(Exists$data) == F)){
@@ -206,7 +206,7 @@ if (!Exists$log1 | !Exists$log2){
   }
   
   #get the release dates and associated years
-  release_dates <- read.delim(file.path(sim_input_path, paste0("cfgs_",year[1],"-",year[length(year)]), "release_dates.txt"))
+  release_dates <- read.delim(file.path(sim_input_path, paste0("cfgs_",year), "release_dates.txt"))
   release_years <- unique(lubridate::year(as.Date(release_dates[,1])))
   
   ### Not really satisfying
