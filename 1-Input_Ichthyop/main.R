@@ -39,7 +39,7 @@ source(file.path(ROUT_PATH, "1.nlog_inputs.R"))
 #'****************************************
 #'@2. Generate the cfg files and pbs jobs
 #'****************************************
-if (input_method == "allMask" & generate_xml == T){
+if (generate_xml == T){
   source(file.path(ROUT_PATH, "2.input_to_xml.R"))
 }
 

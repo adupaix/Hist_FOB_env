@@ -73,7 +73,8 @@ input_method = "allMask" # one of c("onMask","kFromCoast", "allMask")
 #'             the closest point of the product mask                                
 #'
 dist = 1 # used if input_method == kFromCoast (distance from coast in degrees)
-curr_prod = "nemo" # one of c("PHILIN12.L75","oscar","nemo","globcurrent","nemo15m") # used if input_method == onMask ou allMask
+curr_prod = "nemo" # one of c("PHILIN12.L75","nemo") # used if input_method == onMask ou allMask
+#' @! for other current products, .xml templates for Ichthyop should be added to the Resources directory (called template_cfg_[curr_prod].xml)
 
 #'
 #' Arguments to generate Ichthyop cfg files (only if input_method == allMask)
