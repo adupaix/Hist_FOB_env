@@ -30,6 +30,7 @@ installAndLoad_packages(srcUsedPackages, loadPackages = TRUE)
 #' load shapefiles
 world <- map_data("world")
 IO <- read_sf(file.path(DATA_PATH, "World_Seas_IHO_v3/World_Seas_IHO_v3.shp")) %>%
+  # dplyr::filter(NAME %in% c("Indian Ocean", "Laccadive Sea", "Bay of Bengal", "Arabian Sea", "Mozambique Channel", "Andaman or Burma Sea"))
   dplyr::filter(NAME %in% c("Indian Ocean", "Laccadive Sea", "Bay of Bengal", "Arabian Sea", "Mozambique Channel"))
 bbox <- read_sf(file.path(DATA_PATH, "OI.shp"))
 
@@ -38,7 +39,9 @@ IO <- st_crop(IO, st_bbox(bbox))
 
 map <- ggplot()+geom_sf(data = IO, fill = "darkblue", color = NA, alpha = 0.5)+
   coord_sf(xlim = c(20, 130), ylim = c(-40, 30), expand = FALSE, crs = st_crs(4326))+
+  # coord_sf(xlim = c(80, 120), ylim = c(-10, 30), expand = FALSE, crs = st_crs(4326))+
   geom_line(aes(x = c(80,80), y = c(-35,30)), color = "red", size = 0.5, linetype = "dashed")+
+  # geom_label(data = IO, aes(x = Longitude, y = Latitude, label = NAME))+
   geom_polygon(data=world, aes(x=long, y=lat, group=group))+
   geom_label(aes(x = c(60,100), y = c(-15,-15),
                  label = c("West","East")))+
