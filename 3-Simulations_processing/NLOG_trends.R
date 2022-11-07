@@ -21,8 +21,6 @@ FUNC_PATH <- file.path(WD,"Functions")
 ROUT_PATH <- file.path(WD, "Sub-routines")
 RESOURCE_PATH <- file.path(WD,"Resources")
 
-try(dir.create(file.path(OUTPUT_PATH, "NLOG_trends")))
-
 #' Load libraries
 source(file.path(FUNC_PATH, "install_libraries.R"))
 
@@ -38,19 +36,34 @@ sim_output_path <- file.path(STUDY_DIR, "2-Post_Ichthyop/Outputs/nemo_river_allM
 # number of days over which the moving average is performed for the global time series
 n_days_average <- 7
 
+# choose if take the NLOGs in the Burma Sea into account
+add_burma_sea <- F
+
+# Weighting methods for which the trend is assessed
+weight_methods <- c(3,4,6,7,9)
+
+
+
+#' Create output path
+try(dir.create(file.path(OUTPUT_PATH, "NLOG_trends",
+                         ifelse(add_burma_sea, "with_burma_sea", "without_burma_sea")),
+               recursive = T))
+
 #' 0. Read simulation outputs
 #' 
-for (w in 1:9){
+for (w in weight_methods){
+  cat(paste("Weight method:",w,"\n===============\n"))
   years <- as.numeric(list.dirs(sim_output_path, recursive = F, full.names = F))
-  years <- years[years!=2018]
   
   x <- seq(20, 140-1, 1) + 0.5
   y <- seq(-40, 40-1, 1) + 0.5
   #' Read the shapefile of the world seas, to filter in the for loop (1.):
   #'          Flanders Marine Institute (2018). IHO Sea Areas, version 3.
   #'          Available online at https://www.marineregions.org/ https://doi.org/10.14284/323
+  names_IO <- c("Indian Ocean", "Laccadive Sea", "Bay of Bengal", "Arabian Sea", "Mozambique Channel")
+  if (add_burma_sea){names_IO <- c(names_IO, "Adaman or Burma Sea")}
   IO <- read_sf(file.path(DATA_PATH,"World_Seas_IHO_v3/World_Seas_IHO_v3.shp")) %>%
-    dplyr::filter(NAME %in% c("Indian Ocean", "Laccadive Sea", "Bay of Bengal", "Arabian Sea", "Mozambique Channel"))
+    dplyr::filter(NAME %in% names_IO)
   
   list_dfs <- list()
   for (i in 1:length(years)){
@@ -93,7 +106,9 @@ for (w in 1:9){
     scale_color_brewer("Area", palette = "Set1")+
     ggtitle(w)
   
-  ggplot2::ggsave(file.path(OUTPUT_PATH, "NLOG_trends", paste0("Yearly_mean_w",w,".png")), p,
+  ggplot2::ggsave(file.path(OUTPUT_PATH, "NLOG_trends",
+                            ifelse(add_burma_sea, "with_burma_sea", "without_burma_sea"),
+                            paste0("Yearly_mean_w",w,".png")), p,
                   width = 10, height = 6)
   
   #' 4. Seasonal trend: global times series of daily values
@@ -132,8 +147,9 @@ for (w in 1:9){
           axis.ticks.x = element_blank(),
           title = element_text(hjust = 0.5))
 
-  ggplot2::ggsave(file.path(OUTPUT_PATH, "NLOG_trends", paste0("Evolution_NLOG_number_w",w,".png")), p,
-        width = 10, height = 6)
+  ggplot2::ggsave(file.path(OUTPUT_PATH, "NLOG_trends", ifelse(add_burma_sea, "with_burma_sea", "without_burma_sea"),
+                            paste0("Evolution_NLOG_number_w",w,".png")), p,
+        width = 12, height = 6)
   
   
 }
