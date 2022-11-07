@@ -13,7 +13,7 @@ installAndLoad_packages <-function(srcUsedPackages = srcUsedPackages, loadPackag
   neededPackages <- srcUsedPackages[!srcUsedPackages %in% userPackages$Package]
   
   #---Download and installing packages
-  cat("Installing  and Loading of required packages....\n")
+#  cat("Installing  and Loading of required packages....\n")
   if(length(neededPackages) > 0)
   {
     for(i in 1:length(neededPackages))
