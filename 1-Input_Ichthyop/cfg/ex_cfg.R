@@ -124,6 +124,8 @@ release_year = 2000 #' release from transport_duration days before release_year-
 release_period = 7 # in days, (interval between two release)
 record_period = 1 #in days (interval between two recorded positions)
 
+number_particles = 100 # number of particles released from each point
+
 n_cfg_per_dir = 28*10*4 # number of .xml file per directory
 
 #~ Arguments to generate the pbs jobs and the java command lines

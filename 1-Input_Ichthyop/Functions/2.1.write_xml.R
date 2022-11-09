@@ -10,6 +10,7 @@
 #'  sim_input_path (chr): path to the location of the current products which will be used in the Ichthyop simulation
 #'  sim_output_path (chr): path to where the results of the Ichthyop simulation will be saved
 #'  record_period (num): time between the saving of 2 positions of particles in the Ichthyop simulation
+#'  number_particles (num) : number of particles to release at each release 
 #'  dir_name.i (chr): sub-folder where the cfg file is to be saved
 #'  i_chr (chr): number of the sub-folder where the cfg file will be saved
 #'  
@@ -21,6 +22,7 @@ write.cfg.xml <- function(initial_time,
                           sim_input_path,
                           sim_output_path,
                           record_period,
+                          number_particles,
                           dir_name.i,
                           i_chr,
                           
@@ -35,7 +37,8 @@ write.cfg.xml <- function(initial_time,
                   "output_path",
                   "lon_stain",
                   "lat_stain",
-                  "record_frequency")
+                  "record_frequency",
+                  "number_particles")
   
   #~ Formatted values to replace in the template
   default_value <- c("0180 day\\(s\\) 00 hour\\(s\\) 00 minute\\(s\\)",
@@ -44,7 +47,8 @@ write.cfg.xml <- function(initial_time,
                      "/home/adupaix/Documents/ichthyop-private/output/PHILIN12.L75_river_onMask_d9/",
                      53,
                      -11.5,
-                     12)
+                     12,
+                     1000)
   
   value <- list(paste0(formatC(transport_duration, width = 4, flag = "0"),
                        " day\\(s\\) 00 hour\\(s\\) 00 minute\\(s\\)"),
@@ -65,7 +69,8 @@ write.cfg.xml <- function(initial_time,
                 file.path(sim_output_path, paste0("points_", i_chr), nb),
                 long,
                 lat,
-                (record_period*24*3600)/2400)
+                (record_period*24*3600)/2400,
+                number_particles)
   
   # for each parameter
   for (k in 1:length(param_list)){

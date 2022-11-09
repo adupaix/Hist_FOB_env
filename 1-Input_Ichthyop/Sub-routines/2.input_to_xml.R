@@ -62,6 +62,7 @@ if (!all(Exist$output_2)){
                     sim_input_path,
                     sim_output_path,
                     record_period,
+                    number_particles,
                     dir_name.i,
                     i_chr,
                     
@@ -99,6 +100,7 @@ if (!all(Exist$output_2)){
                   sim_input_path,
                   sim_output_path,
                   record_period,
+                  number_particles,
                   dir_name.i,
                   i_chr,
                   
