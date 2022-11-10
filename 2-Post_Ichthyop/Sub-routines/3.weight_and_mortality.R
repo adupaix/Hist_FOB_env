@@ -40,14 +40,21 @@ if(!Exists$log3){
   na_points_id <- points_id[which(is.na(input_to_keep))]
   theres_an_error <- c()
   if (length(na_points_id) != 0){
-    add_to_log <- paste("\n\nWarning: some Ichthyop outputs were empty. Please see\n", Names$error_ichthyop_outputs, "\nto have the list of empty .nc files")
+    add_to_log <- paste("\n\nWarning: some Ichthyop outputs were empty. Please see\n",
+                        Names$error_ichthyop_outputs,
+                        "\nto have the list of empty .nc files",
+                        "\n\nIf no files are empty, check the following points in the Ichthyop outputs:",
+                        paste(na_points_id,collapse = " ; "))
     for (i in 1:length(na_points_id)){
       theres_an_error[i] <- !any(grepl(na_points_id[i], readLines(Names$error_ichthyop_outputs)))
     }
   }
   
   if(any(theres_an_error)){
-    stop("Error: some points - for which the Ichthyop simulations worked - don't have any associated weight")
+    sink(Names$log3, append = F)
+    cat(add_to_log)
+    sink()
+    stop("Error: some points - for which the Ichthyop simulations worked - don't have any associated weight\nOr, some Ichthyop outputs are missing.")
   } else if (any(input_to_keep, na.rm = T) == F){
     stop("Error: no point has any non null weight")
   }
