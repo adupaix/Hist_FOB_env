@@ -277,10 +277,9 @@ if (!Exists$weight){
                                           weight_per_point
                                           
                                         }
-      
+     
+      parallel::stopCluster(cl) 
     }
-      
-    parallel::stopCluster(cl)
     
       # change format of weight_per_points
       weight_per_points[[i]] <- as.data.frame(weight_per_points[[i]])

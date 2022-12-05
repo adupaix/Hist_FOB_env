@@ -165,21 +165,22 @@ if(!Exists$log3){
                                    release_date.i = release_date.i,
                                    weight.i = weight.i)
         parallel::stopCluster(cl)
+        
         array.i[[j]] <- Reduce("+", array.j)
         rm(array.j) ; invisible(gc())
         
         array.i <- Reduce("+", array.i)
-      
-        #' transform the dates in dimnames back to date format
-        dimnames(array.i)[[3]] <- as.character(as.difftime(as.numeric(dimnames(array.i)[[3]]), units = "secs") + as.Date("1900-01-01"))
-      
-        #' apply mortality
-        array.i <- apply.mortality(array.i, ltime, ltime_method, ltime_sd)
-      
-        #' save the results
-        saveRDS(array.i, fname)
+        
       }
-    
+      
+      #' transform the dates in dimnames back to date format
+      dimnames(array.i)[[3]] <- as.character(as.difftime(as.numeric(dimnames(array.i)[[3]]), units = "secs") + as.Date("1900-01-01"))
+      
+      #' apply mortality
+      array.i <- apply.mortality(array.i, ltime, ltime_method, ltime_sd)
+      
+      #' save the results
+      saveRDS(array.i, fname)
     }
     
   }
