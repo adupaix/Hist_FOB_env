@@ -218,7 +218,7 @@ if (!Exists$log1 | !Exists$log2){
     # Logical to check that the cover data exists
     Exists$data$cover <- all(dir.exists(file.path(DATA_PATH,
                                                   "forest_cover",
-                                                  paste0("forest_cover_", release_years))))
+                                                  paste0("forest_cover_", release_years[which(release_years<=year)]))))
     Exists$data$coast_surface <- dir.exists(file.path(DATA_PATH,"coast_cover_with_zeros"))
   }
   
