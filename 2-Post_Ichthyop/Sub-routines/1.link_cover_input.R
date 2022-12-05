@@ -35,8 +35,8 @@ if(!Exists$cover){
     #' @testing
     #' uncomment line 38 for script testing
     #' uncomment line 39 to run the script
-    # cover_files <- grep("sample",cover_files, value = T)
-    cover_files <- cover_files[!grepl("sample",cover_files)]
+    cover_files <- grep("sample",cover_files, value = T)
+    # cover_files <- cover_files[!grepl("sample",cover_files)]
     
     
     #' get the cover files names which contain the zeros,
@@ -47,8 +47,8 @@ if(!Exists$cover){
     #' @testing
     #' uncomment 1st line for script testing
     #' uncomment 2nd line to run the script
-    # coast_files <- grep("sample",coast_files, value = T)
-    coast_files <- coast_files[!grepl("sample",coast_files)]
+    coast_files <- grep("sample",coast_files, value = T)
+    # coast_files <- coast_files[!grepl("sample",coast_files)]
     
     #' read the input points
     #' filter them to keep only the IO ones
@@ -335,8 +335,8 @@ if(!all(file.exists(coastal_surface_fnames)) & !Exists$coastalSurface){
   #' @testing
   #' uncomment 1st line for script testing
   #' uncomment 2nd line to run the script
-  # coast_files <- grep("sample",coast_files, value = T) ; testing = T
-  coast_files <- coast_files[!grepl("sample",coast_files)] ; testing = F
+  coast_files <- grep("sample",coast_files, value = T) ; testing = T
+  # coast_files <- coast_files[!grepl("sample",coast_files)] ; testing = F
   
   for (k in 1:length(coast_files)){
     
