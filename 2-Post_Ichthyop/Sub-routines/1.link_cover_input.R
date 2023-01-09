@@ -309,7 +309,7 @@ if(!Exists$cover){
 #'********************************************************************************
 
 
-msg <- crayon::bold("\n\n3. Get the length of coastline associated with each input point\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+msg <- "\n\n3. Get the length of coastline associated with each input point\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
 
 if(!all(file.exists(coastal_surface_fnames)) & !Exists$coastalSurface){
