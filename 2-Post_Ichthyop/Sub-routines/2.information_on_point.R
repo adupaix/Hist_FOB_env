@@ -36,7 +36,7 @@ if (!Exists$weight){
   for (i in 1:length(sub_dirs)){
       
     #' create the output sub directory in the output folder 2
-    dir.create(file.path(output_paths[2], sub_dirs[i]), recursive = T, showWarnings = F)
+    # dir.create(file.path(output_paths[2], sub_dirs[i]), recursive = T, showWarnings = F)
     
     #' get all the names of the rds files in the sub directory
     dens_files <- list.files(file.path(sim_output_path, sub_dirs[i]), recursive = T, pattern = ".nc")
@@ -173,12 +173,12 @@ if (!Exists$weight){
                                                                 as.numeric(weights))
                                           
                                           # Save the point object
-                                          outfile_name <- paste0(point$id, "_", point$release_date, "_infos.rds")
-                                          
-                                          out_dir <- file.path(output_paths[2], sub_dirs[i], point$id)
-                                          dir.create(out_dir, showWarnings = F)
-                                          
-                                          saveRDS(point, file.path(out_dir, outfile_name))
+                                          # outfile_name <- paste0(point$id, "_", point$release_date, "_infos.rds")
+                                          # 
+                                          # out_dir <- file.path(output_paths[2], sub_dirs[i], point$id)
+                                          # dir.create(out_dir, showWarnings = F)
+                                          # 
+                                          # saveRDS(point, file.path(out_dir, outfile_name))
                                           
                                           #close the netcdf connection
                                           ncdf4::nc_close(precip)
