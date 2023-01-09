@@ -35,7 +35,7 @@ if (!Exists$weight){
   # for each sub directory
   for (i in 1:length(sub_dirs)){
       
-    #' create the output sub directory in the output folder 2
+    #' create the output sub directory in the output folder 2 ; uncomment to @save_info
     # dir.create(file.path(output_paths[2], sub_dirs[i]), recursive = T, showWarnings = F)
     
     #' get all the names of the rds files in the sub directory
@@ -97,6 +97,11 @@ if (!Exists$weight){
       
     cat("Getting information on input points\n")
     
+    #'get the precipitation values (stored in an array)
+    precip <- ncdf4::nc_open(filename = file.path(DATA_PATH,"precip.mon.mean.nc"))
+    precip_array <- get.precip.array(precip)
+    ncdf4::nc_close(precip)
+    
     if (!cluster){
       # set cluster for parallel run, and initialize progress bar
       cl <- makeCluster(nb_cores)
@@ -113,7 +118,7 @@ if (!Exists$weight){
                                         .options.snow = opts) %dopar% {
                                           
                                           ## open the precipitations netcdf file
-                                          precip <- ncdf4::nc_open(filename = file.path(DATA_PATH,"precip.mon.mean.nc"))
+                                          # precip <- ncdf4::nc_open(filename = file.path(DATA_PATH,"precip.mon.mean.nc"))
                                           
                                           #' create a point "object"
                                           point <- list()
@@ -138,13 +143,13 @@ if (!Exists$weight){
                                           if (year(point$release_date) == max(release_years)){cheat = T ; year(point$release_date) <- year(point$release_date) - 1}
                                           
                                           # get precipitations
-                                          point <- get.precipitations(precip, point)
+                                          point <- get.precipitations(precip_array, point)
                                           
                                           # get forest cover
                                           point <- get.cover.surface(cover_surface_per_input, point)
                                           
                                           # get rivers and associated discharge
-                                          point <- get.associated.rivers.and.precip(link_river_input, cover_surface_per_river, embouchures, point, precip)
+                                          point <- get.associated.rivers.and.precip(link_river_input, cover_surface_per_river, embouchures, point, precip_array)
                                           
                                           # get river mouths and associated discharge + cover
                                           # point <- get.associated.rivers(link_river_input, n_cover_per_mouth, embouchures, point, mouth = T)
@@ -172,7 +177,7 @@ if (!Exists$weight){
                                                                 as.numeric(difftime(point$release_date, as.Date("1990-01-01"), units = "days")),
                                                                 as.numeric(weights))
                                           
-                                          # Save the point object
+                                          #' Save the point object ; uncomment to @save_info
                                           # outfile_name <- paste0(point$id, "_", point$release_date, "_infos.rds")
                                           # 
                                           # out_dir <- file.path(output_paths[2], sub_dirs[i], point$id)
@@ -181,7 +186,7 @@ if (!Exists$weight){
                                           # saveRDS(point, file.path(out_dir, outfile_name))
                                           
                                           #close the netcdf connection
-                                          ncdf4::nc_close(precip)
+                                          # ncdf4::nc_close(precip)
                                           
                                           #' return the vector with c(sub_dir, point_id, release_date, all the weights)
                                           weight_per_point
@@ -203,7 +208,7 @@ if (!Exists$weight){
                                         .packages = srcUsedPackages) %dopar% {
                                           
                                           ## open the precipitations netcdf file
-                                          precip <- ncdf4::nc_open(filename = file.path(DATA_PATH,"precip.mon.mean.nc"))
+                                          # precip <- ncdf4::nc_open(filename = file.path(DATA_PATH,"precip.mon.mean.nc"))
                                           
                                           #' create a point "object"
                                           point <- list()
@@ -228,13 +233,13 @@ if (!Exists$weight){
                                           if (year(point$release_date) == max(release_years)){cheat = T ; year(point$release_date) <- year(point$release_date) - 1}
                                           
                                           # get precipitations
-                                          point <- get.precipitations(precip, point)
+                                          point <- get.precipitations(precip_array, point)
                                           
                                           # get forest cover
                                           point <- get.cover.surface(cover_surface_per_input, point)
                                           
                                           # get rivers and associated discharge
-                                          point <- get.associated.rivers.and.precip(link_river_input, cover_surface_per_river, embouchures, point, precip)
+                                          point <- get.associated.rivers.and.precip(link_river_input, cover_surface_per_river, embouchures, point, precip_array)
                                           
                                           # get river mouths and associated discharge + cover
                                           # point <- get.associated.rivers(link_river_input, n_cover_per_mouth, embouchures, point, mouth = T)
@@ -262,16 +267,16 @@ if (!Exists$weight){
                                                                 as.numeric(difftime(point$release_date, as.Date("1990-01-01"), units = "days")),
                                                                 as.numeric(weights))
                                           
-                                          # Save the point object
-                                          outfile_name <- paste0(point$id, "_", point$release_date, "_infos.rds")
-                                          
-                                          out_dir <- file.path(output_paths[2], sub_dirs[i], point$id)
-                                          dir.create(out_dir, showWarnings = F)
-                                          
-                                          saveRDS(point, file.path(out_dir, outfile_name))
+                                          #' Save the point object ; uncomment to @save_info
+                                          # outfile_name <- paste0(point$id, "_", point$release_date, "_infos.rds")
+                                          # 
+                                          # out_dir <- file.path(output_paths[2], sub_dirs[i], point$id)
+                                          # dir.create(out_dir, showWarnings = F)
+                                          # 
+                                          # saveRDS(point, file.path(out_dir, outfile_name))
                                           
                                           #close the netcdf connection
-                                          ncdf4::nc_close(precip)
+                                          # ncdf4::nc_close(precip)
                                           
                                           #' return the vector with c(sub_dir, point_id, release_date, all the weights)
                                           weight_per_point
