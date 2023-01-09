@@ -228,6 +228,7 @@ if (!Exists$log1 | !Exists$log2){
   msg <- "    - Reading\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
   rivers_IO <- readRDS(file.path(DATA_PATH, "river_data", "rivers_IO.rds"))
+  st_crs(rivers_IO) <- 4326
   
   msg <- "    - Filtering\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
