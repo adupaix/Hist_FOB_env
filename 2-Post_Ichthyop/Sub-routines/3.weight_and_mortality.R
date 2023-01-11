@@ -96,10 +96,12 @@ if(!Exists$log3){
         
         #' read, weight and sum all the arrays for the release date i
         array.i <- foreach(k = 1:length(points_id),
-                           .combine = f.for.combining,
+                           .combine = "f.for.combining",
                            .packages = srcUsedPackages,
                            .export = "get.array.k",
-                           .options.snow = opts) %dopar% {
+                           .options.snow = opts,
+                           .inorder = F,
+                           .multicombine = T) %dopar% {
                              
                              get.array.k(k = k,
                                          points_id = points_id,

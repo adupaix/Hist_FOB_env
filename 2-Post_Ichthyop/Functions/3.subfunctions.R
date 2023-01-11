@@ -62,8 +62,8 @@ apply.mortality <- function(array.k, ltime, ltime_method, sd = 30){
 #   return(sweep(x2, 1:3, y2, "+"))
 # }
 
-f.for.combining <- function(x,y){
-  return(sweep(x, 1:3, y, "+"))
+f.for.combining <- function(...){
+  Reduce(f = "+", x = list(...))
 }
 
 #'@sub-function 3
