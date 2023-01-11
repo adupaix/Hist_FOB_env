@@ -86,95 +86,35 @@ if(!Exists$log3){
       # get the weights associated with each release points at the given date
       weight.i <- as.numeric(as.character(weight_per_points_matrix[,i]))
       
-      if (!cluster){
-        # set cluster for parallel run, and initialize progress bar
-        cl <- makeCluster(nb_cores)
-        registerDoSNOW(cl)
-        pb <- txtProgressBar(max = length(points_id), style = 3)
-        progress <- function(n) setTxtProgressBar(pb, n)
-        opts <- list(progress = progress)
+      # set cluster for parallel run, and initialize progress bar
+      cl <- makeCluster(nb_cores)
+      registerDoSNOW(cl)
+      pb <- txtProgressBar(max = length(points_id), style = 3)
+      progress <- function(n) setTxtProgressBar(pb, n)
+      opts <- list(progress = progress)
         
-        #' read, weight and sum all the arrays for the release date i
-        array.i <- foreach(k = 1:length(points_id),
-                           .combine = "f.for.combining",
-                           .packages = srcUsedPackages,
-                           .export = "get.array.k",
-                           .options.snow = opts,
-                           .inorder = F,
-                           .multicombine = T) %dopar% {
-                             
-                             get.array.k(k = k,
-                                         points_id = points_id,
-                                         sim_output_path = sim_output_path,
-                                         sub_dirs = sub_dirs,
-                                         release_date.i = release_date.i,
-                                         weight.i = weight.i)
-                           }
-        
-        #' stop parallel and close progress bar
-        close(pb)
-        stopCluster(cl)
-        registerDoSEQ()
-      } else {
-        
-        #' read, weight and sum all the arrays for the release date i
-        #' 
-        #' indices:
-        #' @j is in 1:n_steps (it allows to read the arrays subset by subset)
-        #' @k is in each subset
-        #' 
-        #' For example:
-        #' if length(points_id) == 13 and n_per_step == 5
-        #' each | represents an iteration of read.array.k() 
-        #' 
-        #'     | | | | |    | | | | |    | | |      L = 13 
-        #'    |_________| |__________| |______|     n_step = 2
-        #'      j = 1       j = 2        j = 3
-        #'k = 1 2 3 4 5    1 2 3 4 5    1 2 3   
-        #'    |______________________|              runs in the for loop
-        #'                            |______|      runs after the for loop
-        #'                            
-        #' for each @j, combine the k arrays by summing them, using Reduce()
-        
-        L = length(points_id)
-        n_per_step = 150
-        n_steps = floor(L/n_per_step)
-        
-        array.i <- list()
-        
-        for (j in 1:n_steps){
-          k.indices <- ((j-1)*n_per_step+1):(j*n_per_step)
-          cl <- parallel::makeCluster(nb_cores)
-          array.j <- snow::parLapply(cl, k.indices, get.array.k,
-                                     points_id = points_id,
-                                     sim_output_path = sim_output_path,
-                                     sub_dirs = sub_dirs,
-                                     release_date.i = release_date.i,
-                                     weight.i = weight.i)
-          # array.j <- lapply(indices, f)
-          parallel::stopCluster(cl)
-          array.i[[j]] <- Reduce("+", array.j)
-          rm(array.j) ; invisible(gc())
-        }
-        
-        j=j+1
-        k.indices <- ((j-1)*n_per_step+1):L
-        cl <- parallel::makeCluster(nb_cores)
-        array.j <- snow::parLapply(cl, k.indices, get.array.k,
-                                   points_id = points_id,
-                                   sim_output_path = sim_output_path,
-                                   sub_dirs = sub_dirs,
-                                   release_date.i = release_date.i,
-                                   weight.i = weight.i)
-        parallel::stopCluster(cl)
-        
-        array.i[[j]] <- Reduce("+", array.j)
-        rm(array.j) ; invisible(gc())
-        
-        array.i <- Reduce("+", array.i)
-        
-      }
+      #' read, weight and sum all the arrays for the release date i
+      array.i <- foreach(k = 1:length(points_id),
+                         .combine = "f.for.combining",
+                         .packages = srcUsedPackages,
+                         .export = "get.array.k",
+                         .options.snow = opts,
+                         .inorder = F,
+                         .multicombine = T) %dopar% {
+                           
+                           get.array.k(k = k,
+                                       points_id = points_id,
+                                       sim_output_path = sim_output_path,
+                                       sub_dirs = sub_dirs,
+                                       release_date.i = release_date.i,
+                                       weight.i = weight.i)
+                         }
       
+      #' stop parallel and close progress bar
+      close(pb)
+      stopCluster(cl)
+      registerDoSEQ()
+       
       #' transform the dates in dimnames back to date format
       dimnames(array.i)[[3]] <- as.character(as.difftime(as.numeric(dimnames(array.i)[[3]]), units = "secs") + as.Date("1900-01-01"))
       
