@@ -102,193 +102,105 @@ if (!Exists$weight){
     precip_array <- get.precip.array(precip)
     ncdf4::nc_close(precip)
     
-    if (!cluster){
-      # set cluster for parallel run, and initialize progress bar
-      cl <- makeCluster(nb_cores)
-      registerDoSNOW(cl)
-      pb <- txtProgressBar(max = length(dens_files), style = 3)
-      progress <- function(n) setTxtProgressBar(pb, n)
-      opts <- list(progress = progress)
+    # set cluster for parallel run, and initialize progress bar
+    cl <- makeCluster(nb_cores)
+    registerDoSNOW(cl)
+    pb <- txtProgressBar(max = length(dens_files), style = 3)
+    progress <- function(n) setTxtProgressBar(pb, n)
+    opts <- list(progress = progress)
       
-      #' for each rds file (each rds file contains the density matrices
-      #' associated with a release at 1 release date from 1 release point)
-      weight_per_points[[i]] <- foreach(k = 1:length(dens_files),
-                                        .combine = rbind,
-                                        .packages = srcUsedPackages,
-                                        .options.snow = opts) %dopar% {
-                                          
-                                          ## open the precipitations netcdf file
-                                          # precip <- ncdf4::nc_open(filename = file.path(DATA_PATH,"precip.mon.mean.nc"))
-                                          
-                                          #' create a point "object"
-                                          point <- list()
-                                          
-                                          #' get the id from the file name
-                                          point$id <- sub("/.*","",dens_files[k])
-                                          
-                                          #' keep the file name
-                                          fname <- sub(".*/","",dens_files[k])
-                                          
-                                          #'@get_information_on_release_point
-                                          #'***********************************
-                                          
-                                          # get release coordinates
-                                          point <- get.coords.release(sim_input_path,
-                                                                      point)
-                                          
-                                          # get release date
-                                          point$release_date <- release_dates[k]
-                                          
-                                          cheat = F
-                                          if (year(point$release_date) == max(release_years)){cheat = T ; year(point$release_date) <- year(point$release_date) - 1}
-                                          
-                                          # get precipitations
-                                          point <- get.precipitations(precip_array, point)
-                                          
-                                          # get forest cover
-                                          point <- get.cover.surface(cover_surface_per_input, point)
-                                          
-                                          # get rivers and associated discharge
-                                          point <- get.associated.rivers.and.precip(link_river_input, cover_surface_per_river, embouchures, point, precip_array)
-                                          
-                                          # get river mouths and associated discharge + cover
-                                          # point <- get.associated.rivers(link_river_input, n_cover_per_mouth, embouchures, point, mouth = T)
-                                          
-                                          if (any(!is.na(point$rivers))){
-                                            if (round(point$total_cover_surface_m2) != round(point$coastal_cover_surface_m2 +
-                                                                                             sum(unlist(lapply(point$rivers$data, function(x) sum(x$river_cover_surface_m2)))))){
-                                              stop("Error: total cover surface does not correspond to sum of coastal and river associated cover surfaces")
-                                            }
+    #' for each rds file (each rds file contains the density matrices
+    #' associated with a release at 1 release date from 1 release point)
+    weight_per_points[[i]] <- foreach(k = 1:length(dens_files),
+                                      .combine = rbind,
+                                      .packages = srcUsedPackages,
+                                      .options.snow = opts) %dopar% {
+                                        
+                                        ## open the precipitations netcdf file
+                                        # precip <- ncdf4::nc_open(filename = file.path(DATA_PATH,"precip.mon.mean.nc"))
+                                        
+                                        #' create a point "object"
+                                        point <- list()
+                                        
+                                        #' get the id from the file name
+                                        point$id <- sub("/.*","",dens_files[k])
+                                        
+                                        #' keep the file name
+                                        fname <- sub(".*/","",dens_files[k])
+                                        
+                                        #'@get_information_on_release_point
+                                        #'***********************************
+                                        
+                                        # get release coordinates
+                                        point <- get.coords.release(sim_input_path,
+                                                                    point)
+                                        
+                                        # get release date
+                                        point$release_date <- release_dates[k]
+                                        
+                                        cheat = F
+                                        if (year(point$release_date) == max(release_years)){cheat = T ; year(point$release_date) <- year(point$release_date) - 1}
+                                        
+                                        # get precipitations
+                                        point <- get.precipitations(precip_array, point)
+                                        
+                                        # get forest cover
+                                        point <- get.cover.surface(cover_surface_per_input, point)
+                                        
+                                        # get rivers and associated discharge
+                                        point <- get.associated.rivers.and.precip(link_river_input, cover_surface_per_river, embouchures, point, precip_array)
+                                        
+                                        # get river mouths and associated discharge + cover
+                                        # point <- get.associated.rivers(link_river_input, n_cover_per_mouth, embouchures, point, mouth = T)
+                                        
+                                        if (any(!is.na(point$rivers))){
+                                          if (round(point$total_cover_surface_m2) != round(point$coastal_cover_surface_m2 +
+                                                                                           sum(unlist(lapply(point$rivers$data, function(x) sum(x$river_cover_surface_m2)))))){
+                                            stop("Error: total cover surface does not correspond to sum of coastal and river associated cover surfaces")
                                           }
-                                          
-                                          #' get length of coastline associated with the point
-                                          point <- get.coastline.length(cover_surface_per_input, point)
-                                          
-                                          #' get weights (returns a vector with the weight for all the weighting methods)
-                                          weights <- get.weights(point)
-                                          point$weights <- weights
-                                          
-                                          if (cheat == T){year(point$release_date) <- year(point$release_date) + 1}
-                                          
-                                          # fill in weight_per_points
-                                          weight_per_point <- c(sub_dirs[i],
-                                                                point$id,
-                                                                # the date will be changed to character (hence keep the number of days since 1990-01-01, to choose the time origin)
-                                                                as.numeric(difftime(point$release_date, as.Date("1990-01-01"), units = "days")),
-                                                                as.numeric(weights))
-                                          
-                                          #' Save the point object ; uncomment to @save_info
-                                          # outfile_name <- paste0(point$id, "_", point$release_date, "_infos.rds")
-                                          # 
-                                          # out_dir <- file.path(output_paths[2], sub_dirs[i], point$id)
-                                          # dir.create(out_dir, showWarnings = F)
-                                          # 
-                                          # saveRDS(point, file.path(out_dir, outfile_name))
-                                          
-                                          #close the netcdf connection
-                                          # ncdf4::nc_close(precip)
-                                          
-                                          #' return the vector with c(sub_dir, point_id, release_date, all the weights)
-                                          weight_per_point
-                                          
                                         }
-      
-      #' stop parallel and close progress bar
-      close(pb)
-      stopCluster(cl)
-      registerDoSEQ()
-    } else {
-      
-      cl <- parallel::makeCluster(nb_cores)
-      doParallel::registerDoParallel(cl)
-      #' for each rds file (each rds file contains the density matrices
-      #' associated with a release at 1 release date from 1 release point)
-      weight_per_points[[i]] <- foreach(k = 1:length(dens_files),
-                                        .combine = rbind,
-                                        .packages = srcUsedPackages) %dopar% {
-                                          
-                                          ## open the precipitations netcdf file
-                                          # precip <- ncdf4::nc_open(filename = file.path(DATA_PATH,"precip.mon.mean.nc"))
-                                          
-                                          #' create a point "object"
-                                          point <- list()
-                                          
-                                          #' get the id from the file name
-                                          point$id <- sub("/.*","",dens_files[k])
-                                          
-                                          #' keep the file name
-                                          fname <- sub(".*/","",dens_files[k])
-                                          
-                                          #'@get_information_on_release_point
-                                          #'***********************************
-                                          
-                                          # get release coordinates
-                                          point <- get.coords.release(sim_input_path,
-                                                                      point)
-                                          
-                                          # get release date
-                                          point$release_date <- release_dates[k]
-                                          
-                                          cheat = F
-                                          if (year(point$release_date) == max(release_years)){cheat = T ; year(point$release_date) <- year(point$release_date) - 1}
-                                          
-                                          # get precipitations
-                                          point <- get.precipitations(precip_array, point)
-                                          
-                                          # get forest cover
-                                          point <- get.cover.surface(cover_surface_per_input, point)
-                                          
-                                          # get rivers and associated discharge
-                                          point <- get.associated.rivers.and.precip(link_river_input, cover_surface_per_river, embouchures, point, precip_array)
-                                          
-                                          # get river mouths and associated discharge + cover
-                                          # point <- get.associated.rivers(link_river_input, n_cover_per_mouth, embouchures, point, mouth = T)
-                                          
-                                          if (any(!is.na(point$rivers))){
-                                            if (round(point$total_cover_surface_m2) != round(point$coastal_cover_surface_m2 +
-                                                                                             sum(unlist(lapply(point$rivers$data, function(x) sum(x$river_cover_surface_m2)))))){
-                                              stop("Error: total cover surface does not correspond to sum of coastal and river associated cover surfaces")
-                                            }
-                                          }
-                                          
-                                          #' get length of coastline associated with the point
-                                          point <- get.coastline.length(cover_surface_per_input, point)
-                                          
-                                          #' get weights (returns a vector with the weight for all the weighting methods)
-                                          weights <- get.weights(point)
-                                          point$weights <- weights
-                                          
-                                          if (cheat == T){year(point$release_date) <- year(point$release_date) + 1}
-                                          
-                                          # fill in weight_per_points
-                                          weight_per_point <- c(sub_dirs[i],
-                                                                point$id,
-                                                                # the date will be changed to character (hence keep the number of days since 1990-01-01, to choose the time origin)
-                                                                as.numeric(difftime(point$release_date, as.Date("1990-01-01"), units = "days")),
-                                                                as.numeric(weights))
-                                          
-                                          #' Save the point object ; uncomment to @save_info
-                                          # outfile_name <- paste0(point$id, "_", point$release_date, "_infos.rds")
-                                          # 
-                                          # out_dir <- file.path(output_paths[2], sub_dirs[i], point$id)
-                                          # dir.create(out_dir, showWarnings = F)
-                                          # 
-                                          # saveRDS(point, file.path(out_dir, outfile_name))
-                                          
-                                          #close the netcdf connection
-                                          # ncdf4::nc_close(precip)
-                                          
-                                          #' return the vector with c(sub_dir, point_id, release_date, all the weights)
-                                          weight_per_point
-                                          
-                                        }
-     
-      parallel::stopCluster(cl) 
-    }
+                                        
+                                        #' get length of coastline associated with the point
+                                        point <- get.coastline.length(cover_surface_per_input, point)
+                                        
+                                        #' get weights (returns a vector with the weight for all the weighting methods)
+                                        weights <- get.weights(point)
+                                        point$weights <- weights
+                                        
+                                        if (cheat == T){year(point$release_date) <- year(point$release_date) + 1}
+                                        
+                                        # fill in weight_per_points
+                                        weight_per_point <- c(sub_dirs[i],
+                                                              point$id,
+                                                              # the date will be changed to character (hence keep the number of days since 1990-01-01, to choose the time origin)
+                                                              as.numeric(difftime(point$release_date, as.Date("1990-01-01"), units = "days")),
+                                                              as.numeric(weights))
+                                        
+                                        #' Save the point object ; uncomment to @save_info
+                                        # outfile_name <- paste0(point$id, "_", point$release_date, "_infos.rds")
+                                        # 
+                                        # out_dir <- file.path(output_paths[2], sub_dirs[i], point$id)
+                                        # dir.create(out_dir, showWarnings = F)
+                                        # 
+                                        # saveRDS(point, file.path(out_dir, outfile_name))
+                                        
+                                        #close the netcdf connection
+                                        # ncdf4::nc_close(precip)
+                                        
+                                        #' return the vector with c(sub_dir, point_id, release_date, all the weights)
+                                        weight_per_point
+                                        
+                                      }
     
-      # change format of weight_per_points
-      weight_per_points[[i]] <- as.data.frame(weight_per_points[[i]])
-      names(weight_per_points[[i]]) <- c("sub_dir", "point_id", "release_date", paste0("w", 1:n_weight_methods))
+    #' stop parallel and close progress bar
+    close(pb)
+    stopCluster(cl)
+    registerDoSEQ()
+    
+    
+     # change format of weight_per_points
+     weight_per_points[[i]] <- as.data.frame(weight_per_points[[i]])
+     names(weight_per_points[[i]]) <- c("sub_dir", "point_id", "release_date", paste0("w", 1:n_weight_methods))
       
     # }
     
