@@ -40,15 +40,16 @@ set.seed(10) # set for reproductibility
 #'# @! If the script is running on a Windows machine, the script is executed sequentially
 Parallel = c(T, 1/2)
 
+#' @cluster (num): script running on the cluster ?
+#'  used only if Parallel == T
+#'  If we run the script on the cluster (cluster[1] == T), we do not use Parallel[2]
+#'  to determine the number of cores used, but we specify the number in cluster[2]
+cluster = c(T, 20)
+
 #' @RESET @!!! (log): Reset ?
 #' Whether to delete the results obtained for these arguments (T) or not (F):
 #'  each element of RESET concerns the outputs obtained from the corresponding sub-routine (1 to 4)
 RESET = c(F,F,F,F)
-
-#' @cluster (log): script running on the cluster ?
-#'  allows to choose how the foreach loops are run in parallel (if Parallel[1] is TRUE)
-#'  use doParallel if T and use doSNOW if F
-cluster = T
 
 #' Arguments on the current study
 #' ******************************

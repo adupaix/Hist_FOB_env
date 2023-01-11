@@ -160,10 +160,10 @@ Exists$log4 <- file.exists(Names$log4)
 if (.Platform$OS.type == "windows" | as.logical(Parallel[1]) == F) {
   nb_cores = 1
 } else if (as.logical(Parallel[1]) == T){
-  if (!cluster){ #use a fraction of the available cores
+  if (!cluster[1]){ #use a fraction of the available cores
     nb_cores = trunc(detectCores() * as.numeric(Parallel[2]))
-  } else if (cluster){
-    nb_cores = 10
+  } else if (cluster[1]){
+    nb_cores = cluster[2]
   }
 }
 
