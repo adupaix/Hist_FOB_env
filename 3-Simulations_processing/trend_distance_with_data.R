@@ -1,6 +1,6 @@
 run_from_other_script <- ""
 
-RESET=F
+RESET=T
 DoNotDelete <- c("df_list")
 
 df_list <- list()
@@ -32,12 +32,12 @@ p1=ggplot(toplot %>% dplyr::filter(w %in% c(2,3,4,6,7,9)),
 ggsave(file.path(OUTPUT_PATH,"Distance_to_data/distance_trend.png"),p1,width=10,height=6)
 
 plyr::ddply(df, .variables = c("effort_threshold","w"),
-            function(x) sum(x$dist)) -> toplot2
-  tidyr::pivot_wider(data = toplot2,
-                     names_from = "effort_threshold",
-                     names_prefix = "T = ",
-                     values_from = "V1") -> distance_summary
-p2 <- ggplot(toplot2, aes(x = as.factor(w), y = V1,
+            function(x) sum(x$dist)/nrow(x)) -> toplot2 #'@voir impact modification
+tidyr::pivot_wider(data = toplot2,
+                   names_from = "effort_threshold",
+                   names_prefix = "T = ",
+                   values_from = "V1") -> distance_summary
+p2 <- ggplot(toplot2 %>% dplyr::filter(effort_threshold != 0), aes(x = as.factor(w), y = V1,
                     group = as.factor(effort_threshold),
                     fill = as.factor(effort_threshold)))+
   geom_bar(stat = "identity", position = "dodge")+
