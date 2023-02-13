@@ -37,23 +37,94 @@ sim_output_path <- file.path(STUDY_DIR, "2-Post_Ichthyop/Outputs/nemo_river_allM
 n_days_average <- 7
 
 # choose if take the NLOGs in the Burma Sea into account
-add_burma_sea <- F
+add_burma_sea <- T
 
 # Weighting methods for which the trend is assessed
-weight_methods <- c(3,4,6,7,9)
+weight_methods <- c(2,3,4,6,7,9,1)
+# weight_methods <- 9
 
+#' @AREAS
+#' IO: study of the global trend on the whole ocean bassin
+#' E_W: 2 zones, east and west
+#' IOTC: same areas used in Dupaix et al. (2021) and Dagorn et al. (2013)
+#' IHO: areas obtained from the shapefile of the world seas:
+#'          Flanders Marine Institute (2018). IHO Sea Areas, version 3.
+#'          Available online at https://www.marineregions.org/ https://doi.org/10.14284/323
+# AREAS <- c("IO", "E_W", "IOTC", "IHO")
+AREAS <- "IHO"
 
+#' @do_not_change:
+daily_saved_years <- c(2001,2002,2004,2008,2012,2014:2019)
 
 #' Create output path
-try(dir.create(file.path(OUTPUT_PATH, "NLOG_trends",
-                         ifelse(add_burma_sea, "with_burma_sea", "without_burma_sea")),
-               recursive = T))
+NEW_OUTPUT_PATH <- file.path(OUTPUT_PATH, "NLOG_trends",
+                             ifelse(add_burma_sea, "with_burma_sea", "without_burma_sea"),
+                             AREAS)
+invisible(try(mapply(
+  dir.create,
+  file.path(NEW_OUTPUT_PATH,
+            c("Times_series_per_area","General_time_series",
+              "Climato_per_areas","Yearly_mean")),
+  MoreArgs = list(recursive = T,
+                  showWarnings = F))))
+
+try(dir.create(file.path(WD, "temp")))
+
+# Functions
+delete.under.threshold <- function(x, threshold){
+  diff <- anomaly.detection(x)
+  condition <- abs(diff) > threshold
+  for (i in 2:(length(diff)-2)){
+    if (condition[i]){
+      y <- x[-i]
+      return(c(i, delete.under.threshold(y, threshold)+1))
+    }
+  }
+  return(c())
+}
+get.threshold <- function(x){
+  diff <- anomaly.detection(x)
+  thr <- 2*sd(diff, na.rm = T)
+  return(thr)
+}
+anomaly.detection <- function(x){
+  return(lag(x) + x - lead(x) - lead(lead(x)))
+  return(lag(x) + x - lead(x) - lead(lead(x)))
+}
+delete.aberrant <- function(x){
+  thr <- get.threshold(x)
+  return(delete.under.threshold(x, thr))
+}
+breaks.of <- function(x, step){
+  mx <- step*ceiling(max(x)/step)
+  mn <- step*floor(min(x)/step)
+  return(seq(mn,mx,step))
+}
+source(file = file.path(FUNC_PATH, "generate.CTOI.areas.R"))
+source(file = file.path(FUNC_PATH, "add.area.column.R"))
+source(file = file.path(FUNC_PATH, "build.climato.R"))
+
+# Weights corresponding table
+weight_informations <- data.frame(cbind(1:9,
+                                        c("No weight",
+                                          "Coastline length",
+                                          "Coastal cover",
+                                          "River cover * mean river discharge",
+                                          "River cover * mean river discharge + coastal cover",
+                                          "Coastal cover * precipitations",
+                                          "River cover * mean river discharge * precipitations",
+                                          "Precipitations * (River cover * mean river discharge + coastal cover)",
+                                          "River cover + coastal cover"
+                                        )))
+weight_informations$X2 <- as.character(weight_informations$X2)
+
 
 #' 0. Read simulation outputs
 #' 
 for (w in weight_methods){
   cat(paste("Weight method:",w,"\n===============\n"))
   years <- as.numeric(list.dirs(sim_output_path, recursive = F, full.names = F))
+  years <- years[!is.na(years)]
   
   x <- seq(20, 140-1, 1) + 0.5
   y <- seq(-40, 40-1, 1) + 0.5
@@ -61,7 +132,7 @@ for (w in weight_methods){
   #'          Flanders Marine Institute (2018). IHO Sea Areas, version 3.
   #'          Available online at https://www.marineregions.org/ https://doi.org/10.14284/323
   names_IO <- c("Indian Ocean", "Laccadive Sea", "Bay of Bengal", "Arabian Sea", "Mozambique Channel")
-  if (add_burma_sea){names_IO <- c(names_IO, "Adaman or Burma Sea")}
+  if (add_burma_sea){names_IO <- c(names_IO, "Andaman or Burma Sea")}
   IO <- read_sf(file.path(DATA_PATH,"World_Seas_IHO_v3/World_Seas_IHO_v3.shp")) %>%
     dplyr::filter(NAME %in% names_IO)
   
@@ -77,79 +148,185 @@ for (w in weight_methods){
                          y = rep(rep(y, each = length(x)), times = dim(arr)[3]),
                          day = rep(dimnames(arr)[[3]], each = dim(arr)[1]*dim(arr)[2]),
                          sim_nlog = as.vector(arr))
+      
+      df_s %>% dplyr::filter(!sim_nlog < max(sim_nlog)/10**4) -> df_s
     
       #' 1. Keep only the cells in the IO (exclude cells which are not in the IO polygons)
+      
       pts <- st_as_sf(df_s, coords = c("x","y"), crs = st_crs(4326))
       df_inIO <- st_intersects(pts, IO, sparse = F)
       df_s <- df_s[apply(df_inIO, 1, any),]
-    
+      
+      rm(pts, df_inIO)
+      
       #' 2. Define areas
-      #'                a. Eastern-Western IO (<=80° and >80°)
-      df_s %>% dplyr::mutate(area = if_else(x<80, "W", "E")) -> df_s
-      plyr::ddply(df_s, .variables = c("day","area"), function(x) sum(x$sim_nlog)) -> list_dfs[[i]]
-      plyr::ddply(df_s, .variables = c("day"), function(x) sum(x$sim_nlog)) %>%
-        dplyr::mutate(area = "IO") %>%
-        dplyr::select(day, area, V1) -> df_sum
-      list_dfs[[i]] <- dplyr::bind_rows(list_dfs[[i]], df_sum)
+      if (AREAS == "IO"){
+        df_s$area <- "Global"
+        plyr::ddply(df_s, .variables = c("day","area"), function(x) sum(x$sim_nlog)) -> list_dfs[[i]]
+        
+        rm(df_s)
+        
+      } else {
+        if (AREAS == "IHO"){
+          df_s <- add.area.column(df_s, IO)
+        } else if (AREAS == "E_W"){
+          df_s %>% dplyr::mutate(area = if_else(x<80, "W", "E")) -> df_s
+        } else if (AREAS == "IOTC"){
+          df_s <- add.area.column(df_s, generate.CTOI.areas())
+        }
+        # filter the cells which are not in the defined areas
+        df_s %>% dplyr::filter(!is.na(area)) -> df_s
+        
+        plyr::ddply(df_s, .variables = c("day","area"), function(x) sum(x$sim_nlog)) -> list_dfs[[i]]
+        plyr::ddply(df_s, .variables = c("day"), function(x) sum(x$sim_nlog)) %>%
+          dplyr::mutate(area = "Global") %>%
+          dplyr::select(day, area, V1) -> df_sum
+        list_dfs[[i]] <- dplyr::bind_rows(list_dfs[[i]], df_sum)
+        
+        rm(df_sum, df_s)
+      }
+      
+      # Delete aberrant points
+      # df_s <- list()
+      # areas <- unique(list_dfs[[i]]$area)
+      # for (j in 1:length(areas)){
+      #   df <- list_dfs[[i]] %>% dplyr::filter(area == areas[j])
+      #   df_s[[j]] <- df[-delete.aberrant(df$V1),]
+      # }
+      # list_dfs[[i]] <- bind_rows(df_s)
+
+      
     }
   }
   
+  save(list_dfs, file = file.path(WD, "temp", "list_dfs.Rdata"))
+  load(file.path(WD, "temp", "list_dfs.Rdata"))
+  
   #' 3. Long term trend: yearly mean number of NLOGs per area
   #'                     Use the mean value of 2000 as a reference point
-  dplyr::bind_rows(list_dfs) -> yearly_mean
-  yearly_mean %>% dplyr::mutate(year = lubridate::year(as.Date(day))) %>%
+  dplyr::bind_rows(list_dfs) %>%
+    dplyr::mutate(area = as.factor(area)) %>%
+    dplyr::mutate(year = lubridate::year(as.Date(day))) %>%
     plyr::ddply(c("year", "area"), summarise, sim_nlog = mean(V1)) %>%
-    do({df <- .; df %>% dplyr::mutate(sim_nlog = sim_nlog / df[which(df$year == "2000" & df$area == "IO"),"sim_nlog"])}) -> yearly_mean
+    do({df <- .; df %>% dplyr::mutate(sim_nlog = sim_nlog / df[which(df$year == "2000" & df$area == "Global"),"sim_nlog"])}) -> yearly_mean
   
-  p <- ggplot(yearly_mean, aes(x=as.factor(year), y = sim_nlog, group = area, color = area))+
+  p <- ggplot(yearly_mean, aes(x=year, y = sim_nlog,
+                               group = relevel(area, "Global"), color = relevel(area,"Global")))+
     geom_point()+xlab("Date")+ylab("Indicator of the number of NLOGs")+
     scale_color_brewer("Area", palette = "Set1")+
-    ggtitle(w)
+    ggtitle(weight_informations[w,2])+
+    theme(plot.title = element_text(hjust = 0.5))
   
-  ggplot2::ggsave(file.path(OUTPUT_PATH, "NLOG_trends",
-                            ifelse(add_burma_sea, "with_burma_sea", "without_burma_sea"),
+  ggplot2::ggsave(file.path(NEW_OUTPUT_PATH,
+                            "Yearly_mean",
                             paste0("Yearly_mean_w",w,".png")), p,
-                  width = 10, height = 6)
+                  width = 6, height = 4)
   
-  #' 4. Seasonal trend: global times series of daily values
+  rm(yearly_mean)
+  
+  #' 4.1. Seasonal trend: @global_times_series of daily values
   #'                    Use January the 1st 2000 as a reference point
-  dplyr::bind_rows(list_dfs) -> global_ts
-  global_ts %>% dplyr::mutate(sim_nlog = V1 / global_ts[which(global_ts$day == "2000-01-01" & global_ts$area == "IO"),"V1"],
-                           year = lubridate::year(as.Date(day)),
-                           area = factor(area, levels = c("IO", "W","E"))) %>%
+  dplyr::bind_rows(list_dfs) %>%
+    dplyr::mutate(area = as.factor(area)) %>%
+    dplyr::mutate(day = as.Date(day)) -> global_ts
+  global_ts %>%
+    dplyr::mutate(sim_nlog = V1 / global_ts[which(global_ts$day == min(global_ts$day) & global_ts$area == "Global"),"V1"],
+                           year = lubridate::year(as.Date(day))) %>%
     dplyr::select(-V1) %>%
     dplyr::arrange(area, year, day) -> global_ts
   
+  save(global_ts, file = file.path(WD, "temp", "global_ts.Rdata"))
+  load(file.path(WD, "temp", "global_ts.Rdata"))
   #' Moving averaging over the global time series
   #'       average over "n_days_average" days, centered
   #'       use the zoo::rollmean function
   global_ts$av_sim_nlog <- NA
+  list_ts <- list()
   for (i in 1:length(years)){
-    for (j in 1:length(unique(global_ts$area))){
-      global_ts[which(global_ts$year == years[i] & global_ts$area == unique(global_ts$area)[j]),
-             "av_sim_nlog"] <- zoo::rollmean(
-               global_ts[which(global_ts$year == years[i] & global_ts$area == unique(global_ts$area)[j]),
-                      "sim_nlog"],
-               k = n_days_average,
-               fill = NA
-               )
+    if (years[i] %in% daily_saved_years){
+        global_ts %>%
+          dplyr::filter(year == years[i]) %>%
+          group_by(area) %>%
+          mutate(av_sim_nlog = zoo::rollmean(sim_nlog, k = n_days_average, fill = NA)) %>%
+          ungroup() -> list_ts[[i]]
+    } else {
+      global_ts %>%
+        dplyr::filter(year == years[i]) %>%
+        dplyr::filter(!sim_nlog < max(sim_nlog)/10**4) %>%
+        dplyr::mutate(av_sim_nlog = sim_nlog) -> list_ts[[i]]
     }
   }
  
-  p <- ggplot(data = global_ts, aes(x = as.Date(day), y = sim_nlog, color = area, group = area))+
-    facet_wrap(~year, nrow = 1, scales = "free_x")+
-    geom_point(size = 0.5, alpha = 0.2)+
-    geom_line(aes(x = as.Date(day), y = av_sim_nlog, color = area, group = area))+
+  global_ts <- dplyr::bind_rows(list_ts) %>%
+    dplyr::filter(!is.na(av_sim_nlog))
+  
+  p <- ggplot(data = global_ts)+
+    # facet_wrap(~year, nrow = 1, scales = "free_x")+
+    # geom_point(aes(x = as.Date(day), y = sim_nlog,
+    #                color = relevel(area, "Global"),
+    #                group = relevel(area, "Global")),
+    #            size = 0.5, alpha = 0.2)+
+    geom_line(aes(x = as.Date(day), y = av_sim_nlog,
+                  color = relevel(area, "Global"),
+                  group = relevel(area, "Global")))+
+    scale_y_continuous(breaks = breaks.of(global_ts$av_sim_nlog, 0.25))+
     xlab("Date")+ylab("Indicator of the number of NLOGs")+
     scale_color_brewer("Area", palette = "Set1")+
-    ggtitle(w)+
-    theme(axis.text.x = element_blank(),
-          axis.ticks.x = element_blank(),
-          title = element_text(hjust = 0.5))
+    ggtitle(weight_informations[w,2])+
+    theme(plot.title = element_text(hjust = 0.5))
 
-  ggplot2::ggsave(file.path(OUTPUT_PATH, "NLOG_trends", ifelse(add_burma_sea, "with_burma_sea", "without_burma_sea"),
-                            paste0("Evolution_NLOG_number_w",w,".png")), p,
+  global_ts %>%
+    dplyr::filter(area == 'Global' & !is.na(av_sim_nlog)) -> toplot
+    ggplot(toplot)+
+    # facet_wrap(~year, nrow = 1, scales = "free_x")+
+    # geom_point(size = 0.5, alpha = 0.2)+
+    geom_line(aes(x = as.Date(day), y = av_sim_nlog))+
+    scale_y_continuous(breaks = breaks.of(toplot$av_sim_nlog, 0.25))+
+    xlab("Date")+ylab("Indicator of the number of NLOGs")+
+    # scale_y_continuous(labels = function(x) format(x, scientific = TRUE))+
+    # scale_color_brewer("Area", palette = "Set1")+
+    ggtitle(weight_informations[w,2])+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+          plot.title = element_text(hjust = 0.5)) -> p2
+  
+  ggplot2::ggsave(file.path(NEW_OUTPUT_PATH,
+                            "Times_series_per_area",
+                            paste0("Evolution_NLOG_number_areas_w",w,".png")), p,
         width = 12, height = 6)
   
+  ggplot2::ggsave(file.path(NEW_OUTPUT_PATH,
+                            "General_time_series",
+                            paste0("Evolution_NLOG_number_w",w,".png")), p2,
+                  width = 12, height = 6)
+  
+  #' 4.2. Seasonal trend @climato
+  #' Calculate the daily average over all the years
+  climato <- build.climato(global_ts, years,
+                           var_to_average = "av_sim_nlog",
+                           duplicated_over = c("area"))
+  
+  # plot it
+  p3 <- ggplot(data = climato, aes(x = as.Date(day), y = av_sim_nlog,
+                                  color = relevel(area, "Global"),
+                                  group = relevel(area, "Global")))+
+    # facet_wrap(~year, nrow = 1, scales = "free_x")+
+    geom_line(linewidth = 0.5)+
+    scale_x_date(date_labels = "%b", date_breaks = "1 month")+
+    scale_y_continuous(breaks = breaks.of(climato$av_sim_nlog,
+                                          step = 0.25))+
+    xlab("Date")+ylab("Indicator of the number of NLOGs")+
+    scale_color_brewer("Area", palette = "Set1")+
+    ggtitle(weight_informations[w,2])+
+    theme(plot.title = element_text(hjust = 0.5),
+          axis.text.x = element_text(angle = 45,
+                                     hjust = 1,
+                                     vjust = 1))
+  
+  ggplot2::ggsave(file.path(NEW_OUTPUT_PATH,
+                            "Climato_per_areas",
+                            paste0("Climato_NLOG_number_w",w,".png")), p3,
+                  width = 10, height = 6)
   
 }
+
+try(unlink(file.path(WD, "temp"), recursive = T, force = T))
