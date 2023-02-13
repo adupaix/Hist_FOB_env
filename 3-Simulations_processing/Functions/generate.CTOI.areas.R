@@ -54,7 +54,7 @@ generate.CTOI.areas <- function(){
                       crs = 4326)
   
   
-  areas <- st_as_sf(data.frame(name = c("Somalia", "NW Seychelles", "SE Seychelles", "Chagos", "Mozambique")),
+  areas <- st_as_sf(data.frame(NAME = c("Somalia", "NW Seychelles", "SE Seychelles", "Chagos", "Mozambique")),
                     geom = CTOI_area)
   
   return(areas)
