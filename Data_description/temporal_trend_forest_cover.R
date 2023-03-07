@@ -40,11 +40,17 @@ cover_sum <- list()
 cover_df <- list()
 
 for (i in 1:length(years)){
+  
   cat(years[i],"\n")
   files <- list.files(paste0("forest_cover_",years[i]), pattern = file_pattern, full.names = T)
   cover_sum[[i]] <- c(0)
   cover_df[[i]] <- data.frame(X = NA, Y = NA, cover = NA)
+  
   for (f in files){
+    sink(file = file.path(OUTPUT_PATH, "FOLLOW_UP"), append = F)
+    cat(years[i],"\n  ",f)
+    sink()
+    
     cat(" ",f,"\n")
     cover <- read_sf(f)
     cover_df.temp <- data.frame(cbind(cover, st_coordinates(cover))) %>%
