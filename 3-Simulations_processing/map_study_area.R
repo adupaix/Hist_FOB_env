@@ -37,7 +37,7 @@ IO <- read_sf(file.path(DATA_PATH, "World_Seas_IHO_v3/World_Seas_IHO_v3.shp")) %
   # dplyr::filter(NAME %in% c("Indian Ocean", "Laccadive Sea", "Bay of Bengal", "Arabian Sea", "Mozambique Channel"))
 bbox <- read_sf(file.path(DATA_PATH, "OI.shp"))
 
-source(file = file.path(FUNC_PATH, "generate.CTOI.areas.R"))
+source(file = file.path(FUNC_PATH, "readAreas.R"))
 
 #' crop the IO with the used bbox
 IO <- st_crop(IO, st_bbox(bbox))
@@ -46,7 +46,7 @@ map <- ggplot()+geom_sf(data = IO, fill = RColorBrewer::brewer.pal(6, "Blues")[3
                         color = NA, alpha = 0.5)+
   coord_sf(xlim = c(20, 130), ylim = c(-40, 30), expand = FALSE, crs = st_crs(4326))+
   # coord_sf(xlim = c(80, 120), ylim = c(-10, 30), expand = FALSE, crs = st_crs(4326))+
-  geom_line(aes(x = c(80,80), y = c(-35,30)), color = "red", size = 0.5, linetype = "dashed")+
+  geom_line(aes(x = c(80,80), y = c(-35,30)), color = "red", linewidth = 0.5, linetype = "dashed")+
   # geom_label(data = IO, aes(x = Longitude, y = Latitude, label = NAME))+
   geom_polygon(data=world, aes(x=long, y=lat, group=group))+
   geom_label(aes(x = c(60,100), y = c(-15,-15),
@@ -94,4 +94,22 @@ map <- ggplot()+
         panel.grid = element_blank())
 
 ggsave(file.path(NEW_OUTPUT_PATH, "map_study_area_IOTC.png"), map,
+       height = 8, width = 12)
+
+my_areas <- generate.perso.areas(IHO_areas = IO)
+
+map <- ggplot()+
+  geom_sf(data = my_areas, aes(fill = NAME), color = "grey40", alpha = 0.5)+
+  scale_fill_brewer(palette = "Blues", guide = "none")+
+  coord_sf(xlim = c(20, 130), ylim = c(-40, 30), expand = FALSE, crs = st_crs(4326))+
+  # geom_label(data = IO, aes(x = Longitude, y = Latitude, label = NAME))+
+  geom_polygon(data=world, aes(x=long, y=lat, group=group))+
+  geom_label(aes(x = c(55,65,40,86,70,86,105,80),
+                 y = c(7,-5,-20,-5,15,15,-5,-25),
+                 label = my_areas$NAME))+
+  ylab("Latitude")+xlab("Longitude")+
+  theme(panel.background = element_rect(fill = "grey90", color = "black"),
+        panel.grid = element_blank())
+
+ggsave(file.path(NEW_OUTPUT_PATH, "map_study_area_myAreas.png"), map,
        height = 8, width = 12)
