@@ -4,9 +4,11 @@ add.area.column <- function(df, area){
   
   df_inArea <- lapply(df_inArea, function(x){
     if(length(x) == 0){
-      x <- NA
+       return(NA)
+    } else if (length(x) > 1){
+      return(x[1])
     } else {
-      x <- x
+      return(x)
     }
     return(x)
     }

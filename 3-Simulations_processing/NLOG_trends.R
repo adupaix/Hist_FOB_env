@@ -40,8 +40,8 @@ n_days_average <- 7
 add_burma_sea <- T
 
 # Weighting methods for which the trend is assessed
-weight_methods <- c(2,3,4,6,7,9,1)
-# weight_methods <- 9
+weight_methods <- c(2,3,4,7,1)
+# weight_methods <- c(6,9)
 
 #' @AREAS
 #' IO: study of the global trend on the whole ocean bassin
@@ -50,11 +50,12 @@ weight_methods <- c(2,3,4,6,7,9,1)
 #' IHO: areas obtained from the shapefile of the world seas:
 #'          Flanders Marine Institute (2018). IHO Sea Areas, version 3.
 #'          Available online at https://www.marineregions.org/ https://doi.org/10.14284/323
-# AREAS <- c("IO", "E_W", "IOTC", "IHO")
-AREAS <- "IHO"
+#' myAreas: personalized areas
+# AREAS <- c("IO", "E_W", "IOTC", "IHO", "myAreas")
+AREAS <- "myAreas"
 
 #' @do_not_change:
-daily_saved_years <- c(2001,2002,2004,2008,2012,2014:2019)
+daily_saved_years <- c(2002,2004,2008,2012,2014:2019)
 
 #' Create output path
 NEW_OUTPUT_PATH <- file.path(OUTPUT_PATH, "NLOG_trends",
@@ -100,7 +101,7 @@ breaks.of <- function(x, step){
   mn <- step*floor(min(x)/step)
   return(seq(mn,mx,step))
 }
-source(file = file.path(FUNC_PATH, "generate.CTOI.areas.R"))
+source(file = file.path(FUNC_PATH, "readAreas.R"))
 source(file = file.path(FUNC_PATH, "add.area.column.R"))
 source(file = file.path(FUNC_PATH, "build.climato.R"))
 
@@ -119,22 +120,27 @@ weight_informations <- data.frame(cbind(1:9,
 weight_informations$X2 <- as.character(weight_informations$X2)
 
 
+# Read the necessary areas
+#' Read the shapefile of the world seas, to filter in the for loop (1.):
+#'          Flanders Marine Institute (2018). IHO Sea Areas, version 3.
+#'          Available online at https://www.marineregions.org/ https://doi.org/10.14284/323
+IO <- read.IO.areas("IHO", DATA_PATH = DATA_PATH, add_burma_sea = add_burma_sea)
+#' Read the areas selected with the AREAS argument. If AREAS not in 'IO' 'E_W'
+if (AREAS %in% c("IOTC","IHO","myAreas")){
+  used_areas <- read.IO.areas(AREAS, DATA_PATH = DATA_PATH,
+                              add_burma_sea = add_burma_sea)
+}
+# List years with outputs
+years <- as.numeric(list.dirs(sim_output_path, recursive = F, full.names = F))
+years <- years[!is.na(years)]
+
 #' 0. Read simulation outputs
 #' 
 for (w in weight_methods){
   cat(paste("Weight method:",w,"\n===============\n"))
-  years <- as.numeric(list.dirs(sim_output_path, recursive = F, full.names = F))
-  years <- years[!is.na(years)]
   
   x <- seq(20, 140-1, 1) + 0.5
   y <- seq(-40, 40-1, 1) + 0.5
-  #' Read the shapefile of the world seas, to filter in the for loop (1.):
-  #'          Flanders Marine Institute (2018). IHO Sea Areas, version 3.
-  #'          Available online at https://www.marineregions.org/ https://doi.org/10.14284/323
-  names_IO <- c("Indian Ocean", "Laccadive Sea", "Bay of Bengal", "Arabian Sea", "Mozambique Channel")
-  if (add_burma_sea){names_IO <- c(names_IO, "Andaman or Burma Sea")}
-  IO <- read_sf(file.path(DATA_PATH,"World_Seas_IHO_v3/World_Seas_IHO_v3.shp")) %>%
-    dplyr::filter(NAME %in% names_IO)
   
   list_dfs <- list()
   for (i in 1:length(years)){
@@ -167,12 +173,10 @@ for (w in weight_methods){
         rm(df_s)
         
       } else {
-        if (AREAS == "IHO"){
-          df_s <- add.area.column(df_s, IO)
-        } else if (AREAS == "E_W"){
+        if (AREAS == "E_W"){
           df_s %>% dplyr::mutate(area = if_else(x<80, "W", "E")) -> df_s
-        } else if (AREAS == "IOTC"){
-          df_s <- add.area.column(df_s, generate.CTOI.areas())
+        } else if (AREAS %in% c("IHO", "IOTC","myAreas")){
+          df_s <- add.area.column(df_s, used_areas)
         }
         # filter the cells which are not in the defined areas
         df_s %>% dplyr::filter(!is.na(area)) -> df_s
