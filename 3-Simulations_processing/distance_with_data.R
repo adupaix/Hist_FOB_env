@@ -3,78 +3,33 @@
 #'@update : 2022-08-13
 #'@email : amael.dupaix@ird.fr
 #'#*******************************************************************************************************************
-#'@description :  This is the main script to calculate distance between observers data and Ichthyop simulation results
+#'@description :  This is the script calculating distance between observers data and Ichthyop simulation results
 #'#*******************************************************************************************************************
 #'@revision
 #'#*******************************************************************************************************************
-if (!exists(DoNotDelete)){
-  DoNotDelete <- c()  
-}
-DoNotDelete <- unique(c(DoNotDelete,
-                        "DoNotDelete",
-                        "year","effort_threshold", "RESET", "run_from_other_script"))
 
-rm(list=ls()[!ls() %in% DoNotDelete])
+area_year_output_path <- file.path(OUTPUT_PATH, "Distance_to_data", AREAS, "csv_outputs", year)
+try(dir.create(area_year_output_path, showWarnings = F, recursive = T))
 
-STUDY_DIR <- "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/"
+processed_observers_file_path <- file.path(area_year_output_path, paste0("Obs_NLOG_",year,"_",effort_threshold,"d_of_obs.csv"))
+distance_file_path <- file.path(area_year_output_path,
+                                paste("distances_data_sim_", year, "_",effort_threshold,"d_of_obs.csv"))
 
-#' generate basic paths
-WD <- file.path(STUDY_DIR,'3-Simulations_processing')
-DATA_PATH <- file.path(STUDY_DIR,'0-Data')
-
-OUTPUT_PATH <- file.path(WD,"Outputs")
-FUNC_PATH <- file.path(WD,"Functions")
-ROUT_PATH <- file.path(WD, "Sub-routines")
-RESOURCE_PATH <- file.path(WD,"Resources")
-
-source(file.path(FUNC_PATH, "install_libraries.R"))
-
-srcUsedPackages <- c("ggplot2","plyr","sf","ggspatial","rnaturalearth","rnaturalearthdata","rgeos",
-                     "raster","rworldmap","shape", "dplyr")
-
-installAndLoad_packages(srcUsedPackages, loadPackages = TRUE)
-
-
-#' @arguments
-sim_output_path <- file.path(STUDY_DIR, "2-Post_Ichthyop/Outputs/nemo_river_allMask")
-
-#' Can run the main script from another script (to do a loop over the arguments from example)
-#' then, an object called run_from_other_script needs to be created
-#' and the arguments won't be changed
-if (!exists("run_from_other_script")){
-  
-  
-#' Delete the outputs to calculate anew (T) or not (F)
-RESET = T
-
-#' Year for which we want to do the comparison
-#' After 2007, because no data is available before
-#' Available years (on 2022-10-12): 2008, 2012, 2016, 2018
-year = 2018
-
-#' Threshold used to filter the observers data, noted "T"
-#' Cells with a number of days of observation < T are discarded 
-effort_threshold = 6
-}
-
-## Generate df of NLOG observations
-source(file.path(FUNC_PATH, "Maps", "1.Maps_obs.R"))
-
-world <- map_data("world")
-
-data <- read.csv(file.path(DATA_PATH, "Observers_data", "all_operations_on_fobs_observe_fr_indian.csv"))
-
-
-if(!file.exists(file.path(OUTPUT_PATH, "Distance_to_data", paste("distances_data_sim_", year, "_",effort_threshold,"d_of_obs.csv"))) |
+if(!file.exists(distance_file_path) |
    RESET){
-  if (!file.exists(file.path(DATA_PATH, "Observers_data", paste0("Obs_NLOG_",year,"_",effort_threshold,"d_of_obs.csv"))) | RESET){
+  if (!file.exists(processed_observers_file_path) | RESET){
     df <- list()
+    cat("Calculating indicator of NLOG number from obs data\n")
+    pb <- txtProgressBar(min = 0, max = 12, style = 3, width = 24)
     for (m in 1:12){
+      setTxtProgressBar(pb, m)
+      cat(paste(" ; Month:", m))
       rast <- map_occurence(Ob7 = data, DATA_PATH = file.path(DATA_PATH, "Observers_data"),
                             obj.type = "NLOG", year = year,
-                            month = m,
+                            gsize = 2, month = m,
                             return_raster = T,
                             delete.low.effort = T,
+                            data_preped = T,
                             eff.threshold = effort_threshold)
       df[[m]] <- as.data.frame(rast, xy = T)
       df[[m]]$month <- m
@@ -83,14 +38,16 @@ if(!file.exists(file.path(OUTPUT_PATH, "Distance_to_data", paste("distances_data
       df[[m]]$NLOGdata[is.infinite(df[[m]]$NLOGdata)] <- NA
       
     }
+    close(pb)
     
     df <- dplyr::bind_rows(df)
     df %>% dplyr::mutate(effort_threshold = effort_threshold) -> df
     
-    write.csv(df, file = file.path(DATA_PATH, "Observers_data", paste0("Obs_NLOG_",year,"_",effort_threshold,"d_of_obs.csv")),
+    write.csv2(df, file = processed_observers_file_path,
               row.names = FALSE)
   } else {
-    df <- read.csv(file.path(DATA_PATH, "Observers_data", paste0("Obs_NLOG_",year,"_",effort_threshold,"d_of_obs.csv")))
+    cat("Reading existing processed obs file\n")
+    df <- read.csv2(processed_observers_file_path)
   }
   
   
@@ -98,7 +55,11 @@ if(!file.exists(file.path(OUTPUT_PATH, "Distance_to_data", paste("distances_data
   # open array
   plist <- list()
   
+  cat("\nReading processed simulations and calculating distance\n")
+  pb <- txtProgressBar(min = 0, max = 9, style = 3, width = 24)
   for (i in 1:9){
+    setTxtProgressBar(pb, i)
+    cat(paste(" ; Weight scenario:", i))
     monthly_array_name <- file.path(sim_output_path, year, paste0("w",i, "_ltime2-360_thr-disch100"), "4.maps_month", "aggregated_array_mean.rds")
     if (file.exists(monthly_array_name)){
       arr <- readRDS(monthly_array_name)
@@ -129,7 +90,7 @@ if(!file.exists(file.path(OUTPUT_PATH, "Distance_to_data", paste("distances_data
       df_m$NLOGsim <- df_m$NLOGsim / max(df_m$NLOGsim, na.rm = T)
       df_m$NLOGdata <- df_m$NLOGdata / max(df_m$NLOGdata, na.rm = T)
       
-      
+      # calculate the individual cell distance
       df_m %>% dplyr::mutate(dist = (NLOGdata - NLOGsim)^2,
                              w = i) -> df_m
       
@@ -152,53 +113,27 @@ if(!file.exists(file.path(OUTPUT_PATH, "Distance_to_data", paste("distances_data
       stop("The requested simulations outputs do not exist")
     }
   }
+  close(pb)
+  # Adding area column
+  cat("\nAdding area column\n")
+  if (AREAS == "IO"){
+    df_tot$area <- "Global"
+    
+  } else if (AREAS == "E_W"){
+    df_tot %>% dplyr::mutate(area = if_else(x<80, "W", "E")) -> df_tot
+    
+  } else {
+    df_tot <- add.area.column(df = df_tot,
+                              area = used_areas)
+  }
   
-  # fig <- ggpubr::ggarrange(plotlist = plist)
-  
-  try(dir.create(file.path(OUTPUT_PATH, "Distance_to_data")))
-  
-  # ggsave(file.path(OUTPUT_PATH, "Distance_to_data", paste0("distance_maps",year,"_",effort_threshold,"d_of_obs.png")),
-  # width = 12, height = 8)
-  
-  write.csv(df_tot, file.path(OUTPUT_PATH, "Distance_to_data", paste("distances_data_sim_", year, "_",effort_threshold,"d_of_obs.csv")))
+  write.csv2(df_tot, file = distance_file_path,
+            row.names = F)
   
   distance <- ddply(df_tot, "w", summarise, sum(dist))
 } else {
-  df_tot <- read.csv(file.path(OUTPUT_PATH, "Distance_to_data", paste("distances_data_sim_", year, "_",effort_threshold,"d_of_obs.csv")))
+  cat("Reading existing file\n")
+  df_tot <- read.csv2(distance_file_path)
   
 }
 
-
-
-# Testing if can calculate distance to data monthly instead of yearly
-#
-# dfs <- list()
-# for (i in 1:12){
-#   rast <- map_occurence(Ob7 = data, DATA_PATH = file.path(DATA_PATH, "Observers_data"),
-#                         obj.type = "NLOG", year = year, month = c(i),
-#                         return_raster = T,
-#                         delete.low.effort = T,
-#                         eff.threshold = effort_threshold)
-#   df <- as.data.frame(rast, xy = T)
-#   names(df) <- c("x","y","NLOGdata")
-#   
-#   df$NLOGdata[is.infinite(df$NLOGdata)] <- NA
-#   df$NLOGdata <- df$NLOGdata / max(df$NLOGdata, na.rm = T)
-#   
-#   dfs[[i]] <- df
-# }
-# 
-# maps <- list()
-# for (i in 1:12){
-#   maps[[i]] <- ggplot() +
-#     geom_sf() +
-#     coord_sf(xlim = c(35, 100), ylim = c(-25, 25), expand = FALSE, crs = st_crs(4326))+
-#     geom_tile(data=dfs[[i]], aes(x, y, fill=NLOGdata)) +
-#     scale_fill_gradientn(colors=c("black","blue","yellow","red"))+
-#     geom_polygon(data=world, aes(x=long, y=lat, group=group))+
-#     # ggtitle(paste0("w",i," - d =", round(distance[i], digits = 10)))
-#     ggtitle(i)
-# }
-# obs <- ggpubr::ggarrange(plotlist = maps)
-# ggsave(file.path(OUTPUT_PATH, paste0("test_obs_",year,".png")),
-#        obs, width = 16, height = 10)
