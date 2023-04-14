@@ -94,7 +94,7 @@ df <- dplyr::bind_rows(df_list)
 cat("\n\nBuilding plots\n==============")
 #' remove weights 1 5 and 8
 #' and rename other weight scenarios as in the study
-
+kept_scenarios <- c("CL","CC","RC","CCp","RCp","R&CC")
 df %>%
   dplyr::filter(!w %in% c(1,5,8)) %>%
   dplyr::mutate(w = dplyr::case_when(w == 2 ~ "CL",
@@ -103,7 +103,7 @@ df %>%
                                      w == 6 ~ "CCp",
                                      w == 7 ~ "RCp",
                                      w == 9 ~ "R&CC")) %>%
-  dplyr::mutate(w = factor(w, levels = c("CL","CC","RC","CCp","RCp","R&CC"))) -> df
+  dplyr::mutate(w = factor(w, levels = kept_scenarios)) -> df
 
 #' @plot1
 #' *****
@@ -296,4 +296,23 @@ for (eff in EFFORT_THRESHOLD){
   }
 }  
 
+eff = 10
+df_climato %>%
+  dplyr::mutate(quarter = ceiling(month / 3)) %>%
+  plyr::ddply(.variables = c("quarter","area",
+                             "w", "effort_threshold"),
+              function(x) cbind(NLOGdata = mean(x$NLOGdata),
+                                NLOGsim = mean(x$NLOGsim))) %>%
+  dplyr::filter(effort_threshold == eff,
+                area %in% c("Arabian Sea",
+                            "Mozambique",
+                            "SCTR",
+                            "Somalia",
+                            "Southern IO")) -> for_tests
+for (wi in kept_scenarios){
+  data <- for_tests %>%
+    dplyr::filter(w == wi)
+  cat(wi, "\n")
+  print(wilcox.test(data$NLOGsim, data$NLOGdata))
+}
 
