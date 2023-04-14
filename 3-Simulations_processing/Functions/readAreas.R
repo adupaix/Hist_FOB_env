@@ -73,7 +73,8 @@ generate.CTOI.areas <- function(){
   
   
   areas <- st_as_sf(data.frame(NAME = c("Somalia", "NW Seychelles", "SE Seychelles", "Chagos", "Mozambique")),
-                    geom = CTOI_area)
+                    geom = CTOI_area) %>%
+    dplyr::arrange(NAME)
   
   return(areas)
 }
@@ -87,7 +88,8 @@ read.IHO <- function(DATA_PATH, add_burma_sea = T){
   names_IO <- c("Indian Ocean", "Laccadive Sea", "Bay of Bengal", "Arabian Sea", "Mozambique Channel")
   if (add_burma_sea){names_IO <- c(names_IO, "Andaman or Burma Sea")}
   IO <- read_sf(file.path(DATA_PATH,"World_Seas_IHO_v3/World_Seas_IHO_v3.shp")) %>%
-    dplyr::filter(NAME %in% names_IO)
+    dplyr::filter(NAME %in% names_IO) %>%
+    dplyr::arrange(NAME)
   
   return(IO)
 }
@@ -201,7 +203,17 @@ generate.perso.areas <- function(IHO_areas){
     st_difference(areas$geometry[areas$NAME == "Mozambique"]) %>%
     st_difference(areas$geometry[areas$NAME == "SCTR"])
   
+  # order levels of NAME (so that colors are the same on all figures)
+  areas %>% dplyr::arrange(NAME) -> areas
+  areas$NAME <- factor(areas$NAME, levels = sort(levels(areas$NAME)))
+    
   return(areas)
 }
 
 
+color.for.areas <- function(my_areas){
+  cols <- RColorBrewer::brewer.pal(9, "Set1")
+  names(cols) <- my_areas$NAME
+  cols <- cols[!is.na(names(cols))]
+  return(cols)
+}

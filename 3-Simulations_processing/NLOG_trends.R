@@ -40,8 +40,8 @@ n_days_average <- 7
 add_burma_sea <- T
 
 # Weighting methods for which the trend is assessed
-weight_methods <- c(2,3,4,7,1)
-# weight_methods <- c(6,9)
+# weight_methods <- c(2,3,4,7,1)
+weight_methods <- c(6,9)
 
 #' @AREAS
 #' IO: study of the global trend on the whole ocean bassin
@@ -127,7 +127,7 @@ weight_informations$X2 <- as.character(weight_informations$X2)
 IO <- read.IO.areas("IHO", DATA_PATH = DATA_PATH, add_burma_sea = add_burma_sea)
 #' Read the areas selected with the AREAS argument. If AREAS not in 'IO' 'E_W'
 if (AREAS %in% c("IOTC","IHO","myAreas")){
-  used_areas <- read.IO.areas(AREAS, DATA_PATH = DATA_PATH,
+  my_areas <- read.IO.areas(AREAS, DATA_PATH = DATA_PATH,
                               add_burma_sea = add_burma_sea)
 }
 # List years with outputs
@@ -137,14 +137,14 @@ years <- years[!is.na(years)]
 #' 0. Read simulation outputs
 #' 
 for (w in weight_methods){
-  cat(paste("Weight method:",w,"\n===============\n"))
+  message <- paste("\14 Weight method:",w,"\n===============\n    - Reading simulation outputs\n") ; cat(message)
   
   x <- seq(20, 140-1, 1) + 0.5
   y <- seq(-40, 40-1, 1) + 0.5
   
   list_dfs <- list()
   for (i in 1:length(years)){
-    cat("     ",paste0(years[i]),"\n")
+    cat(message, paste("     ",paste0(years[i]),"\n"))
     global_array_name <- file.path(sim_output_path, years[i], paste0("w",w, "_ltime2-360_thr-disch100"), "4.global_array.rds")
     if (file.exists(global_array_name)){
       arr <- readRDS(global_array_name)
@@ -176,7 +176,7 @@ for (w in weight_methods){
         if (AREAS == "E_W"){
           df_s %>% dplyr::mutate(area = if_else(x<80, "W", "E")) -> df_s
         } else if (AREAS %in% c("IHO", "IOTC","myAreas")){
-          df_s <- add.area.column(df_s, used_areas)
+          df_s <- add.area.column(df_s, my_areas)
         }
         # filter the cells which are not in the defined areas
         df_s %>% dplyr::filter(!is.na(area)) -> df_s
@@ -206,6 +206,7 @@ for (w in weight_methods){
   save(list_dfs, file = file.path(WD, "temp", "list_dfs.Rdata"))
   load(file.path(WD, "temp", "list_dfs.Rdata"))
   
+  message <- c(message, "   - Building plots\n") ; cat(message)
   #' 3. Long term trend: yearly mean number of NLOGs per area
   #'                     Use the mean value of 2000 as a reference point
   dplyr::bind_rows(list_dfs) %>%
@@ -214,10 +215,12 @@ for (w in weight_methods){
     plyr::ddply(c("year", "area"), summarise, sim_nlog = mean(V1)) %>%
     do({df <- .; df %>% dplyr::mutate(sim_nlog = sim_nlog / df[which(df$year == "2000" & df$area == "Global"),"sim_nlog"])}) -> yearly_mean
   
+  my_colors <- color.for.areas(my_areas)
+  
   p <- ggplot(yearly_mean, aes(x=year, y = sim_nlog,
                                group = relevel(area, "Global"), color = relevel(area,"Global")))+
     geom_point()+xlab("Date")+ylab("Indicator of the number of NLOGs")+
-    scale_color_brewer("Area", palette = "Set1")+
+    scale_color_manual("Area", values = c(my_colors, Global = "black"))+
     ggtitle(weight_informations[w,2])+
     theme(plot.title = element_text(hjust = 0.5))
   
@@ -275,7 +278,7 @@ for (w in weight_methods){
                   group = relevel(area, "Global")))+
     scale_y_continuous(breaks = breaks.of(global_ts$av_sim_nlog, 0.25))+
     xlab("Date")+ylab("Indicator of the number of NLOGs")+
-    scale_color_brewer("Area", palette = "Set1")+
+    scale_color_manual("Area", values = c(my_colors, Global = "black"))+
     ggtitle(weight_informations[w,2])+
     theme(plot.title = element_text(hjust = 0.5))
 
@@ -319,7 +322,7 @@ for (w in weight_methods){
     scale_y_continuous(breaks = breaks.of(climato$av_sim_nlog,
                                           step = 0.25))+
     xlab("Date")+ylab("Indicator of the number of NLOGs")+
-    scale_color_brewer("Area", palette = "Set1")+
+    scale_color_manual("Area", values = c(my_colors, Global = "black"))+
     ggtitle(weight_informations[w,2])+
     theme(plot.title = element_text(hjust = 0.5),
           axis.text.x = element_text(angle = 45,
