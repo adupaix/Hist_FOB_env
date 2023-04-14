@@ -104,8 +104,8 @@ map <- ggplot()+
   coord_sf(xlim = c(20, 130), ylim = c(-40, 30), expand = FALSE, crs = st_crs(4326))+
   # geom_label(data = IO, aes(x = Longitude, y = Latitude, label = NAME))+
   geom_polygon(data=world, aes(x=long, y=lat, group=group))+
-  geom_label(aes(x = c(55,65,40,86,70,86,105,80),
-                 y = c(7,-5,-20,-5,15,15,-5,-25),
+  geom_label(aes(x = c(70,86,86,105,40,60,55,80),
+                 y = c(15,15,-5,-5,-20,-5,7,-25),
                  label = my_areas$NAME))+
   ylab("Latitude")+xlab("Longitude")+
   theme(panel.background = element_rect(fill = "grey90", color = "black"),
