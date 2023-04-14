@@ -124,7 +124,7 @@ if(!file.exists(distance_file_path) |
     
   } else {
     df_tot <- add.area.column(df = df_tot,
-                              area = used_areas)
+                              area = my_areas)
   }
   
   write.csv2(df_tot, file = distance_file_path,
