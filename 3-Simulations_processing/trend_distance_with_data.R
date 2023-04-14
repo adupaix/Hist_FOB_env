@@ -19,7 +19,7 @@ source(file.path(FUNC_PATH, "install_libraries.R"))
 
 #' Load used packages
 srcUsedPackages <- c("ggplot2","plyr","sf","ggspatial","rnaturalearth","rnaturalearthdata","rgeos",
-                     "raster","rworldmap","shape", "dplyr")
+                     "raster","rworldmap","shape", "dplyr", "RColorBrewer")
 
 installAndLoad_packages(srcUsedPackages, loadPackages = TRUE)
 
@@ -35,7 +35,7 @@ df_list <- list()
 sim_output_path <- file.path(STUDY_DIR, "2-Post_Ichthyop/Outputs/nemo_river_allMask")
 
 #' Delete the outputs to calculate anew (T) or not (F)
-RESET = T
+RESET = F
 
 #' Year for which we want to do the comparison
 #' After 2007, because no data is available before
@@ -69,9 +69,9 @@ data <- prep.obs(data)
 #' Read area 
 if(!AREAS %in% c("IO", "E_W")){
   cat("\nRead IO areas\n")
-  used_areas <- read.IO.areas(area = AREAS,
-                              DATA_PATH = DATA_PATH,
-                              add_burma_sea = T)
+  my_areas <- read.IO.areas(area = AREAS,
+                            DATA_PATH = DATA_PATH,
+                            add_burma_sea = T)
 }
 
 for (year in YEARS){
@@ -92,6 +92,19 @@ df <- dplyr::bind_rows(df_list)
 
 
 cat("\n\nBuilding plots\n==============")
+#' remove weights 1 5 and 8
+#' and rename other weight scenarios as in the study
+
+df %>%
+  dplyr::filter(!w %in% c(1,5,8)) %>%
+  dplyr::mutate(w = dplyr::case_when(w == 2 ~ "CL",
+                                     w == 3 ~ "CC",
+                                     w == 4 ~ "RC",
+                                     w == 6 ~ "CCp",
+                                     w == 7 ~ "RCp",
+                                     w == 9 ~ "R&CC")) %>%
+  dplyr::mutate(w = factor(w, levels = c("CL","CC","RC","CCp","RCp","R&CC"))) -> df
+
 #' @plot1
 #' *****
 # summarize them by month, to plot the time series
@@ -101,7 +114,7 @@ plyr::ddply(df, .variables = c("month","effort_threshold","w","year"),
 toplot$date <- as.Date(paste(toplot$year, toplot$month, 1, sep = "-"))
 toplot$effort_threshold <- factor(toplot$effort_threshold, levels = c("0","6","10"))
 
-p1=ggplot(toplot %>% dplyr::filter(w %in% c(2,3,4,6,7,9)),
+p1=ggplot(toplot,
        aes(x = date, y = V1, group = as.factor(w), color = as.factor(w)))+
   ggplot2::facet_wrap(~effort_threshold, scales = "free", nrow = 3)+
   scale_color_brewer("Weighting\nmethod", palette = "Set1")+
@@ -140,7 +153,6 @@ ggsave(file.path(OUTPUT_PATH, "Distance_to_data", AREAS,"distance_sum.png"),
 plyr::ddply(df, .variables = c("effort_threshold","w","area"),
             function(x) sum(x$dist)/nrow(x)) %>%
   dplyr::filter(!is.na(area)) %>%
-  dplyr::filter(!w %in% c(1,5,8)) %>%
   dplyr::mutate(effort_threshold = paste("T =", effort_threshold)) -> toplot3
 
 plyr::ddply(toplot3, .variables = c("w", "effort_threshold"), function(x) sum(x$V1)) %>%
@@ -173,12 +185,12 @@ obs_vs_predict_output <- file.path(OUTPUT_PATH, "Distance_to_data",
                                    AREAS, "observed_vs_predicted")
 try(dir.create(obs_vs_predict_output, recursive = T, showWarnings = F))
 
+my_colors <- color.for.areas(my_areas = my_areas)
 
 for (eff in EFFORT_THRESHOLD){
   df  %>%
     dplyr::mutate(quarter = ceiling(month / 3)) %>%
-    dplyr::filter(!w %in% c(1,5,8),
-                  effort_threshold == eff) %>%
+    dplyr::filter(effort_threshold == eff) %>%
     ggplot()+
     geom_point(aes(x = NLOGdata, y = NLOGsim, color = as.factor(quarter)))+
     geom_abline(slope = 1, intercept = 0, color = "grey")+
@@ -189,12 +201,11 @@ for (eff in EFFORT_THRESHOLD){
     theme(panel.background = element_rect(fill = "white",
                                           colour = "black")) -> p4
   df %>%
-    dplyr::filter(!w %in% c(1,5,8),
-                  effort_threshold == eff) %>%
+    dplyr::filter(effort_threshold == eff) %>%
     ggplot()+
     geom_point(aes(x = NLOGdata, y = NLOGsim, color = area))+
     geom_abline(slope = 1, intercept = 0, color = "grey")+
-    scale_color_brewer("Area", palette = "Set1")+
+    scale_color_manual("Area", values = my_colors)+
     scale_x_continuous(limits = c(0,1))+
     scale_y_continuous(limits = c(0,1))+
     facet_wrap(~w) +
@@ -223,8 +234,7 @@ for (eff in EFFORT_THRESHOLD){
                                 "Mozambique",
                                 "SCRT",
                                 "Somalia",
-                                "Southern IO"),
-                    !w %in% c(1,5,8)) %>%
+                                "Southern IO")) %>%
       ggplot()+
       geom_abline(slope = 1, intercept = 0, color = "grey")+
       geom_point(aes(x = NLOGdata,
@@ -232,7 +242,7 @@ for (eff in EFFORT_THRESHOLD){
                      color = as.factor(area),
                      shape = as.factor(quarter)))+
       scale_shape("Quarter")+
-      scale_color_brewer("Area", palette = "Set1")+
+      scale_color_manual("Area", values = my_colors)+
       scale_x_continuous(limits = c(0,1))+
       scale_y_continuous(limits = c(0,1))+
       facet_wrap(~w)+
@@ -265,8 +275,7 @@ for (eff in EFFORT_THRESHOLD){
                                 "Mozambique",
                                 "SCTR",
                                 "Somalia",
-                                "Southern IO"),
-                    !w %in% c(1,5,8)) %>%
+                                "Southern IO")) %>%
       ggplot()+
       geom_abline(slope = 1, intercept = 0, color = "grey")+
       geom_point(aes(x = NLOGdata,
@@ -274,7 +283,7 @@ for (eff in EFFORT_THRESHOLD){
                      color = as.factor(area),
                      shape = as.factor(quarter)))+
       scale_shape("Quarter")+
-      scale_color_brewer("Area", palette = "Set1")+
+      scale_color_manual("Area", values = my_colors)+
       scale_x_continuous(limits = c(0,1))+
       scale_y_continuous(limits = c(0,1))+
       facet_wrap(~w)+
