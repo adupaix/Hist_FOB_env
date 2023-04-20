@@ -41,7 +41,7 @@ add_burma_sea <- T
 
 # Weighting methods for which the trend is assessed
 # weight_methods <- c(2,3,4,7,1)
-weight_methods <- c(6,9)
+weight_methods <- c(2,3,4,6,7,9)
 
 #' @AREAS
 #' IO: study of the global trend on the whole ocean bassin
@@ -64,8 +64,13 @@ NEW_OUTPUT_PATH <- file.path(OUTPUT_PATH, "NLOG_trends",
 invisible(try(mapply(
   dir.create,
   file.path(NEW_OUTPUT_PATH,
-            c("Times_series_per_area","General_time_series",
-              "Climato_per_areas","Yearly_mean")),
+            c("Yearly_mean_panel-w_group-area",
+              "Times_series_panel-w_group-area",
+              "Time_series_panel-w_nogroup",
+              "Climato_panel-w_group-area",
+              "Time_series_panel-area_group-w",
+              "Density_time_series_panel-w_group-area",
+              "Density_time_series_panel-area_group-w")),
   MoreArgs = list(recursive = T,
                   showWarnings = F))))
 
@@ -133,6 +138,11 @@ if (AREAS %in% c("IOTC","IHO","myAreas")){
 # List years with outputs
 years <- as.numeric(list.dirs(sim_output_path, recursive = F, full.names = F))
 years <- years[!is.na(years)]
+
+
+# add areas surface
+my_areas$surface_km2 <- as.vector(st_area(my_areas)) * 10**-6
+
 
 #' 0. Read simulation outputs
 #' 
@@ -208,6 +218,7 @@ for (w in weight_methods){
   
   message <- c(message, "   - Building plots\n") ; cat(message)
   #' 3. Long term trend: yearly mean number of NLOGs per area
+  #' *******************************************************
   #'                     Use the mean value of 2000 as a reference point
   dplyr::bind_rows(list_dfs) %>%
     dplyr::mutate(area = as.factor(area)) %>%
@@ -225,13 +236,14 @@ for (w in weight_methods){
     theme(plot.title = element_text(hjust = 0.5))
   
   ggplot2::ggsave(file.path(NEW_OUTPUT_PATH,
-                            "Yearly_mean",
+                            "Yearly_mean_panel-w_group-area",
                             paste0("Yearly_mean_w",w,".png")), p,
                   width = 6, height = 4)
   
   rm(yearly_mean)
   
   #' 4.1. Seasonal trend: @global_times_series of daily values
+  #' *******************************************************
   #'                    Use January the 1st 2000 as a reference point
   dplyr::bind_rows(list_dfs) %>%
     dplyr::mutate(area = as.factor(area)) %>%
@@ -242,8 +254,8 @@ for (w in weight_methods){
     dplyr::select(-V1) %>%
     dplyr::arrange(area, year, day) -> global_ts
   
-  save(global_ts, file = file.path(WD, "temp", "global_ts.Rdata"))
-  load(file.path(WD, "temp", "global_ts.Rdata"))
+  save(global_ts, file = file.path(WD, "temp", paste0("global_ts",w,".Rdata")))
+  load(file.path(WD, "temp", paste0("global_ts",w,".Rdata")))
   #' Moving averaging over the global time series
   #'       average over "n_days_average" days, centered
   #'       use the zoo::rollmean function
@@ -297,16 +309,47 @@ for (w in weight_methods){
           plot.title = element_text(hjust = 0.5)) -> p2
   
   ggplot2::ggsave(file.path(NEW_OUTPUT_PATH,
-                            "Times_series_per_area",
+                            "Times_series_panel-w_group-area",
                             paste0("Evolution_NLOG_number_areas_w",w,".png")), p,
         width = 12, height = 6)
   
   ggplot2::ggsave(file.path(NEW_OUTPUT_PATH,
-                            "General_time_series",
+                            "Time_series_panel-w_nogroup",
                             paste0("Evolution_NLOG_number_w",w,".png")), p2,
                   width = 12, height = 6)
   
+  #' Seasonal trend @general_times_series_density
+  #' *********************************************
+  #' divide the previous time series by area of the regions
+  left_join(global_ts, st_drop_geometry(my_areas),
+            by = c("area" = "NAME")) %>%
+    dplyr::mutate(surface_km2 = case_when(area == "Global" ~ sum(my_areas$surface_km2),
+                                          area != "Global" ~ surface_km2)) %>%
+    dplyr::mutate(sim_density = av_sim_nlog / surface_km2) %>%
+    dplyr::mutate(sim_density = sim_density / max(sim_density)) -> global_ts
+    
+  p_dens <- ggplot(data = global_ts)+
+    # facet_wrap(~year, nrow = 1, scales = "free_x")+
+    # geom_point(aes(x = as.Date(day), y = sim_nlog,
+    #                color = relevel(area, "Global"),
+    #                group = relevel(area, "Global")),
+    #            size = 0.5, alpha = 0.2)+
+    geom_line(aes(x = as.Date(day), y = sim_density,
+                  color = relevel(area, "Global"),
+                  group = relevel(area, "Global")))+
+    scale_y_continuous(breaks = breaks.of(global_ts$sim_density, 0.25))+
+    xlab("Date")+ylab("Indicator of the density of NLOGs")+
+    scale_color_manual("Area", values = c(my_colors, Global = "black"))+
+    ggtitle(weight_informations[w,2])+
+    theme(plot.title = element_text(hjust = 0.5))
+  
+  ggplot2::ggsave(file.path(NEW_OUTPUT_PATH,
+                            "Density_time_series_panel-w_group-area",
+                            paste0("Evolution_NLOG_density_w",w,".png")), p_dens,
+                  width = 12, height = 6)
+  
   #' 4.2. Seasonal trend @climato
+  #' ******************************
   #' Calculate the daily average over all the years
   climato <- build.climato(global_ts, years,
                            var_to_average = "av_sim_nlog",
@@ -330,10 +373,85 @@ for (w in weight_methods){
                                      vjust = 1))
   
   ggplot2::ggsave(file.path(NEW_OUTPUT_PATH,
-                            "Climato_per_areas",
+                            "Climato_panel-w_group-area",
                             paste0("Climato_NLOG_number_w",w,".png")), p3,
                   width = 10, height = 6)
   
+  save(global_ts, file = file.path(WD, "temp", paste0("global_ts",w,".Rdata")))
+  load(file.path(WD, "temp", paste0("global_ts",w,".Rdata")))
+  
 }
 
-try(unlink(file.path(WD, "temp"), recursive = T, force = T))
+
+liste <- list()
+for (w in 1:length(weight_methods)){
+  load(file = file.path(WD, "temp", paste0("global_ts",weight_methods[w],".Rdata")))
+  liste[[w]] <- global_ts %>%
+    dplyr::mutate(w = weight_methods[w])
+}
+global_daily_mean_df <- do.call("rbind", liste) ; rm(liste)
+
+kept_scenarios <- c("CL","CC","RC","CCp","RCp","R&CC")
+global_daily_mean_df %>%
+  dplyr::filter(!w %in% c(1,5,8)) %>%
+  dplyr::mutate(w = dplyr::case_when(w == 2 ~ "CL",
+                                     w == 3 ~ "CC",
+                                     w == 4 ~ "RC",
+                                     w == 6 ~ "CCp",
+                                     w == 7 ~ "RCp",
+                                     w == 9 ~ "R&CC")) %>%
+  dplyr::mutate(w = factor(w, levels = kept_scenarios)) -> global_daily_mean_df
+
+
+#' Seasonal trend @density_by_area
+#' ***********************************
+
+for (a in 1:dim(my_areas)[1]){
+  area.i <- as.character(my_areas$NAME[a])
+  global_daily_mean_df %>%
+    dplyr::filter(area == area.i) -> toplot
+  
+  ggplot(toplot)+
+    # facet_wrap(~year, nrow = 1, scales = "free_x")+
+    # geom_point(size = 0.5, alpha = 0.2)+
+    geom_line(aes(x = as.Date(day), y = av_sim_nlog,
+                  group = w, color = w))+
+    # scale_y_continuous(breaks = breaks.of(toplot$sim_nlog, 0.25))+
+    xlab("Date")+ylab("Indicator of the number of NLOGs")+
+    # scale_y_continuous(labels = function(x) format(x, scientific = TRUE))+
+    scale_color_brewer("Area", palette = "Set1")+
+    ggtitle(area.i)+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+          plot.title = element_text(hjust = 0.5)) -> p4
+  
+  ggplot2::ggsave(file.path(NEW_OUTPUT_PATH,
+                            "Time_series_panel-area_group-w",
+                            paste0("NLOG_number_",
+                                   gsub(" ", "_", area.i),
+                                   ".png")),
+                  p4, width = 10, height = 6)
+  
+  ggplot(toplot)+
+    # facet_wrap(~year, nrow = 1, scales = "free_x")+
+    # geom_point(size = 0.5, alpha = 0.2)+
+    geom_line(aes(x = as.Date(day), y = sim_density,
+                  group = w, color = w))+
+    # scale_y_continuous(breaks = breaks.of(toplot$sim_nlog, 0.25))+
+    xlab("Date")+ylab("Indicator of the density of NLOGs")+
+    # scale_y_continuous(labels = function(x) format(x, scientific = TRUE))+
+    scale_color_brewer("Area", palette = "Set1")+
+    ggtitle(area.i)+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+          plot.title = element_text(hjust = 0.5)) -> p5
+  
+  ggplot2::ggsave(file.path(NEW_OUTPUT_PATH,
+                            "Density_time_series_panel-area_group-w",
+                            paste0("NLOG_number_",
+                                   gsub(" ", "_", area.i),
+                                   ".png")),
+                  p5, width = 10, height = 6)
+  
+}
+
+
+# try(unlink(file.path(WD, "temp"), recursive = T, force = T))
