@@ -232,7 +232,7 @@ for (eff in EFFORT_THRESHOLD){
       dplyr::filter(effort_threshold == eff,
                     area %in% c("Arabian Sea",
                                 "Mozambique",
-                                "SCRT",
+                                "SCTR",
                                 "Somalia",
                                 "Southern IO")) %>%
       ggplot()+
@@ -312,7 +312,10 @@ df_climato %>%
 for (wi in kept_scenarios){
   data <- for_tests %>%
     dplyr::filter(w == wi)
+  sink(file.path(obs_vs_predict_output, "wilcox_tests.txt"),
+       append = T)
   cat(wi, "\n")
   print(wilcox.test(data$NLOGsim, data$NLOGdata))
+  sink()
 }
 
