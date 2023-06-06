@@ -132,7 +132,7 @@ if(!Exists$cover){
                             cover_files[k])) -> cover_df 
           
           # test if the forest cover shp is in the right format
-          if(any(as.numeric(levels(as.factor(cover_df$couvert))) > 100) | any(as.numeric(levels(as.factor(cover_df$couvert))) < 1)){
+          if(any(as.numeric(levels(as.factor(cover_df$couvert))) > 100) | any(as.numeric(levels(as.factor(cover_df$couvert))) < 0)){
             stop("Error: wrong forest cover file format (not a percentage)")
           }
           
