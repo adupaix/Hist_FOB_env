@@ -78,7 +78,7 @@ for (year in YEARS){
   for (effort_threshold in EFFORT_THRESHOLD){
     cat('\14')
     cat(paste("Processing year:", year, "; T:",effort_threshold, "\n===========================\n\n"))
-    source("/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/3-Simulations_processing/distance_with_data.R")
+    source(file.path(ROUT_PATH, "distance_with_data.R"))
     
     df_list[[paste(year, effort_threshold, sep = "-")]] <- df_tot
   }
@@ -185,7 +185,7 @@ obs_vs_predict_output <- file.path(OUTPUT_PATH, "Distance_to_data",
                                    AREAS, "observed_vs_predicted")
 try(dir.create(obs_vs_predict_output, recursive = T, showWarnings = F))
 
-my_colors <- color.for.areas(my_areas = my_areas)
+my_colors <- Set1.without.yellow(my_areas$NAME)
 
 for (eff in EFFORT_THRESHOLD){
   df  %>%

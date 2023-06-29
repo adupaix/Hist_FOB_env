@@ -17,7 +17,7 @@ dir.create(OUTPUT_PATH, showWarnings = F)
 
 # path containing the forest cover data
 # WD <- "/home1/datawork/adupaix/Hist_FOB_env/0-Data/forest_cover"
-WD <- "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/0-Data/forest_cover/"
+WD <- "/media/adupaix/INNOV_FAD/forest_cover/"
 
 setwd(dir = WD)
 

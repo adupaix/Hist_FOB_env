@@ -73,16 +73,27 @@ source(file = file.path(FUNC_PATH, "add.area.column.R"))
 
 
 # Weights corresponding table
+# weight_informations <- data.frame(cbind(1:9,
+#                                         c("No weight",
+#                                           "Coastline length",
+#                                           "Coastal cover",
+#                                           "River cover * mean river discharge",
+#                                           "River cover * mean river discharge + coastal cover",
+#                                           "Coastal cover * precipitations",
+#                                           "River cover * mean river discharge * precipitations",
+#                                           "Precipitations * (River cover * mean river discharge + coastal cover)",
+#                                           "River cover + coastal cover"
+#                                         )))
 weight_informations <- data.frame(cbind(1:9,
                                         c("No weight",
-                                          "Coastline length",
-                                          "Coastal cover",
-                                          "River cover * mean river discharge",
+                                          "CL",
+                                          "CC",
+                                          "RC",
                                           "River cover * mean river discharge + coastal cover",
-                                          "Coastal cover * precipitations",
-                                          "River cover * mean river discharge * precipitations",
+                                          "CCp",
+                                          "RCp",
                                           "Precipitations * (River cover * mean river discharge + coastal cover)",
-                                          "River cover + coastal cover"
+                                          "R&CC"
                                         )))
 weight_informations$X2 <- as.character(weight_informations$X2)
 
@@ -230,6 +241,29 @@ for (w in weight_methods){
                   p,
                   width = 12,
                   height = 10)
+  saveRDS(p, file.path(NEW_OUTPUT_PATH, "Mean_density",
+                       paste0("Quarterly_density_w", w, ".rds")))
+  
+  p <- ggplot()+
+    geom_tile(data = quarterly_mean, aes(x=x,y=y, fill = sim_nlog, color = sim_nlog))+
+    scale_fill_viridis_c("Simulated indicator\nof NLOG density", trans = "log10")+
+    scale_color_viridis_c("Simulated indicator\nof NLOG density", trans = "log10")+
+    geom_sf(data = my_areas, fill = NA, color = "grey90")+
+    coord_sf(xlim = c(20, 130), ylim = c(-40, 30), expand = FALSE, crs = st_crs(4326))+
+    geom_polygon(data=world, aes(x=long, y=lat, group=group))+
+    ylab("Latitude")+xlab("Longitude")+
+    ggtitle(weight_informations[w,2])+
+    theme(panel.background = element_rect(fill = "grey90", color = "black"),
+          panel.grid = element_blank(),
+          plot.title = element_text(hjust = 0.5))
+  
+  ggplot2::ggsave(file.path(NEW_OUTPUT_PATH, "Mean_density",
+                            paste0("Density_w", w, ".png")),
+                  p,
+                  width = 12,
+                  height = 10)
+  saveRDS(p, file.path(NEW_OUTPUT_PATH, "Mean_density",
+                       paste0("Density_w", w, ".rds")))
   
   p <- ggplot()+
     geom_tile(data = quarterly_sd, aes(x=x,y=y, fill = sim_nlog, color = sim_nlog))+

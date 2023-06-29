@@ -211,9 +211,9 @@ generate.perso.areas <- function(IHO_areas){
 }
 
 
-color.for.areas <- function(my_areas){
+Set1.without.yellow <- function(level_names){
   cols <- RColorBrewer::brewer.pal(9, "Set1")[-6]
-  names(cols) <- my_areas$NAME
+  names(cols) <- level_names
   cols <- cols[!is.na(names(cols))]
   return(cols)
 }
