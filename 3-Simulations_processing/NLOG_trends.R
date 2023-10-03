@@ -627,7 +627,9 @@ for (a in 1:(dim(my_areas)[1]+1)){
 }
 
 
-
+write.csv(slopes,
+          file.path(NEW_OUTPUT_PATH, "Slope_tests",
+                    "All_coefficients.csv"))
 
 # library(tseries)
 # df.ts <- ts(df_for_lm$sim_density, frequency = 52, start = c(2000,1))
