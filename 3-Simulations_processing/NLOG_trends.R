@@ -3,7 +3,7 @@
 #'@update : 2023-06-29
 #'@email : amael.dupaix@ird.fr
 #'#*******************************************************************************************************************
-#'@description :  This is the main script to study NLOG numbers trends from Ichthyop simulations
+#'@description :  Script to study NLOG numbers trends from Ichthyop simulations
 #'#*******************************************************************************************************************
 #'@revision
 #'#*******************************************************************************************************************
@@ -83,39 +83,15 @@ try(dir.create(file.path(WD, "temp")))
 invisible(Sys.setlocale("LC_ALL", "en_US.utf8"))
 
 # Functions
-# delete.under.threshold <- function(x, threshold){
-#   diff <- anomaly.detection(x)
-#   condition <- abs(diff) > threshold
-#   for (i in 2:(length(diff)-2)){
-#     if (condition[i]){
-#       y <- x[-i]
-#       return(c(i, delete.under.threshold(y, threshold)+1))
-#     }
-#   }
-#   return(c())
-# }
-# get.threshold <- function(x){
-#   diff <- anomaly.detection(x)
-#   thr <- 2*sd(diff, na.rm = T)
-#   return(thr)
-# }
-# anomaly.detection <- function(x){
-#   return(lag(x) + x - lead(x) - lead(lead(x)))
-#   return(lag(x) + x - lead(x) - lead(lead(x)))
-# }
-# delete.aberrant <- function(x){
-#   thr <- get.threshold(x)
-#   return(delete.under.threshold(x, thr))
-# }
+source(file = file.path(FUNC_PATH, "readAreas.R"))
+source(file = file.path(FUNC_PATH, "add.area.column.R"))
+source(file = file.path(FUNC_PATH, "NLOG_trends", "build.climato.R"))
+source(file = file.path(FUNC_PATH, "NLOG_trends", "correct.lm.pvalue.temp.autocorr.R"))
 breaks.of <- function(x, step){
   mx <- step*ceiling(max(x)/step)
   mn <- step*floor(min(x)/step)
   return(seq(mn,mx,step))
 }
-source(file = file.path(FUNC_PATH, "readAreas.R"))
-source(file = file.path(FUNC_PATH, "add.area.column.R"))
-source(file = file.path(FUNC_PATH, "build.climato.R"))
-source(file = file.path(FUNC_PATH, "correct.lm.pvalue.temp.autocorr.R"))
 
 # Weights corresponding table
 weight_informations <- data.frame(cbind(1:9,

@@ -87,8 +87,10 @@ if(!file.exists(distance_file_path) |
       df_m %>% filter(!is.na(NLOGdata)) -> df_m #remove sim results out of data range
       
       # scale the NLOG values from the 2 columns, based on their respective maximum
-      df_m$NLOGsim <- df_m$NLOGsim / max(df_m$NLOGsim, na.rm = T)
-      df_m$NLOGdata <- df_m$NLOGdata / max(df_m$NLOGdata, na.rm = T)
+      if (SCALE_BY_MAX){
+        df_m$NLOGsim <- df_m$NLOGsim / max(df_m$NLOGsim, na.rm = T)
+        df_m$NLOGdata <- df_m$NLOGdata / max(df_m$NLOGdata, na.rm = T)
+      }
       
       # calculate the individual cell distance
       df_m %>% dplyr::mutate(dist = (NLOGdata - NLOGsim)^2,

@@ -1,3 +1,5 @@
+#Scripts from Dupaix et al. (2021) https://doi.org/10.1093/icesjms/fsab175
+
 #########################################################################################
                               #   MAPS FUNCTIONS  #
 #########################################################################################
@@ -13,7 +15,7 @@
 # @Ob7: observers data, containing all the operations on objects
 
 ###FONCTIONS NECESSAIRES
-source(file.path(FUNC_PATH,'Prep_obs.R'))
+source(file.path(FUNC_PATH, 'Maps', 'Prep_obs.R'))
 source(file.path(FUNC_PATH, 'Maps','1.1.subfunctions_maps_obs.R'))
 
 #======================================================================================#
@@ -586,76 +588,6 @@ map_buoy_operation <- function(Ob7, DATA_PATH, year = c(), operation = 3, obj.ty
   } else if (!is.null(year)){
     titre <- paste(titre, "\nEn", paste(year))
   }
-  
-  
-  # a. If eff ----
-  # if (eff == T){
-  #   echelle = paste("Buoy deployment on\n",obj.type,"/day")
-  #   if (is.null(month)){
-  #     if (is.null(year)){
-  #       if (obj.type!="all"){
-  #         titre<- paste("Nombre de balises deployees sur", obj.type, "\npar jour d'observation \n Pool toutes annees")
-  #       }else{
-  #         titre<- "Nombre de balises deployees sur FOB \npar jour d'observation \n Pool toutes annees"
-  #       }
-  #     }else{
-  #       if (obj.type!="all"){
-  #         titre<- paste("Nombre de balises deployees sur", obj.type, "\npar jour d'observation en", year)
-  #       }else{
-  #         titre<- paste("Nombre de balises deployees sur FOB \npar jour d'observation en", year)
-  #       }
-  #     }
-  #   }else{
-  #     if (is.null(year)){
-  #       if (obj.type!="all"){
-  #         titre<- paste0("Nombre de balises deployees sur ", obj.type,"\npar jour d'observation \n Pool toutes annees \n Mois : ", paste(month,collapse=","))
-  #       }else{
-  #         titre<- paste0("Nombre de balises deployees sur FOB \npar jour d'observation \n Pool toutes annees \n Mois : ", paste(month,collapse=","))
-  #       }
-  #     }else{
-  #       if (obj.type!="all"){
-  #         titre<- paste0("Nombre de balises deployees sur ", obj.type,"\npar jour d'observation\n Annee : ", year,"\n Mois : ", paste(month,collapse=","))
-  #       }else{
-  #         titre<- paste0("Nombre de balises deployees sur FOB \npar jour d'observation \n Annee :", year,"\n Mois : ", paste(month,collapse=","))
-  #       }
-  #     }
-  #   }
-  # }
-  # 
-  # # b. If eff FALSE ----
-  # if (eff == F){
-  #   echelle = paste("Buoy deployment on\n",obj.type)
-  #   if (is.null(month)){
-  #     if (is.null(year)){
-  #       if (obj.type!="all"){
-  #         titre<- paste("Nombre de balises deployees sur", obj.type, "\n Pool toutes annees")
-  #       }else{
-  #         titre<- "Nombre de balises deployees sur FOB \n Pool toutes annees"
-  #       }
-  #     }else{
-  #       if (obj.type!="all"){
-  #         titre<- paste("Nombre de balises deployees sur", obj.type, "en", year)
-  #       }else{
-  #         titre<- paste("Nombre de balises deployees sur FOB en", year)
-  #       }
-  #     }
-  #   }else{
-  #     if (is.null(year)){
-  #       if (obj.type!="all"){
-  #         titre<- paste0("Nombre de balises deployees sur ", obj.type,"\n Pool toutes annees \n Mois : ", paste(month,collapse=","))
-  #       }else{
-  #         titre<- paste0("Nombre de balises deployees sur FOB\n Pool toutes annees \n Mois : ", paste(month,collapse=","))
-  #       }
-  #     }else{
-  #       if (obj.type!="all"){
-  #         titre<- paste0("Nombre de balises deployees sur ", obj.type,"\n Annee : ", year,"\n Mois : ", paste(month,collapse=","))
-  #       }else{
-  #         titre<- paste0("Nombre de balises deployees sur FOB\n Annee :", year,"\n Mois : ", paste(month,collapse=","))
-  #       }
-  #     }
-  #   }
-  # }
-  
   
   
   ## B. ECHELLE DE COULEUR ----

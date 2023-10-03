@@ -3,7 +3,7 @@
 #'@update : 2022-10-12
 #'@email : amael.dupaix@ird.fr
 #'#*******************************************************************************************************************
-#'@description :  This is the main script to study NLOG numbers trends from Ichthyop simulations
+#'@description :  This is the main script to map NLOG numbers from Ichthyop simulations
 #'#*******************************************************************************************************************
 #'@revision
 #'#*******************************************************************************************************************
@@ -39,12 +39,12 @@ n_days_average <- 7
 # choose if take the NLOGs in the Burma Sea into account
 # add_burma_sea <- T
 
-# Weighting methods for which the trend is assessed
+# Weighting methods for which the maps are built
 # weight_methods <- c(2,3,4,7,1)
 weight_methods <- c(2,3,4,6,7,9)
 
 #' @AREAS
-#' IO: study of the global trend on the whole ocean bassin
+#' IO: study of the global trend on the whole ocean basin
 #' E_W: 2 zones, east and west
 #' IOTC: same areas used in Dupaix et al. (2021) and Dagorn et al. (2013)
 #' IHO: areas obtained from the shapefile of the world seas:
@@ -72,18 +72,7 @@ source(file = file.path(FUNC_PATH, "readAreas.R"))
 source(file = file.path(FUNC_PATH, "add.area.column.R"))
 
 
-# Weights corresponding table
-# weight_informations <- data.frame(cbind(1:9,
-#                                         c("No weight",
-#                                           "Coastline length",
-#                                           "Coastal cover",
-#                                           "River cover * mean river discharge",
-#                                           "River cover * mean river discharge + coastal cover",
-#                                           "Coastal cover * precipitations",
-#                                           "River cover * mean river discharge * precipitations",
-#                                           "Precipitations * (River cover * mean river discharge + coastal cover)",
-#                                           "River cover + coastal cover"
-#                                         )))
+# Weights correspondance table
 weight_informations <- data.frame(cbind(1:9,
                                         c("No weight",
                                           "CL",
@@ -240,7 +229,7 @@ for (w in weight_methods){
                             paste0("Quarterly_density_w", w, ".png")),
                   p,
                   width = 12,
-                  height = 10)
+                  height = 8)
   saveRDS(p, file.path(NEW_OUTPUT_PATH, "Mean_density",
                        paste0("Quarterly_density_w", w, ".rds")))
   
@@ -261,7 +250,7 @@ for (w in weight_methods){
                             paste0("Density_w", w, ".png")),
                   p,
                   width = 12,
-                  height = 10)
+                  height = 8)
   saveRDS(p, file.path(NEW_OUTPUT_PATH, "Mean_density",
                        paste0("Density_w", w, ".rds")))
   
@@ -282,7 +271,7 @@ for (w in weight_methods){
                             paste0("SD_density_w", w, ".png")),
                   p,
                   width = 12,
-                  height = 10)
+                  height = 8)
 }
 
 unlink(file.path(WD, "temp"), recursive = T)

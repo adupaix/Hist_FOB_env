@@ -1,3 +1,13 @@
+#'#*******************************************************************************************************************
+#'@author : Amael DUPAIX
+#'@update : 2023-10-03
+#'@email : amael.dupaix@ird.fr
+#'#*******************************************************************************************************************
+#'@description :  Script to compare simulated with observed NLOG numbers
+#'#*******************************************************************************************************************
+#'@revision
+#'#*******************************************************************************************************************
+
 rm(list = ls())
 
 STUDY_DIR <- "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/"
@@ -6,16 +16,17 @@ STUDY_DIR <- "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/"
 WD <- file.path(STUDY_DIR,'3-Simulations_processing')
 DATA_PATH <- file.path(STUDY_DIR,'0-Data')
 
-OUTPUT_PATH <- file.path(WD,"Outputs")
+OUTPUT_PATH <- file.path(WD,"Outputs", "Comparison_with_data") #will be modified below depending on the selected areas
 FUNC_PATH <- file.path(WD,"Functions")
 ROUT_PATH <- file.path(WD, "Sub-routines")
 RESOURCE_PATH <- file.path(WD,"Resources")
 
-#' Source sub-functions
+#' Source functions
 source(file.path(FUNC_PATH, "add.area.column.R"))
-source(file.path(FUNC_PATH, "Maps", "1.Maps_obs.R"))
 source(file.path(FUNC_PATH, "readAreas.R"))
 source(file.path(FUNC_PATH, "install_libraries.R"))
+source(file.path(FUNC_PATH, "Comparison_with_data", "1.Maps_obs.R"))
+source(file.path(FUNC_PATH, "Comparison_with_data", "simulation.vs.obs.R"))
 
 #' Load used packages
 srcUsedPackages <- c("ggplot2","plyr","sf","ggspatial","rnaturalearth","rnaturalearthdata","rgeos",
@@ -35,7 +46,7 @@ df_list <- list()
 sim_output_path <- file.path(STUDY_DIR, "2-Post_Ichthyop/Outputs/nemo_river_allMask")
 
 #' Delete the outputs to calculate anew (T) or not (F)
-RESET = F
+RESET = T
 
 #' Year for which we want to do the comparison
 #' After 2007, because no data is available before
@@ -57,8 +68,19 @@ AREAS = "myAreas"
 #' Cells with a number of days of observation < T are discarded 
 EFFORT_THRESHOLD = c(0,6,10)
 
+#' Choose if the values of NLOGsim and NLOGobs (used to build the correlation plots)
+#'  are scaled by dividing them by their maximum or not
+SCALE_BY_MAX <- F
+
+#'***************
+#' @scripts
+#'***************
+
 #' Read world polygons to build maps
 world <- map_data("world")
+
+#'update output path
+OUTPUT_PATH <- file.path(OUTPUT_PATH, AREAS)
 
 #' Read observers data
 cat("\14")
@@ -91,6 +113,10 @@ for (i in 1:length(df_list)){
 df <- dplyr::bind_rows(df_list)
 
 
+#'***************
+#' @Distances
+#'***************
+
 cat("\n\nBuilding plots\n==============")
 #' remove weights 1 5 and 8
 #' and rename other weight scenarios as in the study
@@ -121,7 +147,7 @@ p1=ggplot(toplot,
   geom_point(alpha=0.5)+geom_line(alpha=0.5)+
   ylab("Distance")
 
-ggsave(file.path(OUTPUT_PATH,"Distance_to_data", AREAS, "distance_trend.png"),
+ggsave(file.path(OUTPUT_PATH, "distance_trend.png"),
        p1,width=10,height=6)
 
 #' @plot2
@@ -143,7 +169,7 @@ p2 <- ggplot(toplot2, aes(x = as.factor(w), y = V1,
   xlab("Weighting method")+
   ylab("Sum of monthly distances")
 
-ggsave(file.path(OUTPUT_PATH, "Distance_to_data", AREAS,"distance_sum.png"),
+ggsave(file.path(OUTPUT_PATH,"distance_sum.png"),
        p2, width = 6, height = 4)
 
 #' @plot3
@@ -160,7 +186,7 @@ plyr::ddply(toplot3, .variables = c("w", "effort_threshold"), function(x) sum(x$
 
 dplyr::bind_rows(toplot3, total) -> toplot3
 
-#mise en forme
+#plot formatting
 toplot3$effort_threshold <- factor(toplot3$effort_threshold,
                                    levels = c("T = 0", "T = 6", "T = 10"))
 toplot3$area <- as.factor(toplot3$area)
@@ -172,8 +198,13 @@ p3 <- ggplot(toplot3)+
   scale_fill_viridis_c("Distance")+
   xlab("Weight scenario")+ylab("Area")
 
-ggsave(file.path(OUTPUT_PATH, "Distance_to_data", AREAS, "distance_heatmap.png"),
+ggsave(file.path(OUTPUT_PATH, "distance_heatmap.png"),
        p3, width = 8, height = 10)
+
+
+#'***************
+#' @Observed_vs_simulated
+#'***************
 
 #' @plot4
 #' *****
@@ -181,40 +212,35 @@ ggsave(file.path(OUTPUT_PATH, "Distance_to_data", AREAS, "distance_heatmap.png")
 #' 
 #'     By cells
 
-obs_vs_predict_output <- file.path(OUTPUT_PATH, "Distance_to_data",
-                                   AREAS, "observed_vs_predicted")
+obs_vs_predict_output <- file.path(OUTPUT_PATH, "observed_vs_predicted")
 try(dir.create(obs_vs_predict_output, recursive = T, showWarnings = F))
 
 my_colors <- Set1.without.yellow(my_areas$NAME)
 
 for (eff in EFFORT_THRESHOLD){
-  df  %>%
-    dplyr::mutate(quarter = ceiling(month / 3)) %>%
-    dplyr::filter(effort_threshold == eff) %>%
-    ggplot()+
-    geom_point(aes(x = NLOGdata, y = NLOGsim, color = as.factor(quarter)))+
-    geom_abline(slope = 1, intercept = 0, color = "grey")+
-    scale_color_brewer("Quarter", palette = "Set1")+
-    scale_x_continuous(limits = c(0,1))+
-    scale_y_continuous(limits = c(0,1))+
-    facet_wrap(~w) +
-    theme(panel.background = element_rect(fill = "white",
-                                          colour = "black")) -> p4
-  df %>%
-    dplyr::filter(effort_threshold == eff) %>%
-    ggplot()+
-    geom_point(aes(x = NLOGdata, y = NLOGsim, color = area))+
-    geom_abline(slope = 1, intercept = 0, color = "grey")+
-    scale_color_manual("Area", values = my_colors)+
-    scale_x_continuous(limits = c(0,1))+
-    scale_y_continuous(limits = c(0,1))+
-    facet_wrap(~w) +
-    theme(panel.background = element_rect(fill = "white",
-                                          colour = "black")) -> p5
+  
+  df %>% dplyr::filter(effort_threshold == eff) %>%
+    dplyr::mutate(quarter = as.factor(ceiling(month / 3)),
+                  area = as.factor(area)) %>%
+    dplyr::filter(area %in% c("Arabian Sea",
+                              "Mozambique",
+                              "SCTR",
+                              "Somalia",
+                              "Southern IO")) -> df_eff
+  
+  ### One point per cell (color = quarter)
+  p4 <- build.SimVsData.plot(df = df_eff,
+                             color_var = "quarter",
+                             colors = Set1.without.yellow(1:4))
   
   ggsave(file.path(obs_vs_predict_output,
                    paste0("byCell_T",eff,"_quarter.png")),
          p4, width = 10, height = 6)
+  
+  
+  ### One point per cell (color = area)
+  p5 <- build.SimVsData.plot(df = df_eff,
+                             color_var = "area")
   
   ggsave(file.path(obs_vs_predict_output,
                    paste0("byCell_T",eff,"_area.png")),
@@ -223,31 +249,15 @@ for (eff in EFFORT_THRESHOLD){
   #'     By areas
   #'     one per year
   if (AREAS == "myAreas"){
-    df %>%
-      dplyr::mutate(quarter = ceiling(month / 3)) %>%
-      plyr::ddply(.variables = c("year","quarter","area",
-                                 "w", "effort_threshold"),
-                  function(x) cbind(NLOGdata = mean(x$NLOGdata),
-                                    NLOGsim = mean(x$NLOGsim))) %>%
-      dplyr::filter(effort_threshold == eff,
-                    area %in% c("Arabian Sea",
-                                "Mozambique",
-                                "SCTR",
-                                "Somalia",
-                                "Southern IO")) %>%
-      ggplot()+
-      geom_abline(slope = 1, intercept = 0, color = "grey")+
-      geom_point(aes(x = NLOGdata,
-                     y = NLOGsim,
-                     color = as.factor(area),
-                     shape = as.factor(quarter)))+
-      scale_shape("Quarter")+
-      scale_color_manual("Area", values = my_colors)+
-      scale_x_continuous(limits = c(0,1))+
-      scale_y_continuous(limits = c(0,1))+
-      facet_wrap(~w)+
-      theme(panel.background = element_rect(fill = "white",
-                                            colour = "black")) -> p6
+    
+    # One point per quarter-year (color = area, shape = quarter)
+    p6 <- build.SimVsData.plot(df = df_eff %>%
+                                 plyr::ddply(.variables = c("year","quarter","area",
+                                                            "w", "effort_threshold"),
+                                             function(x) cbind(NLOGdata = mean(x$NLOGdata),
+                                                               NLOGsim = mean(x$NLOGsim))),
+                               color_var = "area",
+                               shape_var = "quarter")
     
     ggsave(file.path(obs_vs_predict_output,
                      paste0("byAreas_T",eff,"_quarter.png")),
@@ -257,38 +267,21 @@ for (eff in EFFORT_THRESHOLD){
 #'     climato
 
     # df_climato contains, for each cell, the mean monthly values (averaged between years)
-    df_climato <- df %>%
+    df_climato <- df_eff %>%
       plyr::ddply(.variables = c("x","y","month",
                                  "w", "effort_threshold",
-                                 "area"),
+                                 "area","quarter"),
                   function(x) cbind(NLOGdata = mean(x$NLOGdata),
                                     NLOGsim = mean(x$NLOGsim)))
     
-    df_climato %>%
-      dplyr::mutate(quarter = ceiling(month / 3)) %>%
-      plyr::ddply(.variables = c("quarter","area",
-                                 "w", "effort_threshold"),
-                  function(x) cbind(NLOGdata = mean(x$NLOGdata),
-                                    NLOGsim = mean(x$NLOGsim))) %>%
-      dplyr::filter(effort_threshold == eff,
-                    area %in% c("Arabian Sea",
-                                "Mozambique",
-                                "SCTR",
-                                "Somalia",
-                                "Southern IO")) %>%
-      ggplot()+
-      geom_abline(slope = 1, intercept = 0, color = "grey")+
-      geom_point(aes(x = NLOGdata,
-                     y = NLOGsim,
-                     color = as.factor(area),
-                     shape = as.factor(quarter)))+
-      scale_shape("Quarter")+
-      scale_color_manual("Area", values = my_colors)+
-      scale_x_continuous(limits = c(0,1))+
-      scale_y_continuous(limits = c(0,1))+
-      facet_wrap(~w)+
-      theme(panel.background = element_rect(fill = "white",
-                                            colour = "black")) -> p7
+    # CLIMATO: One point per quarter (color = area, shape = quarter)
+    p7 <- build.SimVsData.plot(df = df_climato %>%
+                                 plyr::ddply(.variables = c("quarter","area",
+                                                            "w", "effort_threshold"),
+                                             function(x) cbind(NLOGdata = mean(x$NLOGdata),
+                                                               NLOGsim = mean(x$NLOGsim))),
+                               color_var = "area",
+                               shape_var = "quarter")
     
     ggsave(file.path(obs_vs_predict_output,
                      paste0("climato_byAreas_T",eff,"_quarter.png")),
@@ -296,26 +289,59 @@ for (eff in EFFORT_THRESHOLD){
   }
 }  
 
-eff = 10
-df_climato %>%
-  dplyr::mutate(quarter = ceiling(month / 3)) %>%
-  plyr::ddply(.variables = c("quarter","area",
-                             "w", "effort_threshold"),
-              function(x) cbind(NLOGdata = mean(x$NLOGdata),
-                                NLOGsim = mean(x$NLOGsim))) %>%
-  dplyr::filter(effort_threshold == eff,
-                area %in% c("Arabian Sea",
+
+df %>% dplyr::filter(effort_threshold == 10) %>%
+  dplyr::mutate(quarter = as.factor(ceiling(month / 3)),
+                area = as.factor(area)) %>%
+  dplyr::filter(area %in% c("Arabian Sea",
                             "Mozambique",
                             "SCTR",
                             "Somalia",
-                            "Southern IO")) -> for_tests
-for (wi in kept_scenarios){
+                            "Southern IO"))  %>%
+  plyr::ddply(.variables = c("x","y","month",
+                             "w", "effort_threshold",
+                             "area","quarter"),
+              function(x) cbind(NLOGdata = mean(x$NLOGdata),
+                                NLOGsim = mean(x$NLOGsim))) %>%
+  plyr::ddply(.variables = c("quarter","area",
+                             "w", "effort_threshold"),
+              function(x) cbind(NLOGdata = mean(x$NLOGdata),
+                                NLOGsim = mean(x$NLOGsim))) -> for_tests
+
+lab <- c()
+for (i in 1:length(kept_scenarios)){
+  wi <- kept_scenarios[i]
+  
   data <- for_tests %>%
     dplyr::filter(w == wi)
-  sink(file.path(obs_vs_predict_output, "wilcox_tests.txt"),
+  
+  # for the following plot
+  lm_w <- lm(NLOGsim ~ NLOGdata, data = data)
+  lab[i] <- label.lm.for.ggplot(lm_w)
+  
+  #save summary
+  sink(file.path(obs_vs_predict_output, "linear_regressions.txt"),
        append = T)
   cat(wi, "\n")
-  print(wilcox.test(data$NLOGsim, data$NLOGdata))
+  print(summary(lm(NLOGsim ~ NLOGdata, data = data)))
   sink()
+  
 }
+
+lab <- data.frame(w = kept_scenarios,
+                  lab = lab)
+for_tests2 <- merge(for_tests, lab, by = "w")
+
+label.pos <- ddply(for_tests2, "w", function(x) 0.5*max(x$NLOGsim)) %>%
+  right_join(for_tests2, by = "w")
+
+p <- build.SimVsData.plot(df = for_tests2,
+                     color_var = "area",
+                     shape_var = "quarter")+
+  geom_label(data = label.pos,
+             aes(x=0.75*max(NLOGdata),y=V1,
+                 label=lab))
+  
+ggsave(file.path(obs_vs_predict_output, "Figure_obs_vs_sim.png"),
+       p, width = 12, height = 7.2)
 
