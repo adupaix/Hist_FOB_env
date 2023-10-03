@@ -72,7 +72,8 @@ invisible(try(mapply(
               # "Time_series_panel-area_group-w",
               # "Density_time_series_panel-w_group-area",
               # "Density_time_series_panel-area_group-w",
-              "Density_anomaly_panel-area_group-w")),
+              "Density_anomaly_panel-area_group-w",
+              "Slope_tests")),
   MoreArgs = list(recursive = T,
                   showWarnings = F))))
 
@@ -446,6 +447,11 @@ my_colors <- Set1.without.yellow(level_names = levels(global_daily_mean_df$w))
 
 # years <- unique(toplot$year)
 new_df <- list()
+slopes <- data.frame(area = c(NA),
+                     weight = c(NA),
+                     slope = c(NA),
+                     corrected_p_value = c(NA))
+k=1
 
 for (a in 1:(dim(my_areas)[1]+1)){
   if (a != dim(my_areas)[1]+1){
@@ -597,20 +603,30 @@ for (a in 1:(dim(my_areas)[1]+1)){
                                gsub(" ", "_", area.i),
                                ".rds")))
   
+  # test for slope significance in Global
+  for (w.i in kept_scenarios){
+    toplot %>%
+      dplyr::filter(w == w.i) -> df_for_lm
+    model <- lm(density_anomaly ~ day, data = df_for_lm)
+    corrected_pvalue <- correct.pvalue.temporal.autocorr(model, return.lag_autocorr = T)
+    sink(file.path(NEW_OUTPUT_PATH, "Slope_tests",
+                   paste0(area.i, ".txt")),
+         append = T)
+    cat(w.i,"\n~~~~~~~~~\n")
+    print(summary(model))
+    cat("Corrected p-value of slope and Lag spatial autocorrelation: ",
+        corrected_pvalue,
+        "\n\n\n")
+    sink()
+    
+    slopes[k,] <- c(area.i, w.i, model$coefficients[2], corrected_pvalue[1])
+    k=k+1
+  }
+  
 
 }
 
-# test for slope significance in Global
-for (w.i in kept_scenarios){
-  toplot %>%
-    dplyr::filter(w == w.i) -> df_for_lm
-  model <- lm(density_anomaly ~ day, data = df_for_lm)
-  cat(w.i,"\n~~~~~~~~~\n")
-  print(summary(model))
-  cat("Corrected p-value of slope: ",
-      correct.pvalue.temporal.autocorr(model, return.lag_autocorr = T),
-      "\n\n\n")
-}
+
 
 
 # library(tseries)
