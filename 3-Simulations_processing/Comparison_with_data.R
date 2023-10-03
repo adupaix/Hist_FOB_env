@@ -46,7 +46,7 @@ df_list <- list()
 sim_output_path <- file.path(STUDY_DIR, "2-Post_Ichthyop/Outputs/nemo_river_allMask")
 
 #' Delete the outputs to calculate anew (T) or not (F)
-RESET = T
+RESET = F
 
 #' Year for which we want to do the comparison
 #' After 2007, because no data is available before
