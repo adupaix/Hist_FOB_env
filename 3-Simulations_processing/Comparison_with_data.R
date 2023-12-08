@@ -26,6 +26,8 @@ source(file.path(FUNC_PATH, "add.area.column.R"))
 source(file.path(FUNC_PATH, "readAreas.R"))
 source(file.path(FUNC_PATH, "install_libraries.R"))
 source(file.path(FUNC_PATH, "Comparison_with_data", "1.Maps_obs.R"))
+source(file.path(FUNC_PATH, "Comparison_with_data", "Prep_obs.R")) #necessary to use functions in 1.Maps_obs
+source(file.path(FUNC_PATH, "Comparison_with_data", "1.1.subfunctions_maps_obs.R")) #necessary to use functions in 1.Maps_obs
 source(file.path(FUNC_PATH, "Comparison_with_data", "simulation.vs.obs.R"))
 
 #' Load used packages

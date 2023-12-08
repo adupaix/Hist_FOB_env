@@ -15,8 +15,8 @@
 # @Ob7: observers data, containing all the operations on objects
 
 ###FONCTIONS NECESSAIRES
-source(file.path(FUNC_PATH, 'Maps', 'Prep_obs.R'))
-source(file.path(FUNC_PATH, 'Maps','1.1.subfunctions_maps_obs.R'))
+# source(file.path(FUNC_PATH, 'Maps', 'Prep_obs.R'))
+# source(file.path(FUNC_PATH, 'Maps','1.1.subfunctions_maps_obs.R'))
 
 #======================================================================================#
 #                               CARTE DES RATIOS LOG/FAD ou FAD/LOG                    #
