@@ -34,12 +34,15 @@ build.SimVsData.plot <- function(df, color_var,
     scale_color_manual(firstup(color_var), values = colors)+
     facet_wrap(~w, scales = "free") +
     theme(panel.background = element_rect(fill = "white",
-                                          colour = "black"))
+                                          colour = "black"))+
+    scale_y_continuous("Simulated NLOG abundance index")+
+    scale_x_continuous("Number of NLOG observations per day of observation")
+ 
   if (scale_by_max){
     p <- p +
       geom_abline(slope = 1, intercept = 0, color = "grey")+
-      scale_x_continuous(limits = c(0,1))+
-      scale_y_continuous(limits = c(0,1))
+      scale_y_continuous("Simulated NLOG abundance index", limits = c(0,1))+
+      scale_x_continuous("Number of NLOG observations per day of observation", limits = c(0,1))
   }
   
   return(p)

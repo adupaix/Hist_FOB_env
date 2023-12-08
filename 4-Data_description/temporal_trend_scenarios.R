@@ -12,7 +12,7 @@ rm(list = ls())
 
 
 # OUTPUT_PATH <- "/home1/datawork/adupaix/Hist_FOB_env/Data_description/Outputs"
-OUTPUT_PATH <- "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/Data_description/Outputs/scenarios"
+OUTPUT_PATH <- "/home/adupaix/Documents/These/Axe_1/Hist_FOB_env/4-Data_description/Outputs/scenarios"
 dir.create(OUTPUT_PATH, showWarnings = F)
 
 # path containing the matrices of weight
@@ -80,7 +80,7 @@ p <- ggplot(toplot)+
   scale_y_continuous(limits = c(0,NA))+
   scale_color_manual("Scenario", values = my_colors)+
   facet_wrap(~w, scales = "free")+
-  ylab("Total input at the scale of the Indian Ocean\n(% of input on 2000-01-01)")+
+  ylab("Sum of the weights at the scale of the Indian Ocean\n(% of total weight on 2000-01-01)")+
   xlab("Date")
 
 ggsave(filename = file.path(OUTPUT_PATH, "input_per_scenario.png"),
