@@ -1,0 +1,267 @@
+#'#*******************************************************************************************************************
+#'@author : Amael DUPAIX
+#'@update : 2021-08-19
+#'@email : 
+#'#*******************************************************************************************************************
+#'@description :  Sub-routine reading river/mangrove data and generating Ichthyop input points
+#'#*******************************************************************************************************************
+#'@revision
+#'#*******************************************************************************************************************
+
+cat(crayon::bold("\n\n1. Calculating input points positions\n"))
+
+
+if (!all(Exist$output_1)){
+    
+  ### 1. GENERATE THE POINTS ON LAND USED TO DETERMINE INPUT LOCATIONS
+  ## EITHER RIVER ESTUARIES
+  ## OR MANGROVE LOCATIONS
+    
+  ### For simulations from the rivers
+  if (input_location == "river" | input_method == "allMask"){ 
+    INPUT_PATH <- file.path(DATA_PATH, "river_data")
+    
+    
+    cat("\n### Reading data\n")
+    tic(msg = "   Data read")
+    # read data obtained from prep.river.data()
+    rivers_IO <- readRDS(file.path(INPUT_PATH, "rivers_IO.rds"))
+    
+    # keep only discharge columns +
+    # NEXT_DOWN (if == 0, means that it is the river segment on the coast)
+    rivers_IO %>% dplyr::select(NEXT_DOWN, MAIN_RIV, ENDORHEIC, HYBAS_L12) %>%
+      
+      # select only the last segments of the rivers
+      dplyr::filter(NEXT_DOWN == 0 & ENDORHEIC == 0) %>%
+      
+      # take the centroid of river segments
+      st_centroid() -> entry_points
+    
+    entry_points <- keep.which.is.in.IO(RESOURCE_PATH,
+                                        entry_points,
+                                        buffer_size = 10^4,
+                                        return_format = "sf")
+    
+    toc()
+    
+    
+    ### For simulations from the mangroves
+  } else if (input_location == "mangrove"){
+    
+    cat("\14")
+    cat("\n### Reading data\n")
+    tic(msg = "   Data read")
+    INPUT_PATH <- file.path(DATA_PATH, "mangrove")
+    
+    coord_points <- readRDS(file = file.path(INPUT_PATH,"centroids_mangrove_no_chinese_sea.rds"))
+    
+    toc()
+    
+    cat("\n### Sampling data (10000 points)\n")
+    tic(msg = "   Data sampled")
+    ## SAMPLING 10 000 POINTS OUT OF coord_points
+    set.seed(10)
+    coord_points <- coord_points[sample(1:nrow(coord_points),10000),]
+    
+    entry_points <- st_as_sf(coord_points, coords = c("x","y"), crs = 4326)
+    toc()
+  }
+
+  ### 2. GET THE SEA POINTS
+  ## EITHER AT N KM FROM COAST
+  ## OR ON THE CURRENT PRODUCT MASK
+  
+  if (input_method == "kFromCoast"){
+    
+    cat("\n### Determining closest coastal points\n")
+    tic(msg = "    Closest coastal points determined:")
+    
+    # echantillonne la ligne de cote tous les quelques km
+    # besoin de changer la projection pour que st_line_sample() fonctionne
+    # besoin de la ligne precise, parce que sinon certaines arrivees par les iles
+    # disparaissent du jeu de donnees(a cause du buffer dans la fct closest.point)
+    
+    load(file.path(RESOURCE_PATH, "coastline10.rda")) # highres coastline, downloaded at : https://github.com/ropensci/rnaturalearthhires/tree/master/data (last accessed 2021-02-25)
+    coastline10 <- st_as_sf(coastline10)
+    coastline_points <- st_line_sample(st_transform(coastline10, 3857), density = set_units(3, km)) %>%
+      st_transform(crs = 4326) %>% # repasse a la projection initiale
+      st_cast("POINT") %>% # passe en "POINT" (plutot que MULTIPOINT)
+      st_as_sf() # change la classe en sf
+    
+    pos_entry_in_coastline <- nn2(st_coordinates(coastline_points), st_coordinates(entry_points), k = 1)$nn.idx
+    
+    B_coords <- st_coordinates(coastline_points[pos_entry_in_coastline,])
+    
+    entry_points <- cbind(entry_points, B_coords)
+    
+    B_points <- st_as_sf(st_drop_geometry(entry_points),
+                         coords = c("X","Y"),
+                         crs = 4326)
+    
+    rm(coastline_points) ; invisible(gc())
+    
+    toc()
+    
+    cat("\n### Get points at dist degrees from coast\n")
+    tic(msg = "    Points at dist degrees from coast determined")
+    
+    # recupere la carte du monde
+    world = st_as_sf(clgeo_Clean(getMap()))
+    
+    # For parallel study:
+    # On Windows, or if don't want to parralelize, set cores number to 1
+    if (.Platform$OS.type == "windows" | as.logical(Parallel[1]) == F) {
+      nb_cores = 1
+    } else { #use a fraction of the available cores
+      nb_cores = trunc(detectCores() * as.numeric(Parallel[2]))
+    }
+    
+    # Progress bar implemented in the foreach. Works only in sequencial
+    pb <- progress_bar$new(total = dim(B_points)[1])
+    
+    
+    registerDoParallel(cores = nb_cores)
+    
+    
+    input_points <- foreach(i = 1:dim(B_points)[1],
+                            .combine = rbind) %dopar% {
+                              A <- st_coordinates(entry_points[i,])
+                              B <- st_coordinates(B_points[i,])
+                              
+                              C <- sea.point2(A,B, world = world)
+                              
+                              pb$tick()
+                              
+                              C
+                            }
+    
+    registerDoSEQ()
+    
+    input_points <- bind_cols(input_points, st_drop_geometry(B_points))
+    
+    toc()
+    
+  } else if (input_method == "onMask"){
+    
+    cat(paste("\n### Get the closest point on the", curr_prod, "grid\n"))
+    tic(msg = paste("    Closest points on", curr_prod, "grid determined"))
+    cat(" # Getting product mask\n")
+    sea_points <- get.current.mask(RESOURCE_PATH, curr_prod)
+    
+    
+    cat(" # Getting closest points\n")
+    
+    pos_entry_in_sea <- nn2(st_coordinates(sea_points), st_coordinates(entry_points), k = 1)$nn.idx
+    
+    input_coords <- st_coordinates(sea_points[pos_entry_in_sea,])
+    
+    entry_points <- cbind(entry_points, input_coords)
+    
+    input_points <- st_as_sf(st_drop_geometry(entry_points),
+                             coords = c("X","Y"),
+                             crs = 4326)
+    
+    toc()
+    
+  } else if (input_method == "allMask"){
+    
+    cat(paste("\n### Get the coastal points on the", curr_prod, "grid\n"))
+    tic(msg = paste("    Coastal points on", curr_prod, "grid determined"))
+    cat(" # Getting product mask\n")
+    sea_points <- get.current.mask(RESOURCE_PATH, curr_prod)
+    
+    cat(" # Getting coast points\n")
+    IO <- read_sf(file.path(DATA_PATH, "OI.shp"))
+    load(file.path(RESOURCE_PATH, "coastline10.rda")) # highres coastline, downloaded at : https://github.com/ropensci/rnaturalearthhires/tree/master/data (last accessed 2021-02-25)
+    coastline10 <- st_as_sf(coastline10)
+    coastline_points <- st_line_sample(st_transform(coastline10, 3857), density = set_units(3, km)) %>% # je ne sais pas pourquoi, en mettant 3km, les points sont espacés d'environ 1km... question de sinuosite.....
+      st_cast("POINT") %>% # passe en "POINT" (plutot que MULTIPOINT)
+      # st_crop(IO %>% st_transform(3857)) %>% #garde seulement les points de l'OI
+      st_transform(crs = 4326) %>% # repasse a la projection initiale
+      st_as_sf() # change la classe en sf
+    
+    cat(" # Keeping only coastal points of the product mask\n")
+    product_res = 1/12
+    if (curr_prod == "oscar"){ product_res = 1/3 } else if (curr_prod == "globcurrent") { product_res = 1/4}
+    is_coastal <- which( nn2(st_coordinates(coastline_points), st_coordinates(sea_points), k = 1)$nn.dists < product_res)
+    input_points <- sea_points[is_coastal,]
+    
+    toc()
+
+  }
+  
+  ### 3. FILTER POINTS TO KEEP ONLY THE ONES PROPERLY IN THE IO
+  cat(" # Deleting points outside the study area\n")
+  input_points <- keep.which.is.in.IO(RESOURCE_PATH,
+                                      input_points,
+                                      buffer_size = 10^4,
+                                      return_format = "sf")
+  
+  input_points %>% dplyr::mutate(id_curr = seq(1, dim(input_points)[1])) -> input_points
+  
+  
+  if (input_method == "allMask"){
+    # generate the table linking input points and rivers
+    cat(" # Generating link table\n")
+    entry_points %>% mutate( id_curr = as.vector( nn2(st_coordinates(input_points),
+                                                      st_coordinates(entry_points), k = 1)$nn.idx )) %>%
+      st_drop_geometry() %>% select(MAIN_RIV, HYBAS_L12, id_curr) -> link_table
+    
+  }
+  
+  ### 4. GENERATE THE FILES TO BE SAVED
+  
+  input_coords <- round(st_coordinates(input_points), digits = 6) #get only the coordinates for the Ichthyop Input
+  
+  if( input_method == "allMask"){
+    input_coords_id <- data.frame(cbind(input_coords,
+                                        1:(dim(input_coords)[1])))
+  } else if (input_location == "river"){
+    input_coords_id <- data.frame(cbind(input_points$MAIN_RIV, input_points$HYBAS_L12, input_coords))
+    names(input_coords_id) <- c("MAIN_RIV", "HYBAS_L12", "X", "Y")
+  } else if (input_location == "mangrove"){
+    input_coords_id <- input_coords
+  }
+  
+  if (save==T){
+    
+    cat("\n### Saving input locations\n")
+    
+    #save points coordinates for input in Ichthyop
+    # quote = F to save coordinates (which are characters) as numeric
+    write.table(input_coords, file = file.path(output_path1, "input_icht.txt"),
+                row.names = F, col.names = F, sep=" ")
+    #save points coordinates with river id (or only point id if input_method == allMask)
+    write.table(input_coords_id, file = file.path(output_path1, "IDs.txt"),
+                row.names = F, col.names = F, sep=" ")
+    if(input_method == "allMask"){
+      write.table(link_table, file = file.path(output_path1, "Link_table.txt"),
+                  row.names = F, sep=" ")
+    }
+    #save sf object for post treatement after Ichthyop simulations
+    write_sf(input_points, dsn = output_path1,
+             layer = dir_name,
+             driver = "ESRI Shapefile")
+  }
+  
+  # if (return_format == "mat"){
+  #   return(input_coords)
+  # } else if (return_format == "sf"){
+  #   return(input_points)
+  # }
+  
+} else {
+ 
+  cat("\n### Reading data from existing files\n")
+   
+}
+
+
+#'@outputs_for_next_routine
+input_coords_id <- read.table(file = file.path(output_path1, "IDs.txt"),
+                              sep=" ")
+input_points <- read_sf(file.path(output_path1, paste0(dir_name, ".shp")))
+
+
+# update toKeep
+toKeep <- c(toKeep, "input_coords","input_points")

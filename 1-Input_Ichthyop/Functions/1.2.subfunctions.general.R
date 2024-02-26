@@ -169,3 +169,47 @@ get.current.mask <- function(RESOURCE_PATH, product = "nemo"){
 }
 
 
+
+#####################################################################################
+#     FILTER A SET OF POINTS TO KEEP ONLY THE ONES WHICH ARE IN THE IO              #
+#####################################################################################
+# ARGUMENTS:                                                                        #
+# RESOURCE_PATH: (chr) path to the data directory                                   #
+# sf_points (sf): set of points to filter                                           #
+# buffer_size (num): size of the buffer to consider around the IO shapefile (if the #
+#                    points considered are coastal points)  in meters               #
+# return_format (chr): "sf" or "df" format of the output                            #
+#                                                                                   #
+# OUTPUT: sf (POINTS) of data.frame with the set of points which are in the IO      #
+#####################################################################################
+
+keep.which.is.in.IO <- function(RESOURCE_PATH,
+                                sf_points,
+                                buffer_size,
+                                return_format){
+  
+  names_for_df <- c(grep("geometry", names(sf_points), invert = T, value = T),
+                    "x","y")
+  
+  IO_boundaries <- read_sf(file.path(RESOURCE_PATH, "IO_definition.shp"))
+  
+  contain <- st_contains(IO_boundaries %>%
+                           st_transform(3857) %>%
+                           st_buffer(dist = buffer_size),
+                         sf_points %>% st_transform(3857))
+  
+  points_of_interest <- unique(unlist(contain))
+  
+  sf_points[points_of_interest,] -> sf_points_of_interest
+  
+  if (return_format == "sf"){
+    return(sf_points_of_interest)
+  } else if (return_format == "df"){
+    df_points_of_interest <- as.data.frame(cbind(sf_points_of_interest %>% as.data.frame() %>% select(-geometry),
+                                                 st_coordinates(sf_points_of_interest)))
+    names(df_points_of_interest) <- names_for_df
+    return(df_points_of_interest)
+  }
+  
+}
+
