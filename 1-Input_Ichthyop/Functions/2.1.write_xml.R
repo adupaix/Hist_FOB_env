@@ -10,6 +10,7 @@
 #'  sim_input_path (chr): path to the location of the current products which will be used in the Ichthyop simulation
 #'  sim_output_path (chr): path to where the results of the Ichthyop simulation will be saved
 #'  record_period (num): time between the saving of 2 positions of particles in the Ichthyop simulation
+#'  number_particles (num) : number of particles to release at each release 
 #'  dir_name.i (chr): sub-folder where the cfg file is to be saved
 #'  i_chr (chr): number of the sub-folder where the cfg file will be saved
 #'  
@@ -21,6 +22,7 @@ write.cfg.xml <- function(initial_time,
                           sim_input_path,
                           sim_output_path,
                           record_period,
+                          number_particles,
                           dir_name.i,
                           i_chr,
                           
@@ -35,7 +37,8 @@ write.cfg.xml <- function(initial_time,
                   "output_path",
                   "lon_stain",
                   "lat_stain",
-                  "record_frequency")
+                  "record_frequency",
+                  "number_particles")
   
   #~ Formatted values to replace in the template
   default_value <- c("0180 day\\(s\\) 00 hour\\(s\\) 00 minute\\(s\\)",
@@ -44,7 +47,8 @@ write.cfg.xml <- function(initial_time,
                      "/home/adupaix/Documents/ichthyop-private/output/PHILIN12.L75_river_onMask_d9/",
                      53,
                      -11.5,
-                     12)
+                     12,
+                     1000)
   
   value <- list(paste0(formatC(transport_duration, width = 4, flag = "0"),
                        " day\\(s\\) 00 hour\\(s\\) 00 minute\\(s\\)"),
@@ -65,7 +69,8 @@ write.cfg.xml <- function(initial_time,
                 file.path(sim_output_path, paste0("points_", i_chr), nb),
                 long,
                 lat,
-                (record_period*24*3600)/2400)
+                (record_period*24*3600)/2400,
+                number_particles)
   
   # for each parameter
   for (k in 1:length(param_list)){
@@ -160,7 +165,7 @@ generate.command.list <- function(sim_input_path, cfg_path, cfg_dir, n_pbs_jobs,
 #'   sim_input_path (chr): path to the directory where the cfg files and the current product are stored on the cluster
 #'   cfg_path (chr): path where the jobs will be saved
 #'   cfg_dir (chr): name of the directory which will contain the cfg files (format: cfgs_year1-year2)
-#'   last_release_year (num): last year of the simulation
+#'   release_year (num): year of the simulation
 #'   n_pbs_jobs (num): number of pbs jobs to generate
 #'   n_mpi (num): vector which, for each generated job, contains the number of mpi asked
 #'   walltime (num): vector which, for each generated job, contains the walltime asked (in hours)
@@ -170,7 +175,7 @@ generate.jobs.pbs <- function(template, sim_input_path, cfg_path, cfg_dir,
                               n_pbs_jobs, n_mpi, walltime, curr_prod, initial_time,
                               transport_duration,
                               path_where_the_forcing_product_is_stored,
-                              first_release_year, last_release_year){
+                              release_year){
   
   # 1. generate the job which copies ichthyop and the mpi to scratch
   pbs_text <- scan(template$pbs_cp, what = "", sep = "\n", quiet = T)
@@ -185,8 +190,7 @@ generate.jobs.pbs <- function(template, sim_input_path, cfg_path, cfg_dir,
   #change the path where the forcing product is copied TO
   pbs_text <- sub("[sim_input_path]", sim_input_path, pbs_text, fixed = T)
   # put the years in the line copying the config files
-  pbs_text <- sub("[first_release_year]", first_release_year, pbs_text, fixed = T)
-  pbs_text <- sub("[last_release_year]", last_release_year, pbs_text, fixed = T)
+  pbs_text <- sub("[release_year]", release_year, pbs_text, fixed = T)
   
   # put the year 
   years <- seq(min(year(initial_time)),
@@ -203,13 +207,13 @@ generate.jobs.pbs <- function(template, sim_input_path, cfg_path, cfg_dir,
   #add lines to launch the other jobs
   pbs_text <- append(pbs_text,
                      paste0("qsub ", path_where_the_forcing_product_is_stored,
-                            "/",curr_prod,"/cfgs_",first_release_year,"-",last_release_year,
-                            "/sim_ichthyop-",last_release_year,"-",1:n_pbs_jobs,".pbs")
+                            "/",curr_prod,"/cfgs_",release_year,
+                            "/sim_ichthyop-",release_year,"-",1:n_pbs_jobs,".pbs")
                      )
   
   # save the file
-  file.create(file.path(cfg_path, paste0("sim_ichthyop-",last_release_year,"-0.pbs")))
-  job <- file(file.path(cfg_path, paste0("sim_ichthyop-",last_release_year,"-0.pbs")), open = "w")
+  file.create(file.path(cfg_path, paste0("sim_ichthyop-",release_year,"-0.pbs")))
+  job <- file(file.path(cfg_path, paste0("sim_ichthyop-",release_year,"-0.pbs")), open = "w")
   writeLines(pbs_text, job)
   close(job)
   
@@ -232,60 +236,10 @@ generate.jobs.pbs <- function(template, sim_input_path, cfg_path, cfg_dir,
                                                      sim_input_path, "/", cfg_dir, "/commands_simu-", i, ".txt &> out-",
                                                      i ,".log")
     
-    file.create(file.path(cfg_path, paste0("sim_ichthyop-",last_release_year,"-",i,".pbs")))
-    job <- file(file.path(cfg_path, paste0("sim_ichthyop-",last_release_year,"-",i,".pbs")), open = "w")
+    file.create(file.path(cfg_path, paste0("sim_ichthyop-",release_year,"-",i,".pbs")))
+    job <- file(file.path(cfg_path, paste0("sim_ichthyop-",release_year,"-",i,".pbs")), open = "w")
     writeLines(pbs_text, job)
     close(job)
   }
 }
 
-
-#' @4
-#' Generate:
-#'    the pbs job which will be run after the Ichthyop simulations
-#'        to pre-process the Ichthyop outputs using the ichth_to_rds.R script
-#'    the txt file which contains the commands to launch ichth_to_rds.R (called by the pbs job)
-#' generate.post.ichthyop <- function(template, cfg_path, last_release_year, sim_output_path){
-#'   
-#'   # generate commands
-#'   lignes <- paste0("Rscript ichth_to_rds.R ", list.files(cfg_path, pattern = "cfg_point", recursive = T), " ", sim_output_path)
-#'   lignes <- gsub("cfgs", "points", lignes)
-#'   lignes <- gsub("cfg_point_", "", lignes)
-#'   lignes <- gsub("\\.xml", "", lignes)
-#'   l = length(lignes)
-#'   
-#'   file.create(file.path(cfg_path, paste0("commands_post_simu-",last_release_year,".txt")))
-#'   cmds <- file(file.path(cfg_path, paste0("commands_post_simu-",last_release_year,".txt")), open = "w")
-#'   writeLines(lignes, cmds)
-#'   close(cmds)
-#'   
-#'   # generate job
-#'   pbs_text <- scan(template, what = "", sep = "\n", quiet = T)
-#'   
-#'   pbs_text[grep("MPI_LAUNCH", pbs_text)] <- paste0("time $MPI_LAUNCH -np 168 ichthyop-mpi/ichthyopmpi ",
-#'                                                    sim_input_path, "/",
-#'                                                    cfg_dir, "/commands_post_simu-",
-#'                                                    last_release_year,
-#'                                                    ".txt >& out.log")
-#'   
-#'   file.create(file.path(cfg_path, paste0("post_sim_ichthyop-",last_release_year,".pbs")))
-#'   job <- file(file.path(cfg_path, paste0("post_sim_ichthyop-",last_release_year,".pbs")), open = "w")
-#'   writeLines(pbs_text, job)
-#'   close(job)
-#'   
-#' }
-#' 
-#' #' @5
-#' #' Generate a file which can be executed as follow '. launch_jobs.sh' and will
-#' #' launch all the jobs
-#' generate.sh.launch.jobs <- function(cfg_path, last_release_year, n_pbs_jobs){
-#'   
-#'   sh_text <- c(paste0("qsub -u sim_ichthyop-",last_release_year,"-0.pbs"),
-#'                "sleep 6m",
-#'                paste0("qsub -u sim_ichthyop-", last_release_year, "-", 1:n_pbs_jobs, ".pbs"))
-#'   
-#'   file.create(file.path(cfg_path, "launch_jobs.sh"))
-#'   launch <- file(file.path(cfg_path, "launch_jobs.sh"), open = "w")
-#'   writeLines(sh_text, launch)
-#'   close(launch)
-#' }

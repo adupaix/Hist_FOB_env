@@ -18,7 +18,7 @@ if (!all(Exist$output_1)){
   ## OR MANGROVE LOCATIONS
     
   ### For simulations from the rivers
-  if (input_location == "river"){ 
+  if (input_location == "river" | input_method == "allMask"){ 
     INPUT_PATH <- file.path(DATA_PATH, "river_data")
     
     
@@ -186,16 +186,8 @@ if (!all(Exist$output_1)){
     is_coastal <- which( nn2(st_coordinates(coastline_points), st_coordinates(sea_points), k = 1)$nn.dists < product_res)
     input_points <- sea_points[is_coastal,]
     
-    # cat(" # Deleting points in Chinese Sea\n")
-    # input_points <- delete.chinese.sea(coastal_prod_points, "sf")
-    
-    # cat(" # Generating link table\n")
-    # entry_points %>% mutate( id_curr = as.vector( nn2(st_coordinates(input_points),
-    #                                                   st_coordinates(entry_points), k = 1)$nn.idx )) %>%
-    #   st_drop_geometry() %>% select(MAIN_RIV, HYBAS_L12, id_curr) -> link_table
-    # 
-    # 
-    # toc()
+    toc()
+
   }
   
   ### 3. FILTER POINTS TO KEEP ONLY THE ONES PROPERLY IN THE IO
@@ -214,8 +206,6 @@ if (!all(Exist$output_1)){
     entry_points %>% mutate( id_curr = as.vector( nn2(st_coordinates(input_points),
                                                       st_coordinates(entry_points), k = 1)$nn.idx )) %>%
       st_drop_geometry() %>% select(MAIN_RIV, HYBAS_L12, id_curr) -> link_table
-    
-    toc()
     
   }
   

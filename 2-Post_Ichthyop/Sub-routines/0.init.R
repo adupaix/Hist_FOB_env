@@ -160,10 +160,10 @@ Exists$log4 <- file.exists(Names$log4)
 if (.Platform$OS.type == "windows" | as.logical(Parallel[1]) == F) {
   nb_cores = 1
 } else if (as.logical(Parallel[1]) == T){
-  if (!cluster){ #use a fraction of the available cores
+  if (!cluster[1]){ #use a fraction of the available cores
     nb_cores = trunc(detectCores() * as.numeric(Parallel[2]))
-  } else if (cluster){
-    nb_cores = 10
+  } else if (cluster[1]){
+    nb_cores = cluster[2]
   }
 }
 
@@ -197,7 +197,7 @@ if (!Exists$log1 | !Exists$log2){
     Exists$data$simulation_output <- dir.exists(sim_output_path)
   }
   
-  Exists$data$release_dates <- file.exists(file.path(sim_input_path, paste0("cfgs_",year[1],"-",year[length(year)]), "release_dates.txt"))
+  Exists$data$release_dates <- file.exists(file.path(sim_input_path, paste0("cfgs_",year), "release_dates.txt"))
   Exists$data$input_ichthyop_link_table <- file.exists(file.path(sim_input_path, "Link_table.txt"))
   
   if(any(unlist(Exists$data) == F)){
@@ -206,7 +206,7 @@ if (!Exists$log1 | !Exists$log2){
   }
   
   #get the release dates and associated years
-  release_dates <- read.delim(file.path(sim_input_path, paste0("cfgs_",year[1],"-",year[length(year)]), "release_dates.txt"))
+  release_dates <- read.delim(file.path(sim_input_path, paste0("cfgs_",year), "release_dates.txt"))
   release_years <- unique(lubridate::year(as.Date(release_dates[,1])))
   
   ### Not really satisfying
@@ -218,7 +218,7 @@ if (!Exists$log1 | !Exists$log2){
     # Logical to check that the cover data exists
     Exists$data$cover <- all(dir.exists(file.path(DATA_PATH,
                                                   "forest_cover",
-                                                  paste0("forest_cover_", release_years))))
+                                                  paste0("forest_cover_", release_years[which(release_years<=year)]))))
     Exists$data$coast_surface <- dir.exists(file.path(DATA_PATH,"coast_cover_with_zeros"))
   }
   
@@ -228,6 +228,7 @@ if (!Exists$log1 | !Exists$log2){
   msg <- "    - Reading\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   
   rivers_IO <- readRDS(file.path(DATA_PATH, "river_data", "rivers_IO.rds"))
+  st_crs(rivers_IO) <- 4326
   
   msg <- "    - Filtering\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
   

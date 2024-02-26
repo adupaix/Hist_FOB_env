@@ -105,85 +105,101 @@ if(!Exists$cover){
       
       msg <- "1. Link river - cover\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
       
-      if (!file.exists(coastal_cover_fnames[k])){
+      if (!file.exists(river_cover_fnames[k])){
         
-        
-        msg <- "  - Reading cover file\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-        
-        # read the cover file
-        read_sf(file.path(DATA_PATH,
-                          "forest_cover",
-                          paste0("forest_cover_", release_years[y]),
-                          cover_files[k])) -> cover_df 
-        
-        # test if the forest cover shp is in the right format
-        if(any(as.numeric(levels(as.factor(cover_df$couvert))) > 100) | any(as.numeric(levels(as.factor(cover_df$couvert))) < 1)){
-          stop("Error: wrong forest cover file format (not a percentage)")
+        # If the output does not exist, we try to find it in the outputs of other years' simulations
+        river_cover_exists_in_other_years <- F
+        other_output_years <- list.dirs(file.path(OUTPUT_PATH, sim_name), recursive = F, full.names = F)
+        for (j in 1:length(other_output_years)){
+          file_to_test <- sub(year, other_output_years[j], river_cover_fnames[k])
+          if (file.exists(file_to_test) & !river_cover_exists_in_other_years) {
+            river_cover_summary <- read.table(file_to_test, header = T)
+            river_cover_exists_in_other_years <- T
+            msg <- paste0("  - Reading existing river-cover and mouth-cover link tables in year ",other_output_years[j]," outputs\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+            write.table(river_cover_summary,
+                        file = river_cover_fnames[k],
+                        row.names = F)
+          }
         }
         
-        
-        msg <- "  - Getting the cover points inside the river buffer and the mouth buffer\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-        
-        #' get the points of cover which are inside the buffers
-        #' return a list with for each point, the polygons inside which the point is
-        is_within_river <- st_intersects(st_geometry(cover_df), st_geometry(river_buffer)) # for rivers
-        
-        # unlist the result, and keep only the first value (there shouldn't be any duplicates, but just in case...)
-        unlist_is_within_river <- unlist(lapply(is_within_river, function(x) ifelse(length(x)==0, NA, x[1])))
-        
-        # test if some points are counted twice (if it happens, we need to determine the rule to follow)
-        if((length(unlist_is_within_river) != length(is_within_river))){
-          stop("Error: some points are associated with several rivers at the same time")
+        if (!river_cover_exists_in_other_years){
+          msg <- "  - Reading cover file\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+          
+          # read the cover file
+          read_sf(file.path(DATA_PATH,
+                            "forest_cover",
+                            paste0("forest_cover_", release_years[y]),
+                            cover_files[k])) -> cover_df 
+          
+          # test if the forest cover shp is in the right format
+          if(any(as.numeric(levels(as.factor(cover_df$couvert))) > 100) | any(as.numeric(levels(as.factor(cover_df$couvert))) < 0)){
+            stop("Error: wrong forest cover file format (not a percentage)")
+          }
+          
+          
+          msg <- "  - Getting the cover points inside the river buffer and the mouth buffer\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+          
+          #' get the points of cover which are inside the buffers
+          #' return a list with for each point, the polygons inside which the point is
+          is_within_river <- st_intersects(st_geometry(cover_df), st_geometry(river_buffer)) # for rivers
+          
+          # unlist the result, and keep only the first value (there shouldn't be any duplicates, but just in case...)
+          unlist_is_within_river <- unlist(lapply(is_within_river, function(x) ifelse(length(x)==0, NA, x[1])))
+          
+          # test if some points are counted twice (if it happens, we need to determine the rule to follow)
+          if((length(unlist_is_within_river) != length(is_within_river))){
+            stop("Error: some points are associated with several rivers at the same time")
+          }
+          
+          rm(is_within_river) ; invisible(gc())
+          
+          msg <- "  - Filling the cover df with the river ids\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+          
+          # create the column which will contain the river id
+          cover_df %>% mutate(MAIN_RIV = NA,
+                              HYRIV_ID = NA) -> cover_df
+          # is_within_mouth_buffer = NA) -> cover_df
+          
+          # fill in the river id
+          cover_df$MAIN_RIV[which(!is.na(unlist_is_within_river))] <-
+            river_buffer$MAIN_RIV[unlist_is_within_river[which(!is.na(unlist_is_within_river))]]
+          
+          cover_df$HYRIV_ID[which(!is.na(unlist_is_within_river))] <-
+            river_buffer$HYRIV_ID[unlist_is_within_river[which(!is.na(unlist_is_within_river))]]
+          
+          # cover_df$is_within_mouth_buffer[which(!is.na(unlist_is_within_mouth))] <-
+          #   mouth_buffer$MAIN_RIV[unlist_is_within_mouth[which(!is.na(unlist_is_within_mouth))]]
+          
+          
+          msg <- "  - Saving the tables with the surface of associated cover\n    for each river and for each river mouth\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+          # get HYRIV_ID (river segment ids) corresponding to river ids associated with cover points
+          #' @note that for each 90mx90m cell we have a float, corresponding to a percentage of forest cover (between 1 and 100)
+          #' this float needs to be multiplied by 8100 to get a surface in m2
+          as.data.frame(xtabs(couvert ~ HYRIV_ID, data = cover_df)) %>%
+            # rename("MAIN_RIV" = "is_within_river_buffer") %>%
+            mutate(HYRIV_ID = as.numeric(as.character(HYRIV_ID))) %>%
+            right_join(link_HYRIV_MAINRIV, by = "HYRIV_ID") -> river_cover_summary
+          names(river_cover_summary)[2] <- "river_cover_surface_m2"
+          river_cover_summary$river_cover_surface_m2[which(is.na(river_cover_summary$river_cover_surface_m2))] <- 0
+          river_cover_summary$river_cover_surface_m2 <- river_cover_summary$river_cover_surface_m2 * 8100
+          
+          # add a column with the year
+          river_cover_summary$year <- release_years[y]
+          
+          write.table(river_cover_summary,
+                      file = river_cover_fnames[k],
+                      row.names = F)
+          
+          # write.table(mouth_cover_summary,
+          #             file = mouth_cover_fnames[k],
+          #             row.names = F)
         }
-        
-        rm(is_within_river) ; invisible(gc())
-        
-        msg <- "  - Filling the cover df with the river ids\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-        
-        # create the column which will contain the river id
-        cover_df %>% mutate(MAIN_RIV = NA,
-                            HYRIV_ID = NA) -> cover_df
-        # is_within_mouth_buffer = NA) -> cover_df
-        
-        # fill in the river id
-        cover_df$MAIN_RIV[which(!is.na(unlist_is_within_river))] <-
-          river_buffer$MAIN_RIV[unlist_is_within_river[which(!is.na(unlist_is_within_river))]]
-        
-        cover_df$HYRIV_ID[which(!is.na(unlist_is_within_river))] <-
-          river_buffer$HYRIV_ID[unlist_is_within_river[which(!is.na(unlist_is_within_river))]]
-        
-        # cover_df$is_within_mouth_buffer[which(!is.na(unlist_is_within_mouth))] <-
-        #   mouth_buffer$MAIN_RIV[unlist_is_within_mouth[which(!is.na(unlist_is_within_mouth))]]
-        
-        
-        msg <- "  - Saving the tables with the surface of associated cover\n    for each river and for each river mouth\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-        # get HYRIV_ID (river segment ids) corresponding to river ids associated with cover points
-        #' @note that for each 90mx90m cell we have a float, corresponding to a percentage of forest cover (between 1 and 100)
-        #' this float needs to be multiplied by 8100 to get a surface in m2
-        as.data.frame(xtabs(couvert ~ HYRIV_ID, data = cover_df)) %>%
-          # rename("MAIN_RIV" = "is_within_river_buffer") %>%
-          mutate(HYRIV_ID = as.numeric(as.character(HYRIV_ID))) %>%
-          right_join(link_HYRIV_MAINRIV, by = "HYRIV_ID") -> river_cover_summary
-        names(river_cover_summary)[2] <- "river_cover_surface_m2"
-        river_cover_summary$river_cover_surface_m2[which(is.na(river_cover_summary$river_cover_surface_m2))] <- 0
-        river_cover_summary$river_cover_surface_m2 <- river_cover_summary$river_cover_surface_m2 * 8100
-        
-        # add a column with the year
-        river_cover_summary$year <- release_years[y]
-        
-        write.table(river_cover_summary,
-                    file = river_cover_fnames[k],
-                    row.names = F)
-        
-        # write.table(mouth_cover_summary,
-        #             file = mouth_cover_fnames[k],
-        #             row.names = F)
         
       } else {
         
         msg <- "  - Reading existing river-cover and mouth-cover link tables\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
         
-        river_cover_summary <- read.table(river_cover_fnames[k])
+        river_cover_summary <- read.table(river_cover_fnames[k], header = T)
         
         # mouth_cover_summary <- read.table(mouth_cover_fnames[k])
         
@@ -193,80 +209,96 @@ if(!Exists$cover){
       
       if (!file.exists(coastal_cover_fnames[k])){
         
-        msg <- "  - Filter: keep only coastal cover points\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-        
-        cover_df %>%
-          dplyr::filter(is.na(MAIN_RIV) & is.na(HYRIV_ID)) -> coastal_cover
-        
-        rm(cover_df) ; invisible(gc())
-        
-        
-        
-        msg <- "  - Filtering coastal cover points with the current product mask if needed\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-          
-        cover_bbox <- st_bbox(coastal_cover)
-          # read the bbox of the forcing product from the mask saved in the Resources folder
-        forcing_bbox <- get.forcing.info(RESOURCE_PATH, forcing, info = "bbox")
-          #' crop the cover points df only if any of the points are outside the forcing product 
-          #' if it's not the case, it would also work but it's useless and we'd loose time...
-        cover_is_to_crop <- any(c(cover_bbox[1:2]<forcing_bbox[1:2],
-                                  cover_bbox[3:4]>forcing_bbox[3:4]))
-          
-        if (cover_is_to_crop){
-          coastal_cover <- faster.st_crop.points(coastal_cover, forcing_bbox)
+        # If the output does not exist, we try to find it in the outputs of other years' simulations
+        coastal_cover_exists_in_other_years <- F
+        other_output_years <- list.dirs(file.path(OUTPUT_PATH, sim_name), recursive = F, full.names = F)
+        for (j in 1:length(other_output_years)){
+          file_to_test <- sub(year, other_output_years[j], coastal_cover_fnames[k])
+          if (file.exists(file_to_test) & !coastal_cover_exists_in_other_years) {
+            input_points <- read.table(file_to_test, header = T)
+            coastal_cover_exists_in_other_years <- T
+            msg <- paste0("  - Reading existing coastal cover - release point table in year ",other_output_years[j],"outputs \n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+            write.table(input_points,
+                        file = coastal_cover_fnames[k],
+                        row.names = F)
+          }
         }
         
-        
-        
-        msg <- "  - Get input points associated with cover cells\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
-        
-        sample_size <- 2000
-        
-        niter <- floor( dim(coastal_cover)[1] / sample_size )
-        
-        pb <- progress_bar$new(format = "[:bar] :percent | Cover points sample :current / :total",
-                               total = niter+1
-        )
-        
-        for (i in 1:niter){
+        if (!coastal_cover_exists_in_other_years){
+          msg <- "  - Filter: keep only coastal cover points\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
           
-          indexes <- ((i-1)*sample_size+1):(i*sample_size)
+          cover_df %>%
+            dplyr::filter(is.na(MAIN_RIV) & is.na(HYRIV_ID)) -> coastal_cover
           
-          cover_surface_per_points <- get.nb.cover.per.input(indexes, coastal_cover, input_points)
+          rm(cover_df) ; invisible(gc())
           
-          input_points$coastal_cover_surface_m2[
-            input_points$id_curr == as.numeric(names(cover_surface_per_points))] <-
-            input_points$coastal_cover_surface_m2[ input_points$id_curr == as.numeric(names(cover_surface_per_points)) ] + cover_surface_per_points
+          msg <- "  - Filtering coastal cover points with the current product mask if needed\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+          
+          cover_bbox <- st_bbox(coastal_cover)
+          # read the bbox of the forcing product from the mask saved in the Resources folder
+          forcing_bbox <- get.forcing.info(RESOURCE_PATH, forcing, info = "bbox")
+          #' crop the cover points df only if any of the points are outside the forcing product 
+          #' if it's not the case, it would also work but it's useless and we'd loose time...
+          cover_is_to_crop <- any(c(cover_bbox[1:2]<forcing_bbox[1:2],
+                                    cover_bbox[3:4]>forcing_bbox[3:4]))
+          
+          if (cover_is_to_crop){
+            coastal_cover <- faster.st_crop.points(coastal_cover, forcing_bbox)
+          }
+          
+          
+          
+          msg <- "  - Get input points associated with cover cells\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+          
+          sample_size <- 2000
+          
+          niter <- floor( dim(coastal_cover)[1] / sample_size )
+          
+          pb <- progress_bar$new(format = "[:bar] :percent | Cover points sample :current / :total",
+                                 total = niter+1
+          )
+          
+          for (i in 1:niter){
+            
+            indexes <- ((i-1)*sample_size+1):(i*sample_size)
+            
+            cover_surface_per_points <- get.nb.cover.per.input(indexes, coastal_cover, input_points)
+            
+            input_points$coastal_cover_surface_m2[
+              input_points$id_curr == as.numeric(names(cover_surface_per_points))] <-
+              input_points$coastal_cover_surface_m2[ input_points$id_curr == as.numeric(names(cover_surface_per_points)) ] + cover_surface_per_points
+            
+            pb$tick()
+            
+          }
+          
+          if (niter != dim(coastal_cover)[1] / sample_size){
+            
+            indexes <- (niter*sample_size+1):(dim(coastal_cover)[1])
+            
+            cover_surface_per_points <- get.nb.cover.per.input(indexes, coastal_cover, input_points)
+            
+            input_points$coastal_cover_surface_m2[
+              input_points$id_curr == as.numeric(names(cover_surface_per_points))] <-
+              input_points$coastal_cover_surface_m2[ input_points$id_curr == as.numeric(names(cover_surface_per_points)) ] + cover_surface_per_points
+          }
           
           pb$tick()
           
+          input_points$year <- release_years[y]
+          
+          rm(coastal_cover) ; invisible(gc())
+          
+          write.table(input_points,
+                      file = coastal_cover_fnames[k])
         }
         
-        if (niter != dim(coastal_cover)[1] / sample_size){
-          
-          indexes <- (niter*sample_size+1):(dim(coastal_cover)[1])
-          
-          cover_surface_per_points <- get.nb.cover.per.input(indexes, coastal_cover, input_points)
-          
-          input_points$coastal_cover_surface_m2[
-            input_points$id_curr == as.numeric(names(cover_surface_per_points))] <-
-            input_points$coastal_cover_surface_m2[ input_points$id_curr == as.numeric(names(cover_surface_per_points)) ] + cover_surface_per_points
-        }
-        
-        pb$tick()
-        
-        input_points$year <- release_years[y]
-        
-        rm(coastal_cover) ; invisible(gc())
-        
-        write.table(input_points,
-                    file = coastal_cover_fnames[k])
         
       } else {
         
         msg <- "  - Reading existing coastal cover - release point table\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
         
-        input_points <- read.table(coastal_cover_fnames[k])
+        input_points <- read.table(coastal_cover_fnames[k], header = T)
         
       }
       
@@ -277,7 +309,7 @@ if(!Exists$cover){
 #'********************************************************************************
 
 
-msg <- crayon::bold("\n\n3. Get the length of coastline associated with each input point\n") ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
+msg <- "\n\n3. Get the length of coastline associated with each input point\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
 
 
 if(!all(file.exists(coastal_surface_fnames)) & !Exists$coastalSurface){
@@ -466,7 +498,7 @@ if(!all(file.exists(coastal_surface_fnames)) & !Exists$coastalSurface){
       
       msg <- "  - Reading existing coastal surface - release point table\n" ; cat(msg) ; lines.to.cat <- c(lines.to.cat, msg)
       
-      coastal_surface <- read.table(coastal_surface_fnames[k])
+      coastal_surface <- read.table(coastal_surface_fnames[k], header = T)
       
     }
     
@@ -545,7 +577,7 @@ if(!all(file.exists(coastal_surface_fnames)) & !Exists$coastalSurface){
     coastal_cover_fnames <- list.files(output_paths[1], pattern = "input_point_with_cover_surface_vf", full.names = T)
     input_points <- list()
     for (i in 1:length(coastal_cover_fnames)){
-      input_points[[i]] <- read.table(coastal_cover_fnames[i])
+      input_points[[i]] <- read.table(coastal_cover_fnames[i], header = T)
     }
     bind_rows(input_points) %>%
       full_join(coastal_surface, by = c("x","y","id_curr")) -> input_points

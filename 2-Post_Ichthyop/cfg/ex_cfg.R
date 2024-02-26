@@ -40,15 +40,16 @@ set.seed(10) # set for reproductibility
 #'# @! If the script is running on a Windows machine, the script is executed sequentially
 Parallel = c(T, 1/2)
 
+#' @cluster (num): script running on the cluster ?
+#'  used only if Parallel == T
+#'  If we run the script on the cluster (cluster[1] == T), we do not use Parallel[2]
+#'  to determine the number of cores used, but we specify the number in cluster[2]
+cluster = c(T, 20)
+
 #' @RESET @!!! (log): Reset ?
 #' Whether to delete the results obtained for these arguments (T) or not (F):
 #'  each element of RESET concerns the outputs obtained from the corresponding sub-routine (1 to 4)
 RESET = c(F,F,F,F)
-
-#' @cluster (log): script running on the cluster ?
-#'  allows to choose how the foreach loops are run in parallel (if Parallel[1] is TRUE)
-#'  use doParallel if T and use doSNOW if F
-cluster = T
 
 #' Arguments on the current study
 #' ******************************
@@ -89,7 +90,7 @@ thr_disch = 100
 #' Arguments used previously for the Ichthyop simulation
 #'*******************************************************
 #'## @forcing (chr): forcing product used in ICHTHYOP simulation (oscar/globcurrent/nemo/PHILIN12.L75)     
-forcing="PHILIN12.L75"
+forcing="nemo"
 #'## @input_location (chr): either "river" or "mangrove"
 #'@only "river" used in this study
 input_location="river"
@@ -109,7 +110,7 @@ dist=100
 bouncing=F
 
 #'## @year (num): Year of the simulation
-year = 2000
+year = 2018
 
 #'## @n_points_per_dir (num): number of simulations saved in each sub-directory of Ichthyop output
 n_points_per_dir = 28*8*5

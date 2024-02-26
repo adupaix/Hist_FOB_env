@@ -37,17 +37,37 @@ get.coords.release <- function(sim_input_path, point){
 
 #'@sub-function 3
 #'***************
+#' generate the precipitation array from the netcdf opened connection
+get.precip.array <- function(precip){
+  
+  precip_array <- ncdf4::ncvar_get(precip, varid = "precip")
+  
+  time <- ncdf4::ncvar_get(precip, varid = "time")
+  init_nc <- as.Date("1800-01-01")
+  time <- as.difftime(time, units = "days") + init_nc
+  
+  lon <- ncdf4::ncvar_get(precip, varid = "lon")
+  lat <- ncdf4::ncvar_get(precip, varid = "lat")
+  
+  dimnames(precip_array) <- list(lon, lat, as.character(time))
+  
+  rm(time, init_nc, lon, lat)
+  
+  return(precip_array)
+  
+}
+
+#'@sub-function 4
+#'***************
 #' get the precipitations associated with the point of interest
-get.precipitations <- function(precip,
+get.precipitations <- function(precip_array,
                                point){
   
   x = point$x
   y = point$y
   
   # select the interval of interest
-  time <- ncdf4::ncvar_get(precip, varid = "time")
-  init_nc <- as.Date("1800-01-01")
-  time <- as.difftime(time, units = "days") + init_nc
+  time <- as.Date(dimnames(precip_array)[[3]])
   time_of_int <- which(paste0(year(time),"-",month(time)) == paste0(year(point$release_date),"-",month(point$release_date)))
   
   #' @remark: modification on 03/11/2022
@@ -55,28 +75,26 @@ get.precipitations <- function(precip,
   #' we take the cell on the west (lower longitude)
   #' and the cell on the south (lower latitude)
   
-  lon <- ncdf4::ncvar_get(precip, varid = "lon")
+  lon <- as.numeric(dimnames(precip_array)[[1]])
   lon_of_int <- min(which(abs(lon - x) == min(abs(lon - x))))
   
-  lat <- ncdf4::ncvar_get(precip, varid = "lat")
+  lat <- as.numeric(dimnames(precip_array)[[2]])
   lat_of_int <- min(which(abs(lat - y) == min(abs(lat - y))))
   
-  of_int <- c(lon_of_int, lat_of_int, time_of_int)
-  
   # get the precipitation value
-  point$precip <- ncdf4::ncvar_get(precip, varid = "precip", start = of_int, count = rep(1,3))
+  point$precip <- precip_array[lon_of_int, lat_of_int, time_of_int]
   
   return(point)
 }
 
-#'@sub-function 4
+#'@sub-function 5
 #'***************
 #' get the information on the rivers associated with the input point of interest
 get.associated.rivers.and.precip <- function(link_river_input,
                                              n_cover,
                                              embouchures,
                                              point,
-                                             precip){
+                                             precip_array){
   
   point$rivers <- list()
   
@@ -107,22 +125,17 @@ get.associated.rivers.and.precip <- function(link_river_input,
         y <- ys[k]
         
         # select the interval of interest
-        time <- ncdf4::ncvar_get(precip, varid = "time")
-        init_nc <- as.Date("1800-01-01")
-        time <- as.difftime(time, units = "days") + init_nc
+        time <- as.Date(dimnames(precip_array)[[3]])
         time_of_int <- which(paste0(year(time),"-",month(time)) == paste0(year(point$release_date),"-",month(point$release_date)))
         
+        lon <- as.numeric(dimnames(precip_array)[[1]])
+        lon_of_int <- min(which(abs(lon - x) == min(abs(lon - x))))
         
-        lon <- ncdf4::ncvar_get(precip, varid = "lon")
-        lon_of_int <- which(abs(lon - x) == min(abs(lon - x)))
-        
-        lat <- ncdf4::ncvar_get(precip, varid = "lat")
-        lat_of_int <- which(abs(lat - y) == min(abs(lat - y)))
-        
-        of_int <- c(lon_of_int, lat_of_int, time_of_int)
+        lat <- as.numeric(dimnames(precip_array)[[2]])
+        lat_of_int <- min(which(abs(lat - y) == min(abs(lat - y))))
         
         # get the precipitation value
-        data$precip[k] <- ncdf4::ncvar_get(precip, varid = "precip", start = of_int, count = rep(1,3))
+        data$precip[k] <- precip_array[lon_of_int, lat_of_int, time_of_int]
       }
       
       
@@ -144,7 +157,7 @@ get.associated.rivers.and.precip <- function(link_river_input,
 }
 
 
-#'@sub-function 5
+#'@sub-function 6
 #'***************
 #' get the number of forest cover points associated with the input point
 #' forest_surface is in m2
@@ -158,7 +171,7 @@ get.cover.surface <- function(link_table, point){
 }
 
 
-#' @sub-function 6
+#' @sub-function 7
 #' ***************
 #' get the length of coastline associated with the point
 get.coastline.length <- function(link_table, point){
@@ -170,7 +183,7 @@ get.coastline.length <- function(link_table, point){
 }
 
 
-#' @sub-function 7
+#' @sub-function 8
 #' ***************
 #' weight point$data according to the method used
 get.weights <- function(point){
@@ -225,10 +238,9 @@ get.weights <- function(point){
   w8 <- point$coastal_cover_surface_m2 * point$precip + w7
   
   #' method 9: apply a weight depending on the total cover associated with the release point
-  #' @not_to_be_used_in_the_study
   w9 <- point$total_cover_surface_m2
   
-  #' object point is also in the function env (hence the -1)
+  #' object point is also in the environment of the function (hence the -1)
   n_methods <- length(ls())-1
   
   

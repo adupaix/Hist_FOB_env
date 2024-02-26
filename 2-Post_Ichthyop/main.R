@@ -16,9 +16,10 @@ source(file.path(FUNC_PATH, "install_libraries.R"))
 
 # srcUsedPackages <- c("RNetCDF","RANN","raster","foreach","tictoc","pryr","plyr","lubridate","parallel","crayon",
 srcUsedPackages <- c("ncdf4","raster","foreach","plyr","lubridate","parallel","crayon",
-                     "dplyr","sf","ggplot2", "ggpubr","abind", "progress","tidyr")
+                     "dplyr","sf","ggplot2", "ggpubr","abind", "progress","tidyr",
+                     "doSNOW")
 #                    "dplyr","sf","ggplot2","ggspatial", "doParallel", "ggpubr","abind", "progress","tidyr", "doSNOW")
-if (!cluster){srcUsedPackages <- c(srcUsedPackages, "doSNOW")} else {srcUsedPackages <- c(srcUsedPackages, "doParallel")}
+# if (!cluster){srcUsedPackages <- c(srcUsedPackages, "doSNOW")} else {srcUsedPackages <- c(srcUsedPackages, "doParallel")}
 
 installAndLoad_packages(srcUsedPackages, loadPackages = TRUE)
 

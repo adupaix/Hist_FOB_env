@@ -46,7 +46,7 @@ output_path1 <- file.path(OUTPUT_PATH, dir_name)
 dir.create(path = output_path1, showWarnings = F)
 
 #Create the directory to save the cfg files (output path of subroutine 2)
-cfg_dir <- paste0("cfgs_",first_release_year,"-",last_release_year)
+cfg_dir <- paste0("cfgs_",release_year)
 output_path2 <- file.path(output_path1, cfg_dir)
 dir.create(path = output_path2, showWarnings = F)
 
@@ -64,9 +64,9 @@ if (input_method == "allMask"){ Names$output_1 <- c(Names$output_1, "Link_table.
 #' outputs of subroutine 2
 #' @!! only check the existence of the pbs jobs (not the xml cfg files)
 Names$output_2.1 <- paste0("commands_simu-",1:n_pbs_jobs,".txt")
-Names$output_2.2 <- paste0("sim_ichthyop-",last_release_year,"-",1:n_pbs_jobs,".pbs")
-Names$output_2.3 <- c(paste0("post_sim_ichthyop-",last_release_year,".pbs"),
-                      paste0("commands_post_simu-",last_release_year,".txt"))
+Names$output_2.2 <- paste0("sim_ichthyop-",release_year,"-",1:n_pbs_jobs,".pbs")
+Names$output_2.3 <- c(paste0("post_sim_ichthyop-",release_year,".pbs"),
+                      paste0("commands_post_simu-",release_year,".txt"))
 Names$output_2.4 <- "launch_jobs.sh"
 
 
@@ -90,7 +90,7 @@ Exist$output_2 <- file.exists(c(file.path(output_path2, Names$output_2.1),
 
 
 #' add the year to the sim_output_path (path where the Ichthyop output will be save on the cluster)
-# sim_output_path <- file.path(sim_output_path, curr_prod, last_release_year)
+# sim_output_path <- file.path(sim_output_path, curr_prod, release_year)
 #' add the forcing product name to the sim_input_path
 sim_input_path <- file.path(sim_input_path, curr_prod)
 

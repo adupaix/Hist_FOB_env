@@ -62,8 +62,8 @@ apply.mortality <- function(array.k, ltime, ltime_method, sd = 30){
 #   return(sweep(x2, 1:3, y2, "+"))
 # }
 
-f.for.combining <- function(x,y){
-  return(sweep(x, 1:3, y, "+"))
+f.for.combining <- function(...){
+  Reduce(f = "+", x = list(...))
 }
 
 #'@sub-function 3
@@ -74,10 +74,10 @@ get.array.k <- function(k, points_id, sim_output_path, sub_dirs, release_date.i,
   
   nc.k <- ncdf4::nc_open(file.path(sim_output_path, sub_dirs[k], points_id[k], nc_file_name.k))
   t <- ncdf4::ncvar_get(nc.k, varid = "time")
-  time_to_keep <- which(!is.na(t) & t<10^30) # this part is very long, but it is there to take into account the potential errors in Ichthyop outputs. It can be deleted afterwards
-  t <- t[time_to_keep]
-  array.k <- ncdf4::ncvar_get(nc.k, varid = "density")[,,time_to_keep]
-  # array.k <- ncdf4::ncvar_get(nc.k, varid = "density")
+  # time_to_keep <- which(!is.na(t) & t<10^30) # this part is very long, but it is there to take into account the potential errors in Ichthyop outputs. It can be deleted afterwards
+  # t <- t[time_to_keep]
+  # array.k <- ncdf4::ncvar_get(nc.k, varid = "density")[,,time_to_keep]
+  array.k <- ncdf4::ncvar_get(nc.k, varid = "density")
   ncdf4::nc_close(nc.k)
   # array.k <- readRDS(file.path(sim_output_path, sub_dirs[k], points_id[k], paste0(points_id[k], "_", release_date.i, ".rds")))
   dimnames(array.k)[[3]] <- t
