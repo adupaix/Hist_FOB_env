@@ -1,6 +1,12 @@
 # Historical floating objects distributions
 
-Scripts to perform simulations of natural floating objects (NLOGs) distributions from 2000 to 2020
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](/LICENSE) 
+[![Latest Release](https://img.shields.io/github/release/adupaix/Hist_FOB_env.svg)](/releases) 
+[![DOI](https://zenodo.org/badge/340379748.svg)](https://doi.org/10.5281/zenodo.10711433) 
+
+Scripts to perform simulations of natural floating objects (NLOGs) distributions from 2000 to 2020.
+
+Obtained distributions are available as `.nc` files at [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14833683.svg)](https://doi.org/10.5281/zenodo.14833683)
 
 The study uses __Ichthyop__ (available here: [website](https://www.ichthyop.org) ; [github](https://github.com/ichthyop/ichthyop)) and the __Ichthyop mpi wrapper__ (available here: [github](https://github.com/ichthyop/ichthyop-mpi))
 
